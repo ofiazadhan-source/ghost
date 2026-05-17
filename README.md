@@ -1,2 +1,1 @@
-# ghost
-index .html
+
