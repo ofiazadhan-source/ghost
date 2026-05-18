@@ -17,11 +17,11 @@ body {background:#f5f5f5; padding-bottom:80px;}
 .checkout-btn {flex:1; padding:15px; background:#ff6b35; color:white; border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;}
 .checkout-btn:disabled {background:#ccc;}
 .total-display {text-align:center; padding:10px; background:white; margin:10px 15px; border-radius:10px; font-weight:700; font-size:18px;}
+.prod-note {background:#e8f5e9; color:#2e7d32; padding:10px 15px; margin:10px 15px; border-radius:10px; font-size:13px; text-align:center;}
 
 /* Accordion Styles */
 .accordion {background:white; margin-bottom:12px; border-radius:10px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
 .acc-header {background:#fff3cd; padding:15px; font-weight:700; color:#856404; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;}
-.acc-header:hover {background:#ffeeba;}
 .acc-header.arrow {transition:transform 0.3s;}
 .acc-header.active.arrow {transform:rotate(180deg);}
 .acc-content {max-height:0; overflow:hidden; transition:max-height 0.3s ease-out;}
@@ -62,6 +62,8 @@ body {background:#f5f5f5; padding-bottom:80px;}
     <span class="cart-count" id="cartCount">0</span>
   </div>
 </div>
+
+<div class="prod-note" id="prodNote">Loading...</div>
 
 <div class="container" id="productsContainer"></div>
 <div class="total-display" id="totalDisplay">Total: ₱0</div>
@@ -159,6 +161,7 @@ let selectedPayment = 'Cash';
 
 window.onload = function() {
   loadProducts();
+  showProductionNote();
   renderProducts();
   updateCart();
 }
@@ -168,6 +171,15 @@ function loadProducts() {
   if(Object.keys(products).length === 0) {
     products = JSON.parse(JSON.stringify(defaultProducts));
     localStorage.setItem('products', JSON.stringify(products));
+  }
+}
+
+function showProductionNote() {
+  let lastDate = localStorage.getItem('lastProductionDate');
+  if(lastDate) {
+    document.getElementById('prodNote').textContent = `🏭 Last Production: ${lastDate}`;
+  } else {
+    document.getElementById('prodNote').textContent = '🏭 No production run yet';
   }
 }
 
