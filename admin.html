@@ -3,88 +3,114 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - DHAN SIOMAI POS</title>
+<title>DHAN SIOMAI POS</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
-body {background:#f5f5f5; padding:20px;}
-.container {max-width:900px; margin:0 auto;}
-.header {display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;}
-.header h1 {color:#ff6b35; font-size:22px;}
-.btn {padding:10px 15px; border:none; border-radius:8px; font-weight:600; cursor:pointer;}
-.btn-save {background:#4CAF50; color:white;}
-.btn-danger {background:#f44336; color:white;}
-.btn-logout {background:#666; color:white;}
-.btn-reset {background:#ff9800; color:white;}
-.category {background:white; padding:15px; margin-bottom:15px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-.category h3 {margin-bottom:10px;}
-.item-row {display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; margin-bottom:8px; align-items:center;}
-.item-row input {padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px;}
-.login-box {max-width:400px; margin:100px auto; background:white; padding:30px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); text-align:center;}
-.login-box input {width:100%; padding:12px; margin:15px 0; border:1px solid #ddd; border-radius:8px; font-size:16px;}
-.login-box button {width:100%; padding:12px; background:#ff6b35; color:white; border:none; border-radius:8px; font-weight:700; font-size:16px; cursor:pointer;}
-.hidden {display:none;}
-.tabs {display:flex; gap:10px; margin-bottom:20px;}
-.tab {flex:1; padding:12px; background:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;}
-.tab.active {background:#ff6b35; color:white;}
-.tab-content {display:none;}
-.tab-content.active {display:block;}
-.expense-row {display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; margin-bottom:10px; align-items:center;}
-.expense-row input {padding:8px; border:1px solid #ddd; border-radius:6px;}
-.danger-zone {background:#fff3cd; padding:15px; border-radius:10px; border:2px solid #ffc107;}
-.note {background:#d4edda; padding:10px; border-radius:8px; margin-bottom:15px; font-size:13px; color:#155724;}
+body {background:#f5f5f5; padding-bottom:80px;}
+.header {background:#ff6b35; color:white; padding:15px; text-align:center; position:sticky; top:0; z-index:10;}
+.header h1 {font-size:20px;}
+.cart-icon {position:absolute; right:15px; top:15px; font-size:24px; cursor:pointer;}
+.cart-count {position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center;}
+.container {padding:15px;}
+.category {background:white; margin-bottom:12px; border-radius:10px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+.cat-header {background:#fff3cd; padding:12px; font-weight:700; color:#856404; display:flex; justify-content:space-between; align-items:center; cursor:pointer;}
+.cat-header.arrow {transition:transform 0.3s;}
+.cat-header.active.arrow {transform:rotate(180deg);}
+.cat-content {display:none; padding:10px;}
+.cat-content.active {display:block;}
+.item {display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;}
+.item:last-child {border-bottom:none;}
+.item-info {flex:1;}
+.item-name {font-weight:600; font-size:15px;}
+.item-price {color:#ff6b35; font-weight:700;}
+.item-stock {font-size:12px; color:#666;}
+.item-controls {display:flex; align-items:center; gap:8px;}
+.qty-btn {width:32px; height:32px; border:none; border-radius:6px; background:#ff6b35; color:white; font-size:18px; font-weight:700; cursor:pointer;}
+.qty-btn:disabled {background:#ccc;}
+.qty {min-width:30px; text-align:center; font-weight:700;}
+.bottom-bar {position:fixed; bottom:0; left:0; right:0; background:white; padding:15px; box-shadow:0 -2px 10px rgba(0,0,0,0.1); display:flex; gap:10px;}
+.checkout-btn {flex:1; padding:15px; background:#ff6b35; color:white; border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;}
+.checkout-btn:disabled {background:#ccc;}
+.total-display {text-align:center; padding:10px; background:white; margin:10px 15px; border-radius:10px; font-weight:700; font-size:18px;}
+.empty {text-align:center; padding:40px; color:#666;}
+.modal {display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;}
+.modal.active {display:flex;}
+.modal-content {background:white; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; border-radius:12px; padding:20px;}
+.modal-header {display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;}
+.modal-header h2 {color:#ff6b35;}
+.close-btn {background:none; border:none; font-size:28px; cursor:pointer; color:#666;}
+.cart-item {display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;}
+.payment-option {padding:12px; border:2px solid #ddd; border-radius:8px; margin-bottom:10px; cursor:pointer;}
+.payment-option.selected {border-color:#ff6b35; background:#fff3cd;}
+.payment-form {display:none; margin-top:10px;}
+.payment-form.active {display:block;}
+.payment-form input,.payment-form textarea {width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:6px;}
 </style>
 </head>
 <body>
 
-<div id="loginScreen" class="login-box">
-  <h2>🔒 Admin Login</h2>
-  <input type="password" id="passwordInput" placeholder="Enter admin password" onkeyup="if(event.key==='Enter') checkPassword()">
-  <button onclick="checkPassword()">Login</button>
-  <p id="errorMsg" style="color:red; font-size:13px; margin-top:10px; display:none;">Wrong password!</p>
+<div class="header">
+  <h1>🍢 DHAN SIOMAI</h1>
+  <div class="cart-icon" onclick="openCart()">
+    🛒
+    <span class="cart-count" id="cartCount">0</span>
+  </div>
 </div>
 
-<div id="mainScreen" class="container hidden">
-  <div class="header">
-    <h1>⚙️ Admin Panel</h1>
-    <div>
-      <button class="btn btn-save" onclick="saveAll()">💾 Save All</button>
-      <button class="btn btn-logout" onclick="logout()">🚪 Logout</button>
+<div class="container" id="productsContainer"></div>
+<div class="total-display" id="totalDisplay">Total: ₱0</div>
+
+<div class="bottom-bar">
+  <button class="checkout-btn" id="checkoutBtn" onclick="openCheckout()" disabled>Checkout</button>
+</div>
+
+<!-- Cart Modal -->
+<div class="modal" id="cartModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>🛒 Cart</h2>
+      <button class="close-btn" onclick="closeCart()">×</button>
     </div>
+    <div id="cartItems"></div>
+    <div style="text-align:right; font-weight:700; font-size:18px; margin-top:15px;" id="cartTotal">Total: ₱0</div>
   </div>
+</div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('products')">📦 Products</button>
-    <button class="tab" onclick="switchTab('expenses')">💸 Expenses</button>
-    <button class="tab" onclick="switchTab('reset')">⚠️ Reset Data</button>
-  </div>
-
-  <div id="tab-products" class="tab-content active">
-    <div class="note">💡 Baguhin mo price at stock dito. Click Save All pag tapos.</div>
-    <div id="productsEditor"></div>
-  </div>
-
-  <div id="tab-expenses" class="tab-content">
-    <div class="note">💡 I-log mo dito expenses mo.</div>
-    <div id="expensesEditor"></div>
-    <button class="btn btn-save" onclick="addExpenseRow()">+ Add Expense</button>
-  </div>
-
-  <div id="tab-reset" class="tab-content">
-    <div class="danger-zone">
-      <h3 style="color:#856404; margin-bottom:10px;">⚠️ Danger Zone</h3>
-      <p style="font-size:14px; margin-bottom:15px;">Permanent to. Make sure may backup ka.</p>
-      <button class="btn btn-reset" onclick="resetTransactions()" style="width:100%; margin-bottom:10px;">🗑️ Reset Transactions</button>
-      <button class="btn btn-reset" onclick="resetExpenses()" style="width:100%; margin-bottom:10px;">🗑️ Reset Expenses</button>
-      <button class="btn btn-danger" onclick="resetAll()" style="width:100%;">🔥 Reset Everything</button>
+<!-- Checkout Modal -->
+<div class="modal" id="checkoutModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>💳 Payment</h2>
+      <button class="close-btn" onclick="closeCheckout()">×</button>
     </div>
+
+    <div class="payment-option selected" onclick="selectPayment('Cash')">
+      💵 Cash on Delivery / Pickup
+    </div>
+
+    <div class="payment-option" onclick="selectPayment('GCash')">
+      📱 GCash
+      <div class="payment-form" id="gcashForm">
+        <input type="text" id="gcashName" placeholder="GCash Account Name">
+        <input type="text" id="gcashNumber" placeholder="GCash Number">
+      </div>
+    </div>
+
+    <div class="payment-option" onclick="selectPayment('COD')">
+      🚚 Cash on Delivery
+      <div class="payment-form" id="codForm">
+        <input type="text" id="codName" placeholder="Full Name">
+        <textarea id="codAddress" placeholder="Delivery Address"></textarea>
+        <input type="text" id="codPhone" placeholder="Phone Number">
+      </div>
+    </div>
+
+    <button class="checkout-btn" onclick="placeOrder()" style="margin-top:15px;">Place Order</button>
   </div>
 </div>
 
 <script>
-// CHANGE THIS PASSWORD
-const ADMIN_PASSWORD = "admin123";
-
 const defaultProducts = {
   "Siomai 65pcs": [
     {name:"Pork Siomai 65", price:150, stock:999},
@@ -96,140 +122,239 @@ const defaultProducts = {
     {name:"Pork Siomai 30", price:80, stock:999},
     {name:"Chicken Siomai 30", price:80, stock:999},
     {name:"Beef Siomai 30", price:80, stock:999},
-    {name:"Shrimp Siomai 30", price:80, stock:999}
+    {name:"Shrimp Siomai 30", price:80, stock:999},
+    {name:"Japanese Siomai 30", price:80, stock:999}
+  ],
+  "Big Siomai": [
+    {name:"Big Pork Siomai", price:200, stock:15},
+    {name:"Big Chicken Siomai", price:200, stock:15},
+    {name:"Big Beef Siomai", price:200, stock:15},
+    {name:"Japanese Crabstic Siomai", price:220, stock:15}
+  ],
+  "Dumplings": [
+    {name:"Gyoza Dumplings", price:180, stock:100},
+    {name:"Sharksfin Dumplings", price:180, stock:30},
+    {name:"Hakaw Dumplings", price:180, stock:30}
+  ],
+  "Siopao": [
+    {name:"Jumbo Asado Siopao", price:120, stock:15},
+    {name:"Jumbo Bola-Bola Siopao", price:120, stock:10},
+    {name:"Mini Asado Siopao", price:60, stock:0},
+    {name:"Mini Bola-Bola Siopao", price:60, stock:0}
+  ],
+  "Sauce": [
+    {name:"Chili Garlic Sauce", price:50, stock:20},
+    {name:"Siopao Sauce", price:40, stock:20}
   ]
 };
 
 let products = {};
-let expenses = [];
+let cart = {};
+let selectedPayment = 'Cash';
 
 window.onload = function() {
-  if(sessionStorage.getItem('adminLoggedIn') === 'true') {
-    showMainScreen();
-  }
-  loadData();
-}
-
-function checkPassword() {
-  let input = document.getElementById('passwordInput').value;
-  if(input === ADMIN_PASSWORD) {
-    sessionStorage.setItem('adminLoggedIn', 'true');
-    showMainScreen();
-  } else {
-    document.getElementById('errorMsg').style.display = 'block';
-    document.getElementById('passwordInput').value = '';
-  }
-}
-
-function showMainScreen() {
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('mainScreen').classList.remove('hidden');
+  loadProducts();
   renderProducts();
-  renderExpenses();
+  updateCart();
 }
 
-function logout() {
-  sessionStorage.removeItem('adminLoggedIn');
-  location.reload();
-}
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
-  document.getElementById('tab-' + tab).classList.add('active');
-}
-
-function loadData() {
-  products = JSON.parse(localStorage.getItem('products') || JSON.stringify(defaultProducts));
-  expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+function loadProducts() {
+  products = JSON.parse(localStorage.getItem('products') || '{}');
+  if(Object.keys(products).length === 0) {
+    products = JSON.parse(JSON.stringify(defaultProducts));
+    localStorage.setItem('products', JSON.stringify(products));
+  }
 }
 
 function renderProducts() {
   let html = '';
   Object.keys(products).forEach(cat => {
-    html += `<div class="category"><h3>${cat}</h3>`;
+    html += `<div class="category">
+      <div class="cat-header" onclick="toggleCategory(this)">
+        <span>📦 ${cat}</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="cat-content">
+    `;
+
     products[cat].forEach((prod, idx) => {
       html += `
-        <div class="item-row">
-          <div>${prod.name}</div>
-          <input type="number" value="${prod.price}" onchange="updateProduct('${cat}', ${idx}, 'price', this.value)">
-          <input type="number" value="${prod.stock}" onchange="updateProduct('${cat}', ${idx}, 'stock', this.value)">
+        <div class="item">
+          <div class="item-info">
+            <div class="item-name">${prod.name}</div>
+            <div class="item-price">₱${prod.price}</div>
+            <div class="item-stock">Stock: ${prod.stock}</div>
+          </div>
+          <div class="item-controls">
+            <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, -1)">-</button>
+            <span class="qty" id="qty-${cat}-${idx}">0</span>
+            <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, 1)" ${prod.stock <= 0? 'disabled' : ''}>+</button>
+          </div>
         </div>
       `;
     });
-    html += `</div>`;
+
+    html += `</div></div>`;
   });
-  document.getElementById('productsEditor').innerHTML = html;
+
+  document.getElementById('productsContainer').innerHTML = html;
 }
 
-function updateProduct(cat, idx, field, value) {
-  products[cat][idx][field] = parseInt(value) || 0;
+function toggleCategory(header) {
+  header.classList.toggle('active');
+  header.nextElementSibling.classList.toggle('active');
 }
 
-function renderExpenses() {
+function changeQty(cat, idx, change) {
+  let prod = products[cat][idx];
+  let key = prod.name;
+  let currentQty = cart[key] || 0;
+  let newQty = currentQty + change;
+
+  if(newQty < 0) newQty = 0;
+  if(newQty > prod.stock) newQty = prod.stock;
+
+  if(newQty === 0) {
+    delete cart[key];
+  } else {
+    cart[key] = newQty;
+  }
+
+  document.getElementById(`qty-${cat}-${idx}`).textContent = newQty;
+  updateCart();
+}
+
+function updateCart() {
+  let totalItems = 0;
+  let totalPrice = 0;
+
+  Object.keys(cart).forEach(name => {
+    let qty = cart[name];
+    totalItems += qty;
+
+    // Find price
+    Object.keys(products).forEach(cat => {
+      let prod = products[cat].find(p => p.name === name);
+      if(prod) totalPrice += prod.price * qty;
+    });
+  });
+
+  document.getElementById('cartCount').textContent = totalItems;
+  document.getElementById('totalDisplay').textContent = `Total: ₱${totalPrice}`;
+  document.getElementById('checkoutBtn').disabled = totalItems === 0;
+}
+
+function openCart() {
   let html = '';
-  expenses.forEach((exp, idx) => {
-    html += `
-      <div class="expense-row">
-        <input type="text" placeholder="Description" value="${exp.desc}" onchange="updateExpense(${idx}, 'desc', this.value)">
-        <input type="number" placeholder="Amount" value="${exp.amount}" onchange="updateExpense(${idx}, 'amount', this.value)">
-        <input type="date" value="${exp.date}" onchange="updateExpense(${idx}, 'date', this.value)">
-        <button class="btn btn-danger" onclick="deleteExpense(${idx})">🗑️</button>
-      </div>
-    `;
+  let total = 0;
+
+  if(Object.keys(cart).length === 0) {
+    html = '<div class="empty">Cart is empty</div>';
+  } else {
+    Object.keys(cart).forEach(name => {
+      let qty = cart[name];
+      let price = 0;
+      Object.keys(products).forEach(cat => {
+        let prod = products[cat].find(p => p.name === name);
+        if(prod) price = prod.price;
+      });
+      total += price * qty;
+      html += `<div class="cart-item">
+        <span>${name} x${qty}</span>
+        <span>₱${price * qty}</span>
+      </div>`;
+    });
+  }
+
+  document.getElementById('cartItems').innerHTML = html;
+  document.getElementById('cartTotal').textContent = `Total: ₱${total}`;
+  document.getElementById('cartModal').classList.add('active');
+}
+
+function closeCart() {
+  document.getElementById('cartModal').classList.remove('active');
+}
+
+function openCheckout() {
+  document.getElementById('checkoutModal').classList.add('active');
+}
+
+function closeCheckout() {
+  document.getElementById('checkoutModal').classList.remove('active');
+}
+
+function selectPayment(method) {
+  selectedPayment = method;
+  document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+
+  document.querySelectorAll('.payment-form').forEach(el => el.classList.remove('active'));
+  if(method === 'GCash') document.getElementById('gcashForm').classList.add('active');
+  if(method === 'COD') document.getElementById('codForm').classList.add('active');
+}
+
+function placeOrder() {
+  if(selectedPayment === 'GCash') {
+    if(!document.getElementById('gcashName').value ||!document.getElementById('gcashNumber').value) {
+      alert('Please fill GCash details');
+      return;
+    }
+  }
+  if(selectedPayment === 'COD') {
+    if(!document.getElementById('codName').value ||!document.getElementById('codAddress').value ||!document.getElementById('codPhone').value) {
+      alert('Please fill delivery details');
+      return;
+    }
+  }
+
+  // Save transaction
+  let transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+  let total = 0;
+  Object.keys(cart).forEach(name => {
+    let qty = cart[name];
+    Object.keys(products).forEach(cat => {
+      let prod = products[cat].find(p => p.name === name);
+      if(prod) total += prod.price * qty;
+    });
   });
-  document.getElementById('expensesEditor').innerHTML = html;
-}
 
-function addExpenseRow() {
-  expenses.push({desc:'', amount:0, date:new Date().toISOString().split('T')[0]});
-  renderExpenses();
-}
+  let txn = {
+    id: 'TXN' + Date.now(),
+    date: new Date().toLocaleString(),
+    items: cart,
+    total: total,
+    payment: {
+      method: selectedPayment,
+      gcashName: document.getElementById('gcashName').value,
+      gcashNumber: document.getElementById('gcashNumber').value,
+      codName: document.getElementById('codName').value,
+      codAddress: document.getElementById('codAddress').value,
+      codPhone: document.getElementById('codPhone').value
+    }
+  };
 
-function updateExpense(idx, field, value) {
-  expenses[idx][field] = field === 'amount'? parseInt(value) || 0 : value;
-}
+  transactions.push(txn);
+  localStorage.setItem('transactions', JSON.stringify(transactions));
 
-function deleteExpense(idx) {
-  if(confirm('Delete this expense?')) {
-    expenses.splice(idx, 1);
-    renderExpenses();
-  }
-}
-
-function saveAll() {
+  // Update stock
+  Object.keys(cart).forEach(name => {
+    let qty = cart[name];
+    Object.keys(products).forEach(cat => {
+      let prod = products[cat].find(p => p.name === name);
+      if(prod) prod.stock -= qty;
+    });
+  });
   localStorage.setItem('products', JSON.stringify(products));
-  localStorage.setItem('expenses', JSON.stringify(expenses));
-  alert("✅ Saved!");
-}
 
-function resetTransactions() {
-  if(confirm('Delete all transactions?')) {
-    localStorage.removeItem('transactions');
-    alert('✅ Transactions reset!');
-  }
-}
+  alert('✅ Order placed! Transaction ID: ' + txn.id);
 
-function resetExpenses() {
-  if(confirm('Delete all expenses?')) {
-    localStorage.removeItem('expenses');
-    expenses = [];
-    renderExpenses();
-    alert('✅ Expenses reset!');
-  }
-}
-
-function resetAll() {
-  if(confirm('Delete ALL data? Di na mabalik!')) {
-    localStorage.clear();
-    products = JSON.parse(JSON.stringify(defaultProducts));
-    expenses = [];
-    renderProducts();
-    renderExpenses();
-    alert('✅ All data reset!');
-  }
+  // Reset
+  cart = {};
+  closeCheckout();
+  closeCart();
+  renderProducts();
+  updateCart();
 }
 </script>
 </body>
-  </html>
+</html>
