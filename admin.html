@@ -16,10 +16,6 @@ body {background:#f5f5f5; padding:20px;}
 .btn-danger {background:#f44336; color:white;}
 .btn-logout {background:#666; color:white;}
 .btn-reset {background:#ff9800; color:white;}
-.category {background:white; padding:15px; margin-bottom:15px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-.category h3 {margin-bottom:10px;}
-.item-row {display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; margin-bottom:8px; align-items:center;}
-.item-row input {padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px;}
 .login-box {max-width:400px; margin:100px auto; background:white; padding:30px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); text-align:center;}
 .login-box input {width:100%; padding:12px; margin:15px 0; border:1px solid #ddd; border-radius:8px; font-size:16px;}
 .login-box button {width:100%; padding:12px; background:#ff6b35; color:white; border:none; border-radius:8px; font-weight:700; font-size:16px; cursor:pointer;}
@@ -29,10 +25,22 @@ body {background:#f5f5f5; padding:20px;}
 .tab.active {background:#ff6b35; color:white;}
 .tab-content {display:none;}
 .tab-content.active {display:block;}
+.note {background:#d4edda; padding:10px; border-radius:8px; margin-bottom:15px; font-size:13px; color:#155724;}
 .expense-row {display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; margin-bottom:10px; align-items:center;}
 .expense-row input {padding:8px; border:1px solid #ddd; border-radius:6px;}
 .danger-zone {background:#fff3cd; padding:15px; border-radius:10px; border:2px solid #ffc107;}
-.note {background:#d4edda; padding:10px; border-radius:8px; margin-bottom:15px; font-size:13px; color:#155724;}
+
+/* Accordion Styles */
+.accordion {background:white; margin-bottom:12px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow:hidden;}
+.acc-header {padding:15px; background:#fff3cd; font-weight:700; color:#856404; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;}
+.acc-header:hover {background:#ffeeba;}
+.acc-header.arrow {transition:transform 0.3s;}
+.acc-header.active.arrow {transform:rotate(180deg);}
+.acc-content {max-height:0; overflow:hidden; transition:max-height 0.3s ease-out;}
+.acc-content.active {max-height:2000px; transition:max-height 0.5s ease-in;}
+.item-row {display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; padding:12px 15px; border-top:1px solid #eee; align-items:center;}
+.item-row:first-child {border-top:none;}
+.item-row input {padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px;}
 </style>
 </head>
 <body>
@@ -60,7 +68,7 @@ body {background:#f5f5f5; padding:20px;}
   </div>
 
   <div id="tab-products" class="tab-content active">
-    <div class="note">💡 Baguhin mo price at stock dito. Click Save All pag tapos.</div>
+    <div class="note">💡 Tap mo yung category para mag-open. Baguhin mo price at stock, tapos click Save All.</div>
     <div id="productsEditor"></div>
   </div>
 
@@ -82,7 +90,6 @@ body {background:#f5f5f5; padding:20px;}
 </div>
 
 <script>
-// CHANGE THIS PASSWORD
 const ADMIN_PASSWORD = "admin123";
 
 const defaultProducts = {
@@ -170,7 +177,14 @@ function loadData() {
 function renderProducts() {
   let html = '';
   Object.keys(products).forEach(cat => {
-    html += `<div class="category"><h3>${cat}</h3>`;
+    html += `
+      <div class="accordion">
+        <div class="acc-header" onclick="toggleAccordion(this)">
+          <span>📁 ${cat}</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="acc-content">
+    `;
     products[cat].forEach((prod, idx) => {
       html += `
         <div class="item-row">
@@ -180,9 +194,14 @@ function renderProducts() {
         </div>
       `;
     });
-    html += `</div>`;
+    html += `</div></div>`;
   });
   document.getElementById('productsEditor').innerHTML = html;
+}
+
+function toggleAccordion(header) {
+  header.classList.toggle('active');
+  header.nextElementSibling.classList.toggle('active');
 }
 
 function updateProduct(cat, idx, field, value) {
