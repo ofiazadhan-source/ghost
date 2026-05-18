@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Receipt - DHAN SIOMAI POS</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
+body {background:#f5f5f5; padding:20px;}
+.container {max-width:600px; margin:0 auto; background:white; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.receipt-header {text-align:center; margin-bottom:15px; border-bottom:2px dashed #ddd; padding-bottom:15px;}
+.cart-item {display:flex; justify-content:space-between; padding:8px 0; font-size:14px;}
+.divider {border-bottom:1px dashed #ddd; margin:10px 0;}
+.total-row {display:flex; justify-content:space-between; font-size:18px; font-weight:700; margin-top:10px;}
+.payment-info {background:#f9f9f9; padding:10px; border-radius:8px; margin-top:15px; font-size:14px;}
+.btn-group {display:flex; gap:10px; margin-top:20px;}
+.btn {flex:1; padding:12px; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:16px;}
+.btn-print {background:#ff6b35; color:white;}
+.btn-back {background:#666; color:white;}
+@media print {
+  body {background:white; padding:0;}
+.container {box-shadow:none; padding:0;}
+.btn-group {display:none;}
+}
+</style>
+</head>
+<body>
+<div class="container" id="receipt">
+  <div class="receipt-header">
+    <h3>🔥 DHAN SIOMAI POS</h3>
+    <p>Receipt #: <span id="receiptNo"></span></p>
+    <p id="dateTime"></p>
+  </div>
+
+  <div id="cartList"></div>
+  <div class="divider"></div>
+  <div class="total-row">
+    <span>Total Items:</span>
+    <span id="totalItems">0</span>
+  </div>
+  <div class="total-row">
+    <span>Total Amount:</span>
+    <span id="totalPrice">₱0</span>
+  </div>
+  <div class="payment-info" id="paymentInfo"></div>
+  <div class="divider"></div>
+  <p style="text-align:center; font-size:12px; color:#666; margin-top:15px;">
+    Salamat sa pag-order! 🙏
+  </p>
+</div>
+
+<div class="btn-group">
+  <button class="btn btn-back" onclick="window.location.href='order.html'">← Back</button>
+  <button class="btn btn-print" onclick="window.print()">🖨️ Print Receipt</button>
+</div>
+
+<script>
+window.onload = function() {
+  document.getElementById('receiptNo').textContent = Math.floor(Math.random() * 100000);
+  document.getElementById('dateTime').textContent = new Date().toLocaleString('en-PH');
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const cartData = urlParams.get('cart');
+  const paymentData = urlParams.get('payment');
+
+  if(!cartData) return;
+
+  const cart = JSON.parse(decodeURIComponent(cartData));
+  let html = '';
+  let total = 0;
+  let totalItems = 0;
+
+  Object.keys(cart).forEach(name => {
+    let qty = cart[name];
+    let price = getPrice(name);
+    let subtotal = price * qty;
+    total += subtotal;
+    totalItems += qty;
+    html += `<div class="cart-item"><span>${name} x${qty}</span><span>₱${subtotal}</span></div>`;
+  });
+
+  document.getElementById('cartList').innerHTML = html;
+  document.getElementById('totalItems').textContent = totalItems;
+  document.getElementById('totalPrice').textContent = '₱' + total;
+
+  if(paymentData) {
+    const payment = JSON.parse(decodeURIComponent(paymentData));
+    let payHtml = '';
+    if(payment.method === 'Cash') {
+      payHtml = `💵 Cash<br>Cash: ₱${payment.cash}<br>Change: ₱${payment.change}`;
+    } else if(payment.method === 'GCash') {
+      payHtml = `📱 GCash<br>${payment.gcashName}<br>${payment.gcashNumber}`;
+    } else if(payment.method === 'COD') {
+      payHtml = `🚚 COD<br>${payment.codName}<br>${payment.codAddress}<br>${payment.codPhone}`;
+    }
+    document.getElementById('paymentInfo').innerHTML = payHtml;
+  }
+}
+
+function getPrice(name) {
+  let products = JSON.parse(localStorage.getItem('products') || '{}');
+  for(let cat in products) {
+    let prod = products[cat].find(p => p.name === name);
+    if(prod) return prod.price;
+  }
+  return 0;
+}
+</script>
+</body>
+</html>
