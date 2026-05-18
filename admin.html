@@ -25,15 +25,26 @@ body {background:#f5f5f5;}
 .tab-btn.active {background:#ff6b35; color:white;}
 .tab-content {display:none; background:white; padding:20px; border-radius:10px;}
 .tab-content.active {display:block;}
-.prod-section {margin-bottom:20px;}
-.prod-section h3 {margin-bottom:10px; color:#333;}
-.prod-item {display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;}
+.prod-section {margin-bottom:25px; border-bottom:2px solid #eee; padding-bottom:15px;}
+.prod-section h3 {margin-bottom:10px; color:#333; display:flex; justify-content:space-between; align-items:center;}
+.prod-item {display:flex; justify-content:space-between; align-items:center; padding:12px 10px; border-bottom:1px solid #eee; gap:10px;}
+.prod-item span {flex:1;}
 .prod-item input {width:80px; padding:6px; border:1px solid #ddd; border-radius:6px;}
-.save-btn {padding:10px 20px; background:#4caf50; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer;}
+.input-group {display:flex; gap:8px; align-items:center;}
+.save-btn {padding:12px 24px; background:#4caf50; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; margin-top:15px;}
+.add-btn {padding:8px 16px; background:#2196f3; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;}
+.delete-btn {padding:6px 12px; background:#f44336; color:white; border:none; border-radius:6px; cursor:pointer; font-size:12px;}
 .logout-btn {padding:8px 15px; background:#f44336; color:white; border:none; border-radius:6px; cursor:pointer;}
 table {width:100%; border-collapse:collapse;}
 th, td {padding:12px; text-align:left; border-bottom:1px solid #eee;}
 th {background:#fff3cd; color:#856404;}
+.label {font-size:12px; color:#666; margin-bottom:4px;}
+.add-product-form {background:#f9f9f9; padding:15px; border-radius:8px; margin-top:10px; display:none;}
+.add-product-form input {width:100%; padding:8px; margin-bottom:10px; border:1px solid #ddd; border-radius:6px;}
+.modal {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;}
+.modal.active {display:flex;}
+.modal-content {background:white; padding:25px; border-radius:12px; width:90%; max-width:400px;}
+.modal-buttons {display:flex; gap:10px; margin-top:15px;}
 </style>
 </head>
 <body>
@@ -65,7 +76,7 @@ th {background:#fff3cd; color:#856404;}
 
   <div class="tab-content" id="productionTab">
     <h3>Production Run</h3>
-    <input type="date" id="prodDate" style="padding:10px; margin-bottom:15px;">
+    <input type="date" id="prodDate" style="padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:6px;">
     <div id="productionList"></div>
     <button class="save-btn" onclick="saveProduction()">Save Production</button>
   </div>
@@ -76,9 +87,22 @@ th {background:#fff3cd; color:#856404;}
   </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal">
+  <div class="modal-content">
+    <h3>Delete Product?</h3>
+    <p id="deleteText">Are you sure?</p>
+    <div class="modal-buttons">
+      <button class="delete-btn" onclick="confirmDelete()">Delete</button>
+      <button class="save-btn" onclick="closeModal()" style="background:#666;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const ADMIN_PASSWORD = 'admin123';
 let products = {};
+let deleteTarget = null;
 
 window.onload = function() {
   if(sessionStorage.getItem('adminLoggedIn') === 'true') {
@@ -117,11 +141,33 @@ function loadProducts() {
 function renderProducts() {
   let html = '';
   Object.keys(products).forEach(cat => {
-    html += `<div class="prod-section"><h3>${cat}</h3>`;
+    html += `<div class="prod-section">
+      <h3>${cat}
+        <button class="add-btn" onclick="toggleAddForm('${cat}')">+ Add</button>
+      </h3>
+
+      <div class="add-product-form" id="addForm-${cat}">
+        <input type="text" id="newName-${cat}" placeholder="Product Name">
+        <input type="number" id="newPrice-${cat}" placeholder="Price" min="0" step="1">
+        <input type="number" id="newStock-${cat}" placeholder="Initial Stock" min="0">
+        <button class="add-btn" onclick="addProduct('${cat}')">Add Product</button>
+      </div>
+    `;
+
     products[cat].forEach((prod, idx) => {
       html += `<div class="prod-item">
-        <span>${prod.name} - ₱${prod.price}</span>
-        <input type="number" id="stock-${cat}-${idx}" value="${prod.stock}">
+        <span>${prod.name}</span>
+        <div class="input-group">
+          <div>
+            <div class="label">Price</div>
+            <input type="number" id="price-${cat}-${idx}" value="${prod.price}" min="0" step="1">
+          </div>
+          <div>
+            <div class="label">Stock</div>
+            <input type="number" id="stock-${cat}-${idx}" value="${prod.stock}" min="0">
+          </div>
+          <button class="delete-btn" onclick="deleteProduct('${cat}', ${idx})">Delete</button>
+        </div>
       </div>`;
     });
     html += '</div>';
@@ -129,14 +175,64 @@ function renderProducts() {
   document.getElementById('productsList').innerHTML = html;
 }
 
+function toggleAddForm(cat) {
+  let form = document.getElementById(`addForm-${cat}`);
+  form.style.display = form.style.display === 'block'? 'none' : 'block';
+}
+
+function addProduct(cat) {
+  let name = document.getElementById(`newName-${cat}`).value.trim();
+  let price = parseFloat(document.getElementById(`newPrice-${cat}`).value) || 0;
+  let stock = parseInt(document.getElementById(`newStock-${cat}`).value) || 0;
+
+  if(!name) {
+    alert('Please enter product name!');
+    return;
+  }
+
+  products[cat].push({name: name, price: price, stock: stock});
+  localStorage.setItem('products', JSON.stringify(products));
+
+  document.getElementById(`newName-${cat}`).value = '';
+  document.getElementById(`newPrice-${cat}`).value = '';
+  document.getElementById(`newStock-${cat}`).value = '';
+
+  renderProducts();
+  alert('✅ Product added!');
+}
+
+function deleteProduct(cat, idx) {
+  deleteTarget = {cat: cat, idx: idx};
+  document.getElementById('deleteText').textContent = `Delete "${products[cat][idx].name}"?`;
+  document.getElementById('deleteModal').classList.add('active');
+}
+
+function confirmDelete() {
+  if(deleteTarget) {
+    products[deleteTarget.cat].splice(deleteTarget.idx, 1);
+    localStorage.setItem('products', JSON.stringify(products));
+    deleteTarget = null;
+    closeModal();
+    renderProducts();
+    alert('✅ Product deleted!');
+  }
+}
+
+function closeModal() {
+  document.getElementById('deleteModal').classList.remove('active');
+  deleteTarget = null;
+}
+
 function saveProducts() {
   Object.keys(products).forEach(cat => {
     products[cat].forEach((prod, idx) => {
+      prod.price = parseFloat(document.getElementById(`price-${cat}-${idx}`).value) || 0;
       prod.stock = parseInt(document.getElementById(`stock-${cat}-${idx}`).value) || 0;
     });
   });
   localStorage.setItem('products', JSON.stringify(products));
   alert('✅ Products updated!');
+  loadProducts();
 }
 
 function renderProduction() {
@@ -204,8 +300,8 @@ function switchTab(tab) {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-     .then(reg => console.log('SW registered'))
-     .catch(err => console.log('SW failed:', err));
+   .then(reg => console.log('SW registered'))
+   .catch(err => console.log('SW failed:', err));
   });
 }
 </script>
