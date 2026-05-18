@@ -13,14 +13,22 @@ body {background:#f5f5f5; padding-bottom:80px;}
 .cart-icon {position:absolute; right:15px; top:15px; font-size:24px; cursor:pointer;}
 .cart-count {position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center;}
 .container {padding:15px;}
-.category {background:white; margin-bottom:12px; border-radius:10px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-.cat-header {background:#fff3cd; padding:12px; font-weight:700; color:#856404; display:flex; justify-content:space-between; align-items:center; cursor:pointer;}
-.cat-header.arrow {transition:transform 0.3s;}
-.cat-header.active.arrow {transform:rotate(180deg);}
-.cat-content {display:none; padding:10px;}
-.cat-content.active {display:block;}
-.item {display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;}
-.item:last-child {border-bottom:none;}
+.bottom-bar {position:fixed; bottom:0; left:0; right:0; background:white; padding:15px; box-shadow:0 -2px 10px rgba(0,0,0,0.1); display:flex; gap:10px;}
+.checkout-btn {flex:1; padding:15px; background:#ff6b35; color:white; border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;}
+.checkout-btn:disabled {background:#ccc;}
+.total-display {text-align:center; padding:10px; background:white; margin:10px 15px; border-radius:10px; font-weight:700; font-size:18px;}
+
+/* Accordion Styles */
+.accordion {background:white; margin-bottom:12px; border-radius:10px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+.acc-header {background:#fff3cd; padding:15px; font-weight:700; color:#856404; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;}
+.acc-header:hover {background:#ffeeba;}
+.acc-header.arrow {transition:transform 0.3s;}
+.acc-header.active.arrow {transform:rotate(180deg);}
+.acc-content {max-height:0; overflow:hidden; transition:max-height 0.3s ease-out;}
+.acc-content.active {max-height:2000px; transition:max-height 0.5s ease-in;}
+
+.item {display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-top:1px solid #eee;}
+.item:first-child {border-top:none;}
 .item-info {flex:1;}
 .item-name {font-weight:600; font-size:15px;}
 .item-price {color:#ff6b35; font-weight:700;}
@@ -29,11 +37,7 @@ body {background:#f5f5f5; padding-bottom:80px;}
 .qty-btn {width:32px; height:32px; border:none; border-radius:6px; background:#ff6b35; color:white; font-size:18px; font-weight:700; cursor:pointer;}
 .qty-btn:disabled {background:#ccc;}
 .qty {min-width:30px; text-align:center; font-weight:700;}
-.bottom-bar {position:fixed; bottom:0; left:0; right:0; background:white; padding:15px; box-shadow:0 -2px 10px rgba(0,0,0,0.1); display:flex; gap:10px;}
-.checkout-btn {flex:1; padding:15px; background:#ff6b35; color:white; border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;}
-.checkout-btn:disabled {background:#ccc;}
-.total-display {text-align:center; padding:10px; background:white; margin:10px 15px; border-radius:10px; font-weight:700; font-size:18px;}
-.empty {text-align:center; padding:40px; color:#666;}
+
 .modal {display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;}
 .modal.active {display:flex;}
 .modal-content {background:white; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; border-radius:12px; padding:20px;}
@@ -46,6 +50,7 @@ body {background:#f5f5f5; padding-bottom:80px;}
 .payment-form {display:none; margin-top:10px;}
 .payment-form.active {display:block;}
 .payment-form input,.payment-form textarea {width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:6px;}
+.empty {text-align:center; padding:40px; color:#666;}
 </style>
 </head>
 <body>
@@ -169,15 +174,17 @@ function loadProducts() {
 function renderProducts() {
   let html = '';
   Object.keys(products).forEach(cat => {
-    html += `<div class="category">
-      <div class="cat-header" onclick="toggleCategory(this)">
-        <span>📦 ${cat}</span>
-        <span class="arrow">▼</span>
-      </div>
-      <div class="cat-content">
+    html += `
+      <div class="accordion">
+        <div class="acc-header" onclick="toggleAccordion(this)">
+          <span>📁 ${cat}</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="acc-content">
     `;
 
     products[cat].forEach((prod, idx) => {
+      let qty = cart[prod.name] || 0;
       html += `
         <div class="item">
           <div class="item-info">
@@ -187,7 +194,7 @@ function renderProducts() {
           </div>
           <div class="item-controls">
             <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, -1)">-</button>
-            <span class="qty" id="qty-${cat}-${idx}">0</span>
+            <span class="qty" id="qty-${cat}-${idx}">${qty}</span>
             <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, 1)" ${prod.stock <= 0? 'disabled' : ''}>+</button>
           </div>
         </div>
@@ -200,7 +207,7 @@ function renderProducts() {
   document.getElementById('productsContainer').innerHTML = html;
 }
 
-function toggleCategory(header) {
+function toggleAccordion(header) {
   header.classList.toggle('active');
   header.nextElementSibling.classList.toggle('active');
 }
@@ -231,8 +238,6 @@ function updateCart() {
   Object.keys(cart).forEach(name => {
     let qty = cart[name];
     totalItems += qty;
-
-    // Find price
     Object.keys(products).forEach(cat => {
       let prod = products[cat].find(p => p.name === name);
       if(prod) totalPrice += prod.price * qty;
@@ -287,7 +292,6 @@ function selectPayment(method) {
   selectedPayment = method;
   document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
   event.currentTarget.classList.add('selected');
-
   document.querySelectorAll('.payment-form').forEach(el => el.classList.remove('active'));
   if(method === 'GCash') document.getElementById('gcashForm').classList.add('active');
   if(method === 'COD') document.getElementById('codForm').classList.add('active');
@@ -307,7 +311,6 @@ function placeOrder() {
     }
   }
 
-  // Save transaction
   let transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
   let total = 0;
   Object.keys(cart).forEach(name => {
@@ -336,7 +339,6 @@ function placeOrder() {
   transactions.push(txn);
   localStorage.setItem('transactions', JSON.stringify(transactions));
 
-  // Update stock
   Object.keys(cart).forEach(name => {
     let qty = cart[name];
     Object.keys(products).forEach(cat => {
@@ -347,8 +349,6 @@ function placeOrder() {
   localStorage.setItem('products', JSON.stringify(products));
 
   alert('✅ Order placed! Transaction ID: ' + txn.id);
-
-  // Reset
   cart = {};
   closeCheckout();
   closeCart();
