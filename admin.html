@@ -20,27 +20,24 @@ body {background:#f5f5f5; padding:20px;}
 .login-box input {width:100%; padding:12px; margin:15px 0; border:1px solid #ddd; border-radius:8px; font-size:16px;}
 .login-box button {width:100%; padding:12px; background:#ff6b35; color:white; border:none; border-radius:8px; font-weight:700; font-size:16px; cursor:pointer;}
 .hidden {display:none;}
-.tabs {display:flex; gap:10px; margin-bottom:20px;}
-.tab {flex:1; padding:12px; background:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;}
+.tabs {display:flex; gap:10px; margin-bottom:20px; overflow-x:auto;}
+.tab {flex:1; padding:12px; background:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; white-space:nowrap;}
 .tab.active {background:#ff6b35; color:white;}
 .tab-content {display:none;}
 .tab-content.active {display:block;}
 .note {background:#d4edda; padding:10px; border-radius:8px; margin-bottom:15px; font-size:13px; color:#155724;}
-.expense-row {display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; margin-bottom:10px; align-items:center;}
-.expense-row input {padding:8px; border:1px solid #ddd; border-radius:6px;}
-.danger-zone {background:#fff3cd; padding:15px; border-radius:10px; border:2px solid #ffc107;}
-
-/* Accordion Styles */
+.note.warn {background:#fff3cd; color:#856404;}
 .accordion {background:white; margin-bottom:12px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow:hidden;}
 .acc-header {padding:15px; background:#fff3cd; font-weight:700; color:#856404; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;}
-.acc-header:hover {background:#ffeeba;}
-.acc-header.arrow {transition:transform 0.3s;}
-.acc-header.active.arrow {transform:rotate(180deg);}
 .acc-content {max-height:0; overflow:hidden; transition:max-height 0.3s ease-out;}
-.acc-content.active {max-height:2000px; transition:max-height 0.5s ease-in;}
+.acc-content.active {max-height:2000px;}
 .item-row {display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; padding:12px 15px; border-top:1px solid #eee; align-items:center;}
 .item-row:first-child {border-top:none;}
 .item-row input {padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px;}
+.expense-row {display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; margin-bottom:10px; align-items:center;}
+.expense-row input {padding:8px; border:1px solid #ddd; border-radius:6px;}
+.danger-zone {background:#fff3cd; padding:15px; border-radius:10px; border:2px solid #ffc107;}
+.prod-row {display:grid; grid-template-columns:2fr 1fr; gap:10px; padding:12px 15px; border-top:1px solid #eee; align-items:center;}
 </style>
 </head>
 <body>
@@ -63,6 +60,7 @@ body {background:#f5f5f5; padding:20px;}
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('products')">📦 Products</button>
+    <button class="tab" onclick="switchTab('production')">🏭 Daily Prod</button>
     <button class="tab" onclick="switchTab('expenses')">💸 Expenses</button>
     <button class="tab" onclick="switchTab('reset')">⚠️ Reset Data</button>
   </div>
@@ -70,6 +68,13 @@ body {background:#f5f5f5; padding:20px;}
   <div id="tab-products" class="tab-content active">
     <div class="note">💡 Tap mo yung category para mag-open. Baguhin mo price at stock, tapos click Save All.</div>
     <div id="productsEditor"></div>
+  </div>
+
+  <div id="tab-production" class="tab-content">
+    <div class="note">🏭 Set mo dito kung ilan idadagdag daily per product. Mag-a-auto add sa stocks once a day.</div>
+    <div class="note warn">Last Production: <span id="lastProdDate">Never</span></div>
+    <div id="productionEditor"></div>
+    <button class="btn btn-save" onclick="runProductionNow()">▶️ Run Production Now</button>
   </div>
 
   <div id="tab-expenses" class="tab-content">
@@ -81,7 +86,6 @@ body {background:#f5f5f5; padding:20px;}
   <div id="tab-reset" class="tab-content">
     <div class="danger-zone">
       <h3 style="color:#856404; margin-bottom:10px;">⚠️ Danger Zone</h3>
-      <p style="font-size:14px; margin-bottom:15px;">Permanent to. Make sure may backup ka.</p>
       <button class="btn btn-reset" onclick="resetTransactions()" style="width:100%; margin-bottom:10px;">🗑️ Reset Transactions</button>
       <button class="btn btn-reset" onclick="resetExpenses()" style="width:100%; margin-bottom:10px;">🗑️ Reset Expenses</button>
       <button class="btn btn-danger" onclick="resetAll()" style="width:100%;">🔥 Reset Everything</button>
@@ -130,13 +134,16 @@ const defaultProducts = {
 };
 
 let products = {};
-let expenses = [];
+let expenses = {};
+let dailyProduction = {};
+let lastProductionDate = null;
 
 window.onload = function() {
   if(sessionStorage.getItem('adminLoggedIn') === 'true') {
     showMainScreen();
   }
   loadData();
+  autoRunProduction();
 }
 
 function checkPassword() {
@@ -154,6 +161,7 @@ function showMainScreen() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('mainScreen').classList.remove('hidden');
   renderProducts();
+  renderProduction();
   renderExpenses();
 }
 
@@ -171,80 +179,131 @@ function switchTab(tab) {
 
 function loadData() {
   products = JSON.parse(localStorage.getItem('products') || JSON.stringify(defaultProducts));
-  expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+  expenses = JSON.parse(localStorage.getItem('expenses') || '{}');
+  dailyProduction = JSON.parse(localStorage.getItem('dailyProduction') || '{}');
+  lastProductionDate = localStorage.getItem('lastProductionDate');
+  document.getElementById('lastProdDate').textContent = lastProductionDate || 'Never';
 }
 
+function saveAll() {
+  localStorage.setItem('products', JSON.stringify(products));
+  localStorage.setItem('expenses', JSON.stringify(expenses));
+  localStorage.setItem('dailyProduction', JSON.stringify(dailyProduction));
+  alert("✅ Saved!");
+}
+
+// Products Tab
 function renderProducts() {
   let html = '';
   Object.keys(products).forEach(cat => {
-    html += `
-      <div class="accordion">
-        <div class="acc-header" onclick="toggleAccordion(this)">
-          <span>📁 ${cat}</span>
-          <span class="arrow">▼</span>
-        </div>
-        <div class="acc-content">
-    `;
+    html += `<div class="accordion"><div class="acc-header" onclick="toggleAccordion(this)">
+      <span>📁 ${cat}</span><span>▼</span></div><div class="acc-content">`;
     products[cat].forEach((prod, idx) => {
-      html += `
-        <div class="item-row">
-          <div>${prod.name}</div>
-          <input type="number" placeholder="Price" value="${prod.price}" onchange="updateProduct('${cat}', ${idx}, 'price', this.value)">
-          <input type="number" placeholder="Stock" value="${prod.stock}" onchange="updateProduct('${cat}', ${idx}, 'stock', this.value)">
-        </div>
-      `;
+      html += `<div class="item-row">
+        <div>${prod.name}</div>
+        <input type="number" placeholder="Price" value="${prod.price}" onchange="updateProduct('${cat}', ${idx}, 'price', this.value)">
+        <input type="number" placeholder="Stock" value="${prod.stock}" onchange="updateProduct('${cat}', ${idx}, 'stock', this.value)">
+      </div>`;
     });
     html += `</div></div>`;
   });
   document.getElementById('productsEditor').innerHTML = html;
 }
 
-function toggleAccordion(header) {
-  header.classList.toggle('active');
-  header.nextElementSibling.classList.toggle('active');
-}
-
 function updateProduct(cat, idx, field, value) {
   products[cat][idx][field] = parseInt(value) || 0;
 }
 
+// Daily Production Tab
+function renderProduction() {
+  let html = '';
+  Object.keys(products).forEach(cat => {
+    html += `<div class="accordion"><div class="acc-header" onclick="toggleAccordion(this)">
+      <span>🏭 ${cat}</span><span>▼</span></div><div class="acc-content">`;
+    products[cat].forEach(prod => {
+      let prodQty = dailyProduction[prod.name] || 0;
+      html += `<div class="prod-row">
+        <div>${prod.name}</div>
+        <input type="number" placeholder="Daily Qty" value="${prodQty}"
+          onchange="updateProduction('${prod.name}', this.value)">
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  document.getElementById('productionEditor').innerHTML = html;
+}
+
+function updateProduction(prodName, value) {
+  dailyProduction[prodName] = parseInt(value) || 0;
+}
+
+function autoRunProduction() {
+  let today = new Date().toISOString().split('T')[0];
+  if(lastProductionDate === today) return; // already run today
+
+  runProduction(today);
+}
+
+function runProductionNow() {
+  let today = new Date().toISOString().split('T')[0];
+  runProduction(today);
+  alert('✅ Production run complete!');
+}
+
+function runProduction(today) {
+  let added = false;
+  Object.keys(products).forEach(cat => {
+    products[cat].forEach(prod => {
+      let dailyQty = dailyProduction[prod.name] || 0;
+      if(dailyQty > 0) {
+        prod.stock += dailyQty;
+        added = true;
+      }
+    });
+  });
+
+  if(added) {
+    localStorage.setItem('products', JSON.stringify(products));
+    lastProductionDate = today;
+    localStorage.setItem('lastProductionDate', today);
+    document.getElementById('lastProdDate').textContent = today;
+    renderProducts(); // refresh display
+  }
+}
+
+// Expenses Tab
 function renderExpenses() {
   let html = '';
-  expenses.forEach((exp, idx) => {
-    html += `
-      <div class="expense-row">
-        <input type="text" placeholder="Description" value="${exp.desc}" onchange="updateExpense(${idx}, 'desc', this.value)">
-        <input type="number" placeholder="Amount" value="${exp.amount}" onchange="updateExpense(${idx}, 'amount', this.value)">
-        <input type="date" value="${exp.date}" onchange="updateExpense(${idx}, 'date', this.value)">
-        <button class="btn btn-danger" onclick="deleteExpense(${idx})">🗑️</button>
-      </div>
-    `;
+  let expArr = expenses.list || [];
+  expArr.forEach((exp, idx) => {
+    html += `<div class="expense-row">
+      <input type="text" placeholder="Description" value="${exp.desc}" onchange="updateExpense(${idx}, 'desc', this.value)">
+      <input type="number" placeholder="Amount" value="${exp.amount}" onchange="updateExpense(${idx}, 'amount', this.value)">
+      <input type="date" value="${exp.date}" onchange="updateExpense(${idx}, 'date', this.value)">
+      <button class="btn btn-danger" onclick="deleteExpense(${idx})">🗑️</button>
+    </div>`;
   });
   document.getElementById('expensesEditor').innerHTML = html;
 }
 
 function addExpenseRow() {
-  expenses.push({desc:'', amount:0, date:new Date().toISOString().split('T')[0]});
+  if(!expenses.list) expenses.list = [];
+  expenses.list.push({desc:'', amount:0, date:new Date().toISOString().split('T')[0]});
   renderExpenses();
 }
 
 function updateExpense(idx, field, value) {
-  expenses[idx][field] = field === 'amount'? parseInt(value) || 0 : value;
+  expenses.list[idx][field] = field === 'amount'? parseInt(value) || 0 : value;
 }
 
 function deleteExpense(idx) {
   if(confirm('Delete this expense?')) {
-    expenses.splice(idx, 1);
+    expenses.list.splice(idx, 1);
     renderExpenses();
   }
 }
 
-function saveAll() {
-  localStorage.setItem('products', JSON.stringify(products));
-  localStorage.setItem('expenses', JSON.stringify(expenses));
-  alert("✅ Saved! Open index.html to see changes.");
-}
-
+// Reset Tab
 function resetTransactions() {
   if(confirm('Delete all transactions?')) {
     localStorage.removeItem('transactions');
@@ -255,7 +314,7 @@ function resetTransactions() {
 function resetExpenses() {
   if(confirm('Delete all expenses?')) {
     localStorage.removeItem('expenses');
-    expenses = [];
+    expenses = {};
     renderExpenses();
     alert('✅ Expenses reset!');
   }
@@ -265,11 +324,18 @@ function resetAll() {
   if(confirm('Delete ALL data? Di na mabalik!')) {
     localStorage.clear();
     products = JSON.parse(JSON.stringify(defaultProducts));
-    expenses = [];
+    expenses = {};
+    dailyProduction = {};
+    lastProductionDate = null;
     renderProducts();
+    renderProduction();
     renderExpenses();
     alert('✅ All data reset!');
   }
+}
+
+function toggleAccordion(header) {
+  header.nextElementSibling.classList.toggle('active');
 }
 </script>
 </body>
