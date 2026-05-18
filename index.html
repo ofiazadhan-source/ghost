@@ -4,11 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DHAN SIOMAI POS</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ff6b35">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="DHAN POS">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
@@ -24,10 +19,13 @@ body {background:#f5f5f5; padding-bottom:80px;}
 .total-display {text-align:center; padding:10px; background:white; margin:10px 15px; border-radius:10px; font-weight:700; font-size:18px;}
 .prod-note {background:#e8f5e9; color:#2e7d32; padding:10px 15px; margin:10px 15px; border-radius:10px; font-size:13px; text-align:center;}
 
+/* Accordion Styles */
 .accordion {background:white; margin-bottom:12px; border-radius:10px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
 .acc-header {background:#fff3cd; padding:15px; font-weight:700; color:#856404; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;}
+.acc-header.arrow {transition:transform 0.3s;}
+.acc-header.active.arrow {transform:rotate(180deg);}
 .acc-content {max-height:0; overflow:hidden; transition:max-height 0.3s ease-out;}
-.acc-content.active {max-height:2000px;}
+.acc-content.active {max-height:2000px; transition:max-height 0.5s ease-in;}
 
 .item {display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-top:1px solid #eee;}
 .item:first-child {border-top:none;}
@@ -38,9 +36,7 @@ body {background:#f5f5f5; padding-bottom:80px;}
 .item-controls {display:flex; align-items:center; gap:8px;}
 .qty-btn {width:32px; height:32px; border:none; border-radius:6px; background:#ff6b35; color:white; font-size:18px; font-weight:700; cursor:pointer;}
 .qty-btn:disabled {background:#ccc;}
-.qty-input {width:60px; height:32px; text-align:center; border:1px solid #ddd; border-radius:6px; font-weight:700; font-size:15px;}
-.qty-input::-webkit-outer-spin-button,
-.qty-input::-webkit-inner-spin-button {-webkit-appearance: none; margin: 0;}
+.qty {min-width:30px; text-align:center; font-weight:700;}
 
 .modal {display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;}
 .modal.active {display:flex;}
@@ -97,11 +93,7 @@ body {background:#f5f5f5; padding-bottom:80px;}
     </div>
 
     <div class="payment-option selected" onclick="selectPayment('Cash')">
-      💵 Cash Payment
-      <div class="payment-form active" id="cashForm">
-        <input type="number" id="cashReceived" placeholder="Cash Received" oninput="calculateChange()" min="0">
-        <input type="text" id="cashChange" placeholder="Change: ₱0" readonly style="background:#f5f5f5;">
-      </div>
+      💵 Cash on Delivery / Pickup
     </div>
 
     <div class="payment-option" onclick="selectPayment('GCash')">
@@ -184,39 +176,46 @@ function loadProducts() {
 
 function showProductionNote() {
   let lastDate = localStorage.getItem('lastProductionDate');
-  document.getElementById('prodNote').textContent = lastDate
- ? `🏭 Last Production: ${lastDate}`
-    : '🏭 No production run yet';
+  if(lastDate) {
+    document.getElementById('prodNote').textContent = `🏭 Last Production: ${lastDate}`;
+  } else {
+    document.getElementById('prodNote').textContent = '🏭 No production run yet';
+  }
 }
 
 function renderProducts() {
   let html = '';
   Object.keys(products).forEach(cat => {
-    html += `<div class="accordion">
-      <div class="acc-header" onclick="toggleAccordion(this)">
-        <span>📁 ${cat}</span><span>▼</span>
-      </div>
-      <div class="acc-content">`;
+    html += `
+      <div class="accordion">
+        <div class="acc-header" onclick="toggleAccordion(this)">
+          <span>📁 ${cat}</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="acc-content">
+    `;
 
     products[cat].forEach((prod, idx) => {
       let qty = cart[prod.name] || 0;
-      html += `<div class="item">
-        <div class="item-info">
-          <div class="item-name">${prod.name}</div>
-          <div class="item-price">₱${prod.price}</div>
-          <div class="item-stock">Stock: ${prod.stock}</div>
+      html += `
+        <div class="item">
+          <div class="item-info">
+            <div class="item-name">${prod.name}</div>
+            <div class="item-price">₱${prod.price}</div>
+            <div class="item-stock">Stock: ${prod.stock}</div>
+          </div>
+          <div class="item-controls">
+            <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, -1)">-</button>
+            <span class="qty" id="qty-${cat}-${idx}">${qty}</span>
+            <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, 1)" ${prod.stock <= 0? 'disabled' : ''}>+</button>
+          </div>
         </div>
-        <div class="item-controls">
-          <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, -1)">-</button>
-          <input type="number" class="qty-input" id="qty-${cat}-${idx}" value="${qty}" min="0" max="${prod.stock}"
-            onchange="setQty('${cat}', ${idx}, this.value)">
-          <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, 1)" ${prod.stock <= 0? 'disabled' : ''}>+</button>
-        </div>
-      </div>`;
+      `;
     });
 
     html += `</div></div>`;
   });
+
   document.getElementById('productsContainer').innerHTML = html;
 }
 
@@ -230,21 +229,17 @@ function changeQty(cat, idx, change) {
   let key = prod.name;
   let currentQty = cart[key] || 0;
   let newQty = currentQty + change;
-  setQty(cat, idx, newQty);
-}
-
-function setQty(cat, idx, value) {
-  let prod = products[cat][idx];
-  let key = prod.name;
-  let newQty = parseInt(value) || 0;
 
   if(newQty < 0) newQty = 0;
   if(newQty > prod.stock) newQty = prod.stock;
 
-  if(newQty === 0) delete cart[key];
-  else cart[key] = newQty;
+  if(newQty === 0) {
+    delete cart[key];
+  } else {
+    cart[key] = newQty;
+  }
 
-  document.getElementById(`qty-${cat}-${idx}`).value = newQty;
+  document.getElementById(`qty-${cat}-${idx}`).textContent = newQty;
   updateCart();
 }
 
@@ -264,8 +259,6 @@ function updateCart() {
   document.getElementById('cartCount').textContent = totalItems;
   document.getElementById('totalDisplay').textContent = `Total: ₱${totalPrice}`;
   document.getElementById('checkoutBtn').disabled = totalItems === 0;
-
-  if(selectedPayment === 'Cash') calculateChange();
 }
 
 function openCart() {
@@ -301,7 +294,6 @@ function closeCart() {
 
 function openCheckout() {
   document.getElementById('checkoutModal').classList.add('active');
-  calculateChange();
 }
 
 function closeCheckout() {
@@ -312,56 +304,18 @@ function selectPayment(method) {
   selectedPayment = method;
   document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
   event.currentTarget.classList.add('selected');
-
   document.querySelectorAll('.payment-form').forEach(el => el.classList.remove('active'));
-  if(method === 'Cash') {
-    document.getElementById('cashForm').classList.add('active');
-    calculateChange();
-  }
   if(method === 'GCash') document.getElementById('gcashForm').classList.add('active');
   if(method === 'COD') document.getElementById('codForm').classList.add('active');
 }
 
-function calculateChange() {
-  let total = 0;
-  Object.keys(cart).forEach(name => {
-    let qty = cart[name];
-    Object.keys(products).forEach(cat => {
-      let prod = products[cat].find(p => p.name === name);
-      if(prod) total += prod.price * qty;
-    });
-  });
-
-  let cashReceived = parseFloat(document.getElementById('cashReceived').value) || 0;
-  let change = cashReceived - total;
-  document.getElementById('cashChange').value = `Change: ₱${change >= 0? change : 0}`;
-}
-
 function placeOrder() {
-  let total = 0;
-  Object.keys(cart).forEach(name => {
-    let qty = cart[name];
-    Object.keys(products).forEach(cat => {
-      let prod = products[cat].find(p => p.name === name);
-      if(prod) total += prod.price * qty;
-    });
-  });
-
-  if(selectedPayment === 'Cash') {
-    let cashReceived = parseFloat(document.getElementById('cashReceived').value) || 0;
-    if(cashReceived < total) {
-      alert('Insufficient cash!');
-      return;
-    }
-  }
-
   if(selectedPayment === 'GCash') {
     if(!document.getElementById('gcashName').value ||!document.getElementById('gcashNumber').value) {
       alert('Please fill GCash details');
       return;
     }
   }
-
   if(selectedPayment === 'COD') {
     if(!document.getElementById('codName').value ||!document.getElementById('codAddress').value ||!document.getElementById('codPhone').value) {
       alert('Please fill delivery details');
@@ -370,7 +324,14 @@ function placeOrder() {
   }
 
   let transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-  let cashReceived = parseFloat(document.getElementById('cashReceived').value) || 0;
+  let total = 0;
+  Object.keys(cart).forEach(name => {
+    let qty = cart[name];
+    Object.keys(products).forEach(cat => {
+      let prod = products[cat].find(p => p.name === name);
+      if(prod) total += prod.price * qty;
+    });
+  });
 
   let txn = {
     id: 'TXN' + Date.now(),
@@ -379,8 +340,6 @@ function placeOrder() {
     total: total,
     payment: {
       method: selectedPayment,
-      cash: selectedPayment === 'Cash'? cashReceived : 0,
-      change: selectedPayment === 'Cash'? Math.max(0, cashReceived - total) : 0,
       gcashName: document.getElementById('gcashName').value,
       gcashNumber: document.getElementById('gcashNumber').value,
       codName: document.getElementById('codName').value,
@@ -403,21 +362,10 @@ function placeOrder() {
 
   alert('✅ Order placed! Transaction ID: ' + txn.id);
   cart = {};
-  document.getElementById('cashReceived').value = '';
   closeCheckout();
   closeCart();
   renderProducts();
   updateCart();
-}
-</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-     .then(reg => console.log('SW registered'))
-     .catch(err => console.log('SW failed:', err));
-  });
 }
 </script>
 </body>
