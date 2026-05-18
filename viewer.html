@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viewer - DHAN SIOMAI POS</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
+body {background:#f5f5f5; padding:20px;}
+.container {max-width:900px; margin:0 auto;}
+.header {display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
+.header h1 {color:#ff6b35; font-size:22px;}
+.btn {padding:10px 15px; border:none; border-radius:8px; font-weight:600; cursor:pointer;}
+.btn-logout {background:#666; color:white;}
+.login-box {max-width:400px; margin:100px auto; background:white; padding:30px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); text-align:center;}
+.login-box input {width:100%; padding:12px; margin:15px 0; border:1px solid #ddd; border-radius:8px; font-size:16px;}
+.login-box button {width:100%; padding:12px; background:#ff6b35; color:white; border:none; border-radius:8px; font-weight:700; font-size:16px; cursor:pointer;}
+.hidden {display:none;}
+.note {background:#fff3cd; padding:10px; border-radius:8px; margin-bottom:15px; font-size:13px; color:#856404; text-align:center;}
+.tabs {display:flex; gap:10px; margin-bottom:20px;}
+.tab {flex:1; padding:12px; background:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;}
+.tab.active {background:#ff6b35; color:white;}
+.tab-content {display:none;}
+.tab-content.active {display:block;}
+
+/* Accordion for products */
+.accordion {background:white; margin-bottom:12px; border-radius:10px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+.acc-header {background:#fff3cd; padding:15px; font-weight:700; color:#856404; cursor:pointer; display:flex; justify-content:space-between; align-items:center;}
+.acc-content {max-height:0; overflow:hidden; transition:max-height 0.3s ease-out;}
+.acc-content.active {max-height:2000px;}
+.item-row {display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; padding:12px 15px; border-top:1px solid #eee;}
+.item-row:first-child {border-top:none;}
+.stock-low {color:red; font-weight:700;}
+.stock-ok {color:green; font-weight:700;}
+
+/* Transactions */
+.transaction {background:white; padding:15px; margin-bottom:12px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+.txn-header {display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px;}
+.txn-id {font-weight:700; color:#ff6b35;}
+.txn-date {color:#666;}
+.txn-items {font-size:14px; margin-bottom:8px;}
+.txn-payment {background:#f9f9f9; padding:8px; border-radius:6px; font-size:13px;}
+.txn-total {text-align:right; font-weight:700; font-size:16px; margin-top:8px;}
+.search-box {width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:8px; font-size:16px;}
+.empty {text-align:center; padding:40px; color:#666;}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-box">
+  <h2>🔒 Viewer Access</h2>
+  <p style="color:#666; font-size:14px;">Enter password to view data</p>
+  <input type="password" id="passwordInput" placeholder="Enter password" onkeyup="if(event.key==='Enter') checkPassword()">
+  <button onclick="checkPassword()">Login</button>
+  <p id="errorMsg" style="color:red; font-size:13px; margin-top:10px; display:none;">Wrong password!</p>
+</div>
+
+<div id="mainScreen" class="container hidden">
+  <div class="header">
+    <h1>👁️ Viewer Panel</h1>
+    <button class="btn btn-logout" onclick="logout()">🚪 Logout</button>
+  </div>
+
+  <div class="note">👁️ View Only Mode - Hindi pwedeng mag-edit</div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('products')">📦 Products</button>
+    <button class="tab" onclick="switchTab('transactions')">📋 Transactions</button>
+  </div>
+
+  <div id="tab-products" class="tab-content active">
+    <div id="productsView"></div>
+  </div>
+
+  <div id="tab-transactions" class="tab-content">
+    <input type="text" id="searchBox" class="search-box" placeholder="Search by ID, name, phone..." onkeyup="filterTransactions()">
+    <div id="transactionsList"></div>
+  </div>
+</div>
+
+<script>
+const VIEWER_PASSWORD = "viewer123";
+let allTransactions = [];
+let products = {};
+
+window.onload = function() {
+  if(sessionStorage.getItem('viewerLoggedIn') === 'true') {
+    showMainScreen();
+  }
+}
+
+function checkPassword() {
+  let input = document.getElementById('passwordInput').value;
+  if(input === VIEWER_PASSWORD) {
+    sessionStorage.setItem('viewerLoggedIn', 'true');
+    showMainScreen();
+  } else {
+    document.getElementById('errorMsg').style.display = 'block';
+    document.getElementById('passwordInput').value = '';
+  }
+}
+
+function showMainScreen() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('mainScreen').classList.remove('hidden');
+  loadData();
+}
+
+function logout() {
+  sessionStorage.removeItem('viewerLoggedIn');
+  location.reload();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function loadData() {
+  products = JSON.parse(localStorage.getItem('products') || '{}');
+  allTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+  renderProducts();
+  renderTransactions(allTransactions);
+}
+
+function renderProducts() {
+  let html = '';
+  Object.keys(products).forEach(cat => {
+    html += `
+      <div class="accordion">
+        <div class="acc-header" onclick="toggleAccordion(this)">
+          <span>📁 ${cat}</span>
+          <span>▼</span>
+        </div>
+        <div class="acc-content">
+    `;
+    products[cat].forEach(prod => {
+      let stockClass = prod.stock <= 5 ? 'stock-low' : 'stock-ok';
+      html += `
+        <div class="item-row">
+          <div>${prod.name}</div>
+          <div>₱${prod.price}</div>
+          <div class="${stockClass}">Stock: ${prod.stock}</div>
+        </div>
+      `;
+    });
+    html += `</div></div>`;
+  });
+  
+  if(html === '') html = '<div class="empty">No products yet</div>';
+  document.getElementById('productsView').innerHTML = html;
+}
+
+function toggleAccordion(header) {
+  header.nextElementSibling.classList.toggle('active');
+}
+
+function renderTransactions(transactions) {
+  if(transactions.length === 0) {
+    document.getElementById('transactionsList').innerHTML = 
+      '<div class="empty">📭 Walang transactions pa</div>';
+    return;
+  }
+
+  let html = '';
+  transactions.reverse().forEach(txn => {
+    let itemsHtml = '';
+    Object.keys(txn.items).forEach(name => {
+      itemsHtml += `${name} x${txn.items[name]}<br>`;
+    });
+
+    let paymentHtml = '';
+    if(txn.payment.method === 'Cash') {
+      paymentHtml = `💵 Cash - Cash: ₱${txn.payment.cash || 0}, Change: ₱${txn.payment.change || 0}`;
+    } else if(txn.payment.method === 'GCash') {
+      paymentHtml = `📱 GCash - ${txn.payment.gcashName} / ${txn.payment.gcashNumber}`;
+    } else if(txn.payment.method === 'COD') {
+      paymentHtml = `🚚 COD - ${txn.payment.codName}<br>📍 ${txn.payment.codAddress}<br>📞 ${txn.payment.codPhone}`;
+    }
+
+    html += `
+      <div class="transaction">
+        <div class="txn-header">
+          <span class="txn-id">${txn.id}</span>
+          <span class="txn-date">${txn.date}</span>
+        </div>
+        <div class="txn-items">${itemsHtml}</div>
+        <div class="txn-payment">${paymentHtml}</div>
+        <div class="txn-total">Total: ₱${txn.total}</div>
+      </div>
+    `;
+  });
+
+  document.getElementById('transactionsList').innerHTML = html;
+}
+
+function filterTransactions() {
+  let search = document.getElementById('searchBox').value.toLowerCase();
+  let filtered = allTransactions.filter(txn => {
+    return txn.id.toLowerCase().includes(search) ||
+           JSON.stringify(txn).toLowerCase().includes(search);
+  });
+  renderTransactions(filtered);
+}
+</script>
+</body>
+</html>
