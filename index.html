@@ -33,7 +33,9 @@ body {background:#f5f5f5; padding-bottom:80px;}
 .item-controls {display:flex; align-items:center; gap:8px;}
 .qty-btn {width:32px; height:32px; border:none; border-radius:6px; background:#ff6b35; color:white; font-size:18px; font-weight:700; cursor:pointer;}
 .qty-btn:disabled {background:#ccc;}
-.qty {min-width:30px; text-align:center; font-weight:700;}
+.qty-input {width:60px; height:32px; text-align:center; border:1px solid #ddd; border-radius:6px; font-weight:700; font-size:15px;}
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {-webkit-appearance: none; margin: 0;}
 
 .modal {display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;}
 .modal.active {display:flex;}
@@ -178,7 +180,7 @@ function loadProducts() {
 function showProductionNote() {
   let lastDate = localStorage.getItem('lastProductionDate');
   document.getElementById('prodNote').textContent = lastDate
-   ? `🏭 Last Production: ${lastDate}`
+  ? `🏭 Last Production: ${lastDate}`
     : '🏭 No production run yet';
 }
 
@@ -201,7 +203,8 @@ function renderProducts() {
         </div>
         <div class="item-controls">
           <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, -1)">-</button>
-          <span class="qty" id="qty-${cat}-${idx}">${qty}</span>
+          <input type="number" class="qty-input" id="qty-${cat}-${idx}" value="${qty}" min="0" max="${prod.stock}"
+            onchange="setQty('${cat}', ${idx}, this.value)">
           <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, 1)" ${prod.stock <= 0? 'disabled' : ''}>+</button>
         </div>
       </div>`;
@@ -222,6 +225,13 @@ function changeQty(cat, idx, change) {
   let key = prod.name;
   let currentQty = cart[key] || 0;
   let newQty = currentQty + change;
+  setQty(cat, idx, newQty);
+}
+
+function setQty(cat, idx, value) {
+  let prod = products[cat][idx];
+  let key = prod.name;
+  let newQty = parseInt(value) || 0;
 
   if(newQty < 0) newQty = 0;
   if(newQty > prod.stock) newQty = prod.stock;
@@ -229,7 +239,7 @@ function changeQty(cat, idx, change) {
   if(newQty === 0) delete cart[key];
   else cart[key] = newQty;
 
-  document.getElementById(`qty-${cat}-${idx}`).textContent = newQty;
+  document.getElementById(`qty-${cat}-${idx}`).value = newQty;
   updateCart();
 }
 
