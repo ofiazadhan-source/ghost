@@ -12,7 +12,8 @@ body {background:#f5f5f5; padding:10px;}
 .header h1 {color:#ff6b35; font-size:22px;}
 .header a {color:#ff6b35; text-decoration:none; font-size:14px; margin:0 10px;}
 .product-grid {display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:15px;}
-.product {background:white; padding:10px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+.product {background:white; padding:10px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); text-align:center;}
+.product img {width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:8px;}
 .product-name {font-size:14px; font-weight:600; margin-bottom:5px;}
 .product-price {color:#ff6b35; font-weight:700; margin-bottom:5px;}
 .product-stock {font-size:12px; color:#666; margin-bottom:8px;}
@@ -36,6 +37,7 @@ body {background:#f5f5f5; padding:10px;}
 </style>
 </head>
 <body>
+
 <div class="header">
   <h1>🔥 DHAN SIOMAI POS</h1>
   <a href="admin.html">⚙️ Admin</a>
@@ -60,7 +62,6 @@ body {background:#f5f5f5; padding:10px;}
       <button class="payment-btn btn-cod" onclick="selectPayment('COD')">🚚 COD</button>
       <button class="btn-close" onclick="closeModal()">Cancel</button>
     </div>
-
     <div class="modal-section" id="step2-cash">
       <h3>💵 Cash Payment</h3>
       <p>Total: <strong id="cashTotal">₱0</strong></p>
@@ -68,7 +69,6 @@ body {background:#f5f5f5; padding:10px;}
       <button class="payment-btn btn-cash" onclick="proceedCash()">Confirm</button>
       <button class="btn-close" onclick="backToStep1()">Back</button>
     </div>
-
     <div class="modal-section" id="step2-gcash">
       <h3>📱 GCash Payment</h3>
       <input type="text" id="gcashName" class="input-box" placeholder="GCash Account Name">
@@ -76,7 +76,6 @@ body {background:#f5f5f5; padding:10px;}
       <button class="payment-btn btn-gcash" onclick="proceedGCash()">Confirm</button>
       <button class="btn-close" onclick="backToStep1()">Back</button>
     </div>
-
     <div class="modal-section" id="step2-cod">
       <h3>🚚 COD Payment</h3>
       <p>Customer will pay ₱<span id="codTotal">0</span> upon delivery</p>
@@ -92,38 +91,38 @@ body {background:#f5f5f5; padding:10px;}
 <script>
 const defaultProducts = {
   "Siomai 65pcs": [
-    {name:"Pork Siomai 65", price:150, stock:999},
-    {name:"Chicken Siomai 65", price:150, stock:999},
-    {name:"Beef Siomai 65", price:150, stock:999},
-    {name:"Shrimp Siomai 65", price:150, stock:999}
+    {name:"Pork Siomai 65", price:150, stock:999, imageUrl:""},
+    {name:"Chicken Siomai 65", price:150, stock:999, imageUrl:""},
+    {name:"Beef Siomai 65", price:150, stock:999, imageUrl:""},
+    {name:"Shrimp Siomai 65", price:150, stock:999, imageUrl:""}
   ],
   "Siomai 30pcs": [
-    {name:"Pork Siomai 30", price:80, stock:999},
-    {name:"Chicken Siomai 30", price:80, stock:999},
-    {name:"Beef Siomai 30", price:80, stock:999},
-    {name:"Shrimp Siomai 30", price:80, stock:999}
+    {name:"Pork Siomai 30", price:80, stock:999, imageUrl:""},
+    {name:"Chicken Siomai 30", price:80, stock:999, imageUrl:""},
+    {name:"Beef Siomai 30", price:80, stock:999, imageUrl:""},
+    {name:"Shrimp Siomai 30", price:80, stock:999, imageUrl:""}
   ],
   "Big Siomai": [
-    {name:"Big Pork Siomai", price:200, stock:999},
-    {name:"Big Chicken Siomai", price:200, stock:999},
-    {name:"Big Beef Siomai", price:200, stock:999}
+    {name:"Big Pork Siomai", price:200, stock:999, imageUrl:""},
+    {name:"Big Chicken Siomai", price:200, stock:999, imageUrl:""},
+    {name:"Big Beef Siomai", price:200, stock:999, imageUrl:""}
   ],
   "Dumplings": [
-    {name:"Gyoza Dumplings", price:180, stock:999},
-    {name:"Sharksfin Dumplings", price:180, stock:999},
-    {name:"Hakaw Dumplings", price:180, stock:999}
+    {name:"Gyoza Dumplings", price:180, stock:999, imageUrl:""},
+    {name:"Sharksfin Dumplings", price:180, stock:999, imageUrl:""},
+    {name:"Hakaw Dumplings", price:180, stock:999, imageUrl:""}
   ],
   "Siopao Jumbo": [
-    {name:"Jumbo Asado Siopao", price:120, stock:999},
-    {name:"Jumbo Bola-Bola Siopao", price:120, stock:999}
+    {name:"Jumbo Asado Siopao", price:120, stock:999, imageUrl:""},
+    {name:"Jumbo Bola-Bola Siopao", price:120, stock:999, imageUrl:""}
   ],
   "Siopao Mini": [
-    {name:"Mini Asado Siopao", price:60, stock:999},
-    {name:"Mini Bola-Bola Siopao", price:60, stock:999}
+    {name:"Mini Asado Siopao", price:60, stock:999, imageUrl:""},
+    {name:"Mini Bola-Bola Siopao", price:60, stock:999, imageUrl:""}
   ],
   "Sauce": [
-    {name:"Chili Garlic Sauce", price:50, stock:999},
-    {name:"Siopao Sauce", price:40, stock:999}
+    {name:"Chili Garlic Sauce", price:50, stock:999, imageUrl:""},
+    {name:"Siopao Sauce", price:40, stock:999, imageUrl:""}
   ]
 };
 
@@ -136,15 +135,15 @@ function loadProducts() {
   Object.keys(products).forEach(cat => {
     products[cat].forEach(prod => {
       if(prod.stock > 0) {
+        let imgTag = prod.imageUrl? `<img src="${prod.imageUrl}" alt="${prod.name}">` : '';
         html += `
-          <div class="product">
-            <div class="product-name">${prod.name}</div>
-            <div class="product-price">₱${prod.price}</div>
-            <div class="product-stock">Stock: ${prod.stock}</div>
-            <input type="number" min="0" max="${prod.stock}" placeholder="Qty" class="qty-input"
-                   onchange="updateCart('${prod.name}', this.value)">
-          </div>
-        `;
+        <div class="product">
+          ${imgTag}
+          <div class="product-name">${prod.name}</div>
+          <div class="product-price">₱${prod.price}</div>
+          <div class="product-stock">Stock: ${prod.stock}</div>
+          <input type="number" min="0" max="${prod.stock}" placeholder="Qty" class="qty-input" onchange="updateCart('${prod.name}', this.value)">
+        </div>`;
       }
     });
   });
