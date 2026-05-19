@@ -30,8 +30,8 @@ body {background:#f5f5f5; padding:20px;}
 .accordion {background:white; margin-bottom:12px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow:hidden;}
 .acc-header {padding:15px; background:#fff3cd; font-weight:700; color:#856404; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;}
 .acc-content {max-height:0; overflow:hidden; transition:max-height 0.3s ease-out;}
-.acc-content.active {max-height:2000px;}
-.item-row {display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px; padding:12px 15px; border-top:1px solid #eee; align-items:center;}
+.acc-content.active {max-height:3000px;}
+.item-row {display:grid; grid-template-columns:2fr 1fr 1fr 2fr; gap:10px; padding:12px 15px; border-top:1px solid #eee; align-items:center;}
 .item-row:first-child {border-top:none;}
 .item-row input {padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px;}
 .expense-row {display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; margin-bottom:10px; align-items:center;}
@@ -66,7 +66,7 @@ body {background:#f5f5f5; padding:20px;}
   </div>
 
   <div id="tab-products" class="tab-content active">
-    <div class="note">💡 Tap mo yung category para mag-open. Baguhin mo price at stock, tapos click Save All.</div>
+    <div class="note">💡 Tap mo yung category para mag-open. Baguhin mo price, stock, at Image URL, tapos click Save All.</div>
     <div id="productsEditor"></div>
   </div>
 
@@ -95,41 +95,40 @@ body {background:#f5f5f5; padding:20px;}
 
 <script>
 const ADMIN_PASSWORD = "admin123";
-
 const defaultProducts = {
   "Siomai 65pcs": [
-    {name:"Pork Siomai 65", price:150, stock:999},
-    {name:"Chicken Siomai 65", price:150, stock:999},
-    {name:"Beef Siomai 65", price:150, stock:999},
-    {name:"Shrimp Siomai 65", price:150, stock:999}
+    {name:"Pork Siomai 65", price:150, stock:999, imageUrl:""},
+    {name:"Chicken Siomai 65", price:150, stock:999, imageUrl:""},
+    {name:"Beef Siomai 65", price:150, stock:999, imageUrl:""},
+    {name:"Shrimp Siomai 65", price:150, stock:999, imageUrl:""}
   ],
   "Siomai 30pcs": [
-    {name:"Pork Siomai 30", price:80, stock:999},
-    {name:"Chicken Siomai 30", price:80, stock:999},
-    {name:"Beef Siomai 30", price:80, stock:999},
-    {name:"Shrimp Siomai 30", price:80, stock:999},
-    {name:"Japanese Siomai 30", price:80, stock:999}
+    {name:"Pork Siomai 30", price:80, stock:999, imageUrl:""},
+    {name:"Chicken Siomai 30", price:80, stock:999, imageUrl:""},
+    {name:"Beef Siomai 30", price:80, stock:999, imageUrl:""},
+    {name:"Shrimp Siomai 30", price:80, stock:999, imageUrl:""},
+    {name:"Japanese Siomai 30", price:80, stock:999, imageUrl:""}
   ],
   "Big Siomai": [
-    {name:"Big Pork Siomai", price:200, stock:15},
-    {name:"Big Chicken Siomai", price:200, stock:15},
-    {name:"Big Beef Siomai", price:200, stock:15},
-    {name:"Japanese Crabstic Siomai", price:220, stock:15}
+    {name:"Big Pork Siomai", price:200, stock:15, imageUrl:""},
+    {name:"Big Chicken Siomai", price:200, stock:15, imageUrl:""},
+    {name:"Big Beef Siomai", price:200, stock:15, imageUrl:""},
+    {name:"Japanese Crabstic Siomai", price:220, stock:15, imageUrl:""}
   ],
   "Dumplings": [
-    {name:"Gyoza Dumplings", price:180, stock:100},
-    {name:"Sharksfin Dumplings", price:180, stock:30},
-    {name:"Hakaw Dumplings", price:180, stock:30}
+    {name:"Gyoza Dumplings", price:180, stock:100, imageUrl:""},
+    {name:"Sharksfin Dumplings", price:180, stock:30, imageUrl:""},
+    {name:"Hakaw Dumplings", price:180, stock:30, imageUrl:""}
   ],
   "Siopao": [
-    {name:"Jumbo Asado Siopao", price:120, stock:15},
-    {name:"Jumbo Bola-Bola Siopao", price:120, stock:10},
-    {name:"Mini Asado Siopao", price:60, stock:0},
-    {name:"Mini Bola-Bola Siopao", price:60, stock:0}
+    {name:"Jumbo Asado Siopao", price:120, stock:15, imageUrl:""},
+    {name:"Jumbo Bola-Bola Siopao", price:120, stock:10, imageUrl:""},
+    {name:"Mini Asado Siopao", price:60, stock:0, imageUrl:""},
+    {name:"Mini Bola-Bola Siopao", price:60, stock:0, imageUrl:""}
   ],
   "Sauce": [
-    {name:"Chili Garlic Sauce", price:50, stock:20},
-    {name:"Siopao Sauce", price:40, stock:20}
+    {name:"Chili Garlic Sauce", price:50, stock:20, imageUrl:""},
+    {name:"Siopao Sauce", price:40, stock:20, imageUrl:""}
   ]
 };
 
@@ -203,6 +202,7 @@ function renderProducts() {
         <div>${prod.name}</div>
         <input type="number" placeholder="Price" value="${prod.price}" onchange="updateProduct('${cat}', ${idx}, 'price', this.value)">
         <input type="number" placeholder="Stock" value="${prod.stock}" onchange="updateProduct('${cat}', ${idx}, 'stock', this.value)">
+        <input type="text" placeholder="Image URL" value="${prod.imageUrl || ''}" onchange="updateProduct('${cat}', ${idx}, 'imageUrl', this.value)">
       </div>`;
     });
     html += `</div></div>`;
@@ -211,7 +211,11 @@ function renderProducts() {
 }
 
 function updateProduct(cat, idx, field, value) {
-  products[cat][idx][field] = parseInt(value) || 0;
+  if(field === 'price' || field === 'stock') {
+    products[cat][idx][field] = parseInt(value) || 0;
+  } else {
+    products[cat][idx][field] = value;
+  }
 }
 
 // Daily Production Tab
@@ -224,8 +228,7 @@ function renderProduction() {
       let prodQty = dailyProduction[prod.name] || 0;
       html += `<div class="prod-row">
         <div>${prod.name}</div>
-        <input type="number" placeholder="Daily Qty" value="${prodQty}"
-          onchange="updateProduction('${prod.name}', this.value)">
+        <input type="number" placeholder="Daily Qty" value="${prodQty}" onchange="updateProduction('${prod.name}', this.value)">
       </div>`;
     });
     html += `</div></div>`;
@@ -239,8 +242,7 @@ function updateProduction(prodName, value) {
 
 function autoRunProduction() {
   let today = new Date().toISOString().split('T')[0];
-  if(lastProductionDate === today) return; // already run today
-
+  if(lastProductionDate === today) return;
   runProduction(today);
 }
 
@@ -261,13 +263,12 @@ function runProduction(today) {
       }
     });
   });
-
   if(added) {
     localStorage.setItem('products', JSON.stringify(products));
     lastProductionDate = today;
     localStorage.setItem('lastProductionDate', today);
     document.getElementById('lastProdDate').textContent = today;
-    renderProducts(); // refresh display
+    renderProducts();
   }
 }
 
