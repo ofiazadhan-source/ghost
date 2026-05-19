@@ -3,406 +3,315 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DHAN SIOMAI POS</title>
+<title>DHAN SIOMAI Store</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff6b35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DHAN POS">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
-body {background:#f5f5f5; padding-bottom:80px;}
-.header {background:#ff6b35; color:white; padding:15px; text-align:center; position:sticky; top:0; z-index:10;}
+body {background:#f5f5f5;}
+.header {
+  background:#ff6b35;
+  color:white;
+  padding:15px;
+  text-align:center;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
 .header h1 {font-size:20px;}
-.cart-icon {position:absolute; right:15px; top:15px; font-size:24px; cursor:pointer;}
-.cart-count {position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center;}
-.container {padding:15px;}
-.bottom-bar {position:fixed; bottom:0; left:0; right:0; background:white; padding:15px; box-shadow:0 -2px 10px rgba(0,0,0,0.1); display:flex; gap:10px;}
-.checkout-btn {flex:1; padding:15px; background:#ff6b35; color:white; border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;}
-.checkout-btn:disabled {background:#ccc;}
-.total-display {text-align:center; padding:10px; background:white; margin:10px 15px; border-radius:10px; font-weight:700; font-size:18px;}
-.prod-note {background:#e8f5e9; color:#2e7d32; padding:10px 15px; margin:10px 15px; border-radius:10px; font-size:13px; text-align:center;}
-
-.accordion {background:white; margin-bottom:12px; border-radius:10px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-.acc-header {background:#fff3cd; padding:15px; font-weight:700; color:#856404; cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;}
-.acc-content {max-height:0; overflow:hidden; transition:max-height 0.3s ease-out;}
-.acc-content.active {max-height:2000px;}
-
-.item {display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-top:1px solid #eee;}
-.item:first-child {border-top:none;}
-.item-info {flex:1;}
-.item-name {font-weight:600; font-size:15px;}
-.item-price {color:#ff6b35; font-weight:700;}
-.item-stock {font-size:12px; color:#666;}
-.item-controls {display:flex; align-items:center; gap:8px;}
-.qty-btn {width:32px; height:32px; border:none; border-radius:6px; background:#ff6b35; color:white; font-size:18px; font-weight:700; cursor:pointer;}
-.qty-btn:disabled {background:#ccc;}
-.qty-input {width:60px; height:32px; text-align:center; border:1px solid #ddd; border-radius:6px; font-weight:700; font-size:15px;}
-.qty-input::-webkit-outer-spin-button,
-.qty-input::-webkit-inner-spin-button {-webkit-appearance: none; margin: 0;}
-
-.modal {display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;}
-.modal.active {display:flex;}
-.modal-content {background:white; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; border-radius:12px; padding:20px;}
-.modal-header {display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;}
-.modal-header h2 {color:#ff6b35;}
-.close-btn {background:none; border:none; font-size:28px; cursor:pointer; color:#666;}
-.cart-item {display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;}
-.payment-option {padding:12px; border:2px solid #ddd; border-radius:8px; margin-bottom:10px; cursor:pointer;}
-.payment-option.selected {border-color:#ff6b35; background:#fff3cd;}
-.payment-form {display:none; margin-top:10px;}
-.payment-form.active {display:block;}
-.payment-form input,.payment-form textarea {width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:6px;}
-.empty {text-align:center; padding:40px; color:#666;}
+.cart-icon {
+  position:absolute;
+  right:15px;
+  top:15px;
+  background:white;
+  color:#ff6b35;
+  padding:8px 12px;
+  border-radius:20px;
+  font-weight:700;
+  cursor:pointer;
+}
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 12px;
+}
+.product-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.product-card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  background: #f0f0f0;
+}
+.product-info {
+  padding: 10px;
+}
+.product-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  height: 36px;
+  overflow: hidden;
+}
+.product-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ff6b35;
+  margin-bottom: 4px;
+}
+.product-stock {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+}
+.add-cart-btn {
+  width: 100%;
+  padding: 8px;
+  background: #ff6b35;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.add-cart-btn:disabled {
+  background: #ccc;
+}
+.category-title {
+  margin:20px 12px 10px;
+  font-size:18px;
+  font-weight:700;
+}
+.cart-modal {
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.5);
+  z-index:1000;
+  align-items:center;
+  justify-content:center;
+}
+.cart-modal.active {display:flex;}
+.cart-content {
+  background:white;
+  width:90%;
+  max-width:500px;
+  max-height:80vh;
+  overflow-y:auto;
+  border-radius:12px;
+  padding:20px;
+}
+.cart-item {
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px solid #eee;
+}
+.checkout-btn {
+  width:100%;
+  padding:12px;
+  background:#4caf50;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-weight:700;
+  margin-top:15px;
+  cursor:pointer;
+}
+.close-btn {
+  float:right;
+  background:none;
+  border:none;
+  font-size:24px;
+  cursor:pointer;
+}
+@media(min-width: 768px) {
+ .products-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>🍢 DHAN SIOMAI</h1>
-  <div class="cart-icon" onclick="openCart()">
-    🛒
-    <span class="cart-count" id="cartCount">0</span>
-  </div>
+  <div class="cart-icon" onclick="openCart()">🛒 <span id="cartCount">0</span></div>
 </div>
 
-<div class="prod-note" id="prodNote">Loading...</div>
+<div id="productsList"></div>
 
-<div class="container" id="productsContainer"></div>
-<div class="total-display" id="totalDisplay">Total: ₱0</div>
-
-<div class="bottom-bar">
-  <button class="checkout-btn" id="checkoutBtn" onclick="openCheckout()" disabled>Checkout</button>
-</div>
-
-<!-- Cart Modal -->
-<div class="modal" id="cartModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>🛒 Cart</h2>
-      <button class="close-btn" onclick="closeCart()">×</button>
-    </div>
+<div class="cart-modal" id="cartModal">
+  <div class="cart-content">
+    <button class="close-btn" onclick="closeCart()">×</button>
+    <h3>Your Cart</h3>
     <div id="cartItems"></div>
-    <div style="text-align:right; font-weight:700; font-size:18px; margin-top:15px;" id="cartTotal">Total: ₱0</div>
-  </div>
-</div>
-
-<!-- Checkout Modal -->
-<div class="modal" id="checkoutModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>💳 Payment</h2>
-      <button class="close-btn" onclick="closeCheckout()">×</button>
-    </div>
-
-    <div class="payment-option selected" onclick="selectPayment('Cash')">
-      💵 Cash Payment
-      <div class="payment-form active" id="cashForm">
-        <input type="number" id="cashReceived" placeholder="Cash Received" oninput="calculateChange()" min="0">
-        <input type="text" id="cashChange" placeholder="Change: ₱0" readonly style="background:#f5f5f5;">
-      </div>
-    </div>
-
-    <div class="payment-option" onclick="selectPayment('GCash')">
-      📱 GCash
-      <div class="payment-form" id="gcashForm">
-        <input type="text" id="gcashName" placeholder="GCash Account Name">
-        <input type="text" id="gcashNumber" placeholder="GCash Number">
-      </div>
-    </div>
-
-    <div class="payment-option" onclick="selectPayment('COD')">
-      🚚 Cash on Delivery
-      <div class="payment-form" id="codForm">
-        <input type="text" id="codName" placeholder="Full Name">
-        <textarea id="codAddress" placeholder="Delivery Address"></textarea>
-        <input type="text" id="codPhone" placeholder="Phone Number">
-      </div>
-    </div>
-
-    <button class="checkout-btn" onclick="placeOrder()" style="margin-top:15px;">Place Order</button>
+    <h3 style="margin-top:15px;">Total: ₱<span id="cartTotal">0</span></h3>
+    <button class="checkout-btn" onclick="checkout()">Checkout</button>
   </div>
 </div>
 
 <script>
-const defaultProducts = {
-  "Siomai 65pcs": [
-    {name:"Pork Siomai 65", price:150, stock:999},
-    {name:"Chicken Siomai 65", price:150, stock:999},
-    {name:"Beef Siomai 65", price:150, stock:999},
-    {name:"Shrimp Siomai 65", price:150, stock:999}
-  ],
-  "Siomai 30pcs": [
-    {name:"Pork Siomai 30", price:80, stock:999},
-    {name:"Chicken Siomai 30", price:80, stock:999},
-    {name:"Beef Siomai 30", price:80, stock:999},
-    {name:"Shrimp Siomai 30", price:80, stock:999},
-    {name:"Japanese Siomai 30", price:80, stock:999}
-  ],
-  "Big Siomai": [
-    {name:"Big Pork Siomai", price:200, stock:15},
-    {name:"Big Chicken Siomai", price:200, stock:15},
-    {name:"Big Beef Siomai", price:200, stock:15},
-    {name:"Japanese Crabstic Siomai", price:220, stock:15}
-  ],
-  "Dumplings": [
-    {name:"Gyoza Dumplings", price:180, stock:100},
-    {name:"Sharksfin Dumplings", price:180, stock:30},
-    {name:"Hakaw Dumplings", price:180, stock:30}
-  ],
-  "Siopao": [
-    {name:"Jumbo Asado Siopao", price:120, stock:15},
-    {name:"Jumbo Bola-Bola Siopao", price:120, stock:10},
-    {name:"Mini Asado Siopao", price:60, stock:0},
-    {name:"Mini Bola-Bola Siopao", price:60, stock:0}
-  ],
-  "Sauce": [
-    {name:"Chili Garlic Sauce", price:50, stock:20},
-    {name:"Siopao Sauce", price:40, stock:20}
-  ]
-};
-
 let products = {};
 let cart = {};
-let selectedPayment = 'Cash';
 
 window.onload = function() {
   loadProducts();
-  showProductionNote();
   renderProducts();
-  updateCart();
+  updateCartCount();
 }
 
 function loadProducts() {
   products = JSON.parse(localStorage.getItem('products') || '{}');
-  if(Object.keys(products).length === 0) {
-    products = JSON.parse(JSON.stringify(defaultProducts));
-    localStorage.setItem('products', JSON.stringify(products));
-  }
-}
-
-function showProductionNote() {
-  let lastDate = localStorage.getItem('lastProductionDate');
-  document.getElementById('prodNote').textContent = lastDate
-  ? `🏭 Last Production: ${lastDate}`
-    : '🏭 No production run yet';
 }
 
 function renderProducts() {
   let html = '';
   Object.keys(products).forEach(cat => {
-    html += `<div class="accordion">
-      <div class="acc-header" onclick="toggleAccordion(this)">
-        <span>📁 ${cat}</span><span>▼</span>
-      </div>
-      <div class="acc-content">`;
+    html += `<h2 class="category-title">${cat}</h2>`;
+    html += `<div class="products-grid">`;
 
     products[cat].forEach((prod, idx) => {
-      let qty = cart[prod.name] || 0;
-      html += `<div class="item">
-        <div class="item-info">
-          <div class="item-name">${prod.name}</div>
-          <div class="item-price">₱${prod.price}</div>
-          <div class="item-stock">Stock: ${prod.stock}</div>
+      let imgUrl = prod.image || 'https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai';
+      html += `
+        <div class="product-card">
+          <img src="${imgUrl}" alt="${prod.name}">
+          <div class="product-info">
+            <div class="product-name">${prod.name}</div>
+            <div class="product-price">₱${prod.price}</div>
+            <div class="product-stock">Stock: ${prod.stock}</div>
+            <button class="add-cart-btn"
+                    onclick="addToCart('${cat}', ${idx})"
+                    ${prod.stock <= 0? 'disabled' : ''}>
+              ${prod.stock <= 0? 'Out of Stock' : 'Add to Cart'}
+            </button>
+          </div>
         </div>
-        <div class="item-controls">
-          <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, -1)">-</button>
-          <input type="number" class="qty-input" id="qty-${cat}-${idx}" value="${qty}" min="0" max="${prod.stock}"
-            onchange="setQty('${cat}', ${idx}, this.value)">
-          <button class="qty-btn" onclick="changeQty('${cat}', ${idx}, 1)" ${prod.stock <= 0? 'disabled' : ''}>+</button>
-        </div>
-      </div>`;
+      `;
     });
 
-    html += `</div></div>`;
+    html += `</div>`;
   });
-  document.getElementById('productsContainer').innerHTML = html;
+  document.getElementById('productsList').innerHTML = html;
 }
 
-function toggleAccordion(header) {
-  header.classList.toggle('active');
-  header.nextElementSibling.classList.toggle('active');
+function addToCart(cat, idx) {
+  let key = cat + '-' + idx;
+  if(!cart[key]) {
+    cart[key] = {cat: cat, idx: idx, qty: 0};
+  }
+  if(cart[key].qty < products[cat][idx].stock) {
+    cart[key].qty++;
+  } else {
+    alert('Out of stock!');
+  }
+  updateCartCount();
 }
 
-function changeQty(cat, idx, change) {
-  let prod = products[cat][idx];
-  let key = prod.name;
-  let currentQty = cart[key] || 0;
-  let newQty = currentQty + change;
-  setQty(cat, idx, newQty);
-}
-
-function setQty(cat, idx, value) {
-  let prod = products[cat][idx];
-  let key = prod.name;
-  let newQty = parseInt(value) || 0;
-
-  if(newQty < 0) newQty = 0;
-  if(newQty > prod.stock) newQty = prod.stock;
-
-  if(newQty === 0) delete cart[key];
-  else cart[key] = newQty;
-
-  document.getElementById(`qty-${cat}-${idx}`).value = newQty;
-  updateCart();
-}
-
-function updateCart() {
-  let totalItems = 0;
-  let totalPrice = 0;
-
-  Object.keys(cart).forEach(name => {
-    let qty = cart[name];
-    totalItems += qty;
-    Object.keys(products).forEach(cat => {
-      let prod = products[cat].find(p => p.name === name);
-      if(prod) totalPrice += prod.price * qty;
-    });
-  });
-
-  document.getElementById('cartCount').textContent = totalItems;
-  document.getElementById('totalDisplay').textContent = `Total: ₱${totalPrice}`;
-  document.getElementById('checkoutBtn').disabled = totalItems === 0;
-
-  if(selectedPayment === 'Cash') calculateChange();
+function updateCartCount() {
+  let count = 0;
+  Object.keys(cart).forEach(k => count += cart[k].qty);
+  document.getElementById('cartCount').textContent = count;
 }
 
 function openCart() {
-  let html = '';
-  let total = 0;
-
-  if(Object.keys(cart).length === 0) {
-    html = '<div class="empty">Cart is empty</div>';
-  } else {
-    Object.keys(cart).forEach(name => {
-      let qty = cart[name];
-      let price = 0;
-      Object.keys(products).forEach(cat => {
-        let prod = products[cat].find(p => p.name === name);
-        if(prod) price = prod.price;
-      });
-      total += price * qty;
-      html += `<div class="cart-item">
-        <span>${name} x${qty}</span>
-        <span>₱${price * qty}</span>
-      </div>`;
-    });
-  }
-
-  document.getElementById('cartItems').innerHTML = html;
-  document.getElementById('cartTotal').textContent = `Total: ₱${total}`;
   document.getElementById('cartModal').classList.add('active');
+  renderCart();
 }
 
 function closeCart() {
   document.getElementById('cartModal').classList.remove('active');
 }
 
-function openCheckout() {
-  document.getElementById('checkoutModal').classList.add('active');
-  calculateChange();
-}
-
-function closeCheckout() {
-  document.getElementById('checkoutModal').classList.remove('active');
-}
-
-function selectPayment(method) {
-  selectedPayment = method;
-  document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
-
-  document.querySelectorAll('.payment-form').forEach(el => el.classList.remove('active'));
-  if(method === 'Cash') {
-    document.getElementById('cashForm').classList.add('active');
-    calculateChange();
-  }
-  if(method === 'GCash') document.getElementById('gcashForm').classList.add('active');
-  if(method === 'COD') document.getElementById('codForm').classList.add('active');
-}
-
-function calculateChange() {
+function renderCart() {
+  let html = '';
   let total = 0;
-  Object.keys(cart).forEach(name => {
-    let qty = cart[name];
-    Object.keys(products).forEach(cat => {
-      let prod = products[cat].find(p => p.name === name);
-      if(prod) total += prod.price * qty;
-    });
+
+  Object.keys(cart).forEach(k => {
+    if(cart[k].qty > 0) {
+      let prod = products[cart[k].cat][cart[k].idx];
+      let subtotal = prod.price * cart[k].qty;
+      total += subtotal;
+      html += `
+        <div class="cart-item">
+          <div>
+            <strong>${prod.name}</strong><br>
+            ₱${prod.price} x ${cart[k].qty}
+          </div>
+          <div>
+            <strong>₱${subtotal}</strong>
+          </div>
+        </div>
+      `;
+    }
   });
 
-  let cashReceived = parseFloat(document.getElementById('cashReceived').value) || 0;
-  let change = cashReceived - total;
-  document.getElementById('cashChange').value = `Change: ₱${change >= 0? change : 0}`;
+  if(html === '') html = '<p>Cart is empty</p>';
+
+  document.getElementById('cartItems').innerHTML = html;
+  document.getElementById('cartTotal').textContent = total;
 }
 
-function placeOrder() {
+function checkout() {
   let total = 0;
-  Object.keys(cart).forEach(name => {
-    let qty = cart[name];
-    Object.keys(products).forEach(cat => {
-      let prod = products[cat].find(p => p.name === name);
-      if(prod) total += prod.price * qty;
-    });
+  Object.keys(cart).forEach(k => {
+    if(cart[k].qty > 0) {
+      let prod = products[cart[k].cat][cart[k].idx];
+      total += prod.price * cart[k].qty;
+      prod.stock -= cart[k].qty;
+    }
   });
 
-  if(selectedPayment === 'Cash') {
-    let cashReceived = parseFloat(document.getElementById('cashReceived').value) || 0;
-    if(cashReceived < total) {
-      alert('Insufficient cash!');
-      return;
-    }
+  if(total === 0) {
+    alert('Cart is empty!');
+    return;
   }
 
-  if(selectedPayment === 'GCash') {
-    if(!document.getElementById('gcashName').value ||!document.getElementById('gcashNumber').value) {
-      alert('Please fill GCash details');
-      return;
-    }
-  }
-
-  if(selectedPayment === 'COD') {
-    if(!document.getElementById('codName').value ||!document.getElementById('codAddress').value ||!document.getElementById('codPhone').value) {
-      alert('Please fill delivery details');
-      return;
-    }
-  }
-
-  let transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-  let cashReceived = parseFloat(document.getElementById('cashReceived').value) || 0;
+  localStorage.setItem('products', JSON.stringify(products));
 
   let txn = {
     id: 'TXN' + Date.now(),
     date: new Date().toLocaleString(),
-    items: cart,
+    items: {},
     total: total,
-    payment: {
-      method: selectedPayment,
-      cash: selectedPayment === 'Cash'? cashReceived : 0,
-      change: selectedPayment === 'Cash'? Math.max(0, cashReceived - total) : 0,
-      gcashName: document.getElementById('gcashName').value,
-      gcashNumber: document.getElementById('gcashNumber').value,
-      codName: document.getElementById('codName').value,
-      codAddress: document.getElementById('codAddress').value,
-      codPhone: document.getElementById('codPhone').value
-    }
+    payment: {method: 'Cash'}
   };
 
-  transactions.push(txn);
-  localStorage.setItem('transactions', JSON.stringify(transactions));
-
-  Object.keys(cart).forEach(name => {
-    let qty = cart[name];
-    Object.keys(products).forEach(cat => {
-      let prod = products[cat].find(p => p.name === name);
-      if(prod) prod.stock -= qty;
-    });
+  Object.keys(cart).forEach(k => {
+    if(cart[k].qty > 0) {
+      txn.items[products[cart[k].cat][cart[k].idx].name] = cart[k].qty;
+    }
   });
-  localStorage.setItem('products', JSON.stringify(products));
 
-  alert('✅ Order placed! Transaction ID: ' + txn.id);
+  let txns = JSON.parse(localStorage.getItem('transactions') || '[]');
+  txns.push(txn);
+  localStorage.setItem('transactions', JSON.stringify(txns));
+
+  alert('✅ Order placed! Total: ₱' + total);
   cart = {};
-  document.getElementById('cashReceived').value = '';
-  closeCheckout();
+  updateCartCount();
   closeCart();
   renderProducts();
-  updateCart();
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+   .then(reg => console.log('SW registered'))
+   .catch(err => console.log('SW failed:', err));
+  });
 }
 </script>
 </body>
