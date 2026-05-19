@@ -128,6 +128,24 @@ body {background:#f5f5f5;}
   padding:10px 0;
   border-bottom:1px solid #eee;
 }
+.payment-section {
+  margin-top:15px;
+  padding-top:15px;
+  border-top:1px solid #eee;
+}
+.payment-section select,.payment-section input {
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  border:1px solid #ddd;
+  border-radius:6px;
+  font-size:14px;
+}
+.change-text {
+  margin-top:8px;
+  font-weight:600;
+  color:#4caf50;
+}
 .checkout-btn {
   width:100%;
   padding:12px;
@@ -147,7 +165,7 @@ body {background:#f5f5f5;}
   cursor:pointer;
 }
 @media(min-width: 768px) {
- .products-grid { grid-template-columns: repeat(4, 1fr); }
+.products-grid { grid-template-columns: repeat(4, 1fr); }
 }
 </style>
 </head>
@@ -164,6 +182,21 @@ body {background:#f5f5f5;}
     <button class="close-btn" onclick="closeCart()">×</button>
     <h3>Your Cart</h3>
     <div id="cartItems"></div>
+    
+    <div class="payment-section">
+      <h4>Payment Method</h4>
+      <select id="paymentMethod" onchange="toggleCashInput()">
+        <option value="Cash">Cash</option>
+        <option value="GCash">GCash</option>
+        <option value="Bank Transfer">Bank Transfer</option>
+      </select>
+      
+      <div id="cashInputDiv" style="display:block;">
+        <input type="number" id="cashAmount" placeholder="Enter cash amount" oninput="calculateChange()">
+        <div class="change-text" id="changeText"></div>
+      </div>
+    </div>
+    
     <h3 style="margin-top:15px;">Total: ₱<span id="cartTotal">0</span></h3>
     <button class="checkout-btn" onclick="checkout()">Checkout</button>
   </div>
@@ -250,6 +283,7 @@ function updateCartCount() {
 function openCart() {
   document.getElementById('cartModal').classList.add('active');
   renderCart();
+  toggleCashInput();
 }
 
 function closeCart() {
@@ -281,6 +315,19 @@ function renderCart() {
   document.getElementById('cartTotal').textContent = total;
 }
 
+function toggleCashInput() {
+  let method = document.getElementById('paymentMethod').value;
+  document.getElementById('cashInputDiv').style.display = method === 'Cash'? 'block' : 'none';
+  calculateChange();
+}
+
+function calculateChange() {
+  let total = parseInt(document.getElementById('cartTotal').textContent);
+  let cash = parseFloat(document.getElementById('cashAmount').value) || 0;
+  let change = cash - total;
+  document.getElementById('changeText').textContent = change >= 0? `Change: ₱${change}` : '';
+}
+
 function checkout() {
   let total = 0;
   Object.keys(cart).forEach(k => {
@@ -294,13 +341,26 @@ function checkout() {
     alert('Cart is empty!');
     return;
   }
+  
+  let method = document.getElementById('paymentMethod').value;
+  let cash = parseFloat(document.getElementById('cashAmount').value) || 0;
+  
+  if(method === 'Cash' && cash < total) {
+    alert('Insufficient cash amount!');
+    return;
+  }
+  
   localStorage.setItem('products', JSON.stringify(products));
   let txn = {
     id: 'TXN' + Date.now(),
     date: new Date().toLocaleString(),
     items: {},
     total: total,
-    payment: {method: 'Cash'}
+    payment: {
+      method: method,
+      cash: method === 'Cash'? cash : 0,
+      change: method === 'Cash'? cash - total : 0
+    }
   };
   Object.keys(cart).forEach(k => {
     if(cart[k].qty > 0) {
@@ -310,8 +370,13 @@ function checkout() {
   let txns = JSON.parse(localStorage.getItem('transactions') || '[]');
   txns.push(txn);
   localStorage.setItem('transactions', JSON.stringify(txns));
-  alert('✅ Order placed! Total: ₱' + total);
+  
+  let msg = `✅ Order placed! Total: ₱${total}\nPayment: ${method}`;
+  if(method === 'Cash') msg += `\nCash: ₱${cash}\nChange: ₱${cash - total}`;
+  alert(msg);
+  
   cart = {};
+  document.getElementById('cashAmount').value = '';
   updateCartCount();
   closeCart();
   renderProducts();
@@ -322,8 +387,8 @@ function checkout() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-   .then(reg => console.log('SW registered'))
-   .catch(err => console.log('SW failed:', err));
+  .then(reg => console.log('SW registered'))
+  .catch(err => console.log('SW failed:', err));
   });
 }
 </script>
