@@ -9,180 +9,57 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DHAN POS">
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
 body {background:#f5f5f5;}
-.header {
-  background:#ff6b35;
-  color:white;
-  padding:15px;
-  text-align:center;
-  position:sticky;
-  top:0;
-  z-index:100;
-}
+.header { background:#ff6b35; color:white; padding:15px; text-align:center; position:sticky; top:0; z-index:100; }
 .header h1 {font-size:20px;}
-.cart-icon {
-  position:absolute;
-  right:15px;
-  top:15px;
-  background:white;
-  color:#ff6b35;
-  padding:8px 12px;
-  border-radius:20px;
-  font-weight:700;
-  cursor:pointer;
-}
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  padding: 12px;
-}
-.product-card {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-.product-card img {
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-  background: #f0f0f0;
-}
+.cart-icon { position:absolute; right:15px; top:15px; background:white; color:#ff6b35; padding:8px 12px; border-radius:20px; font-weight:700; cursor:pointer; }
+.products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 12px; }
+.product-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.product-card img { width: 100%; height: 140px; object-fit: cover; background: #f0f0f0; }
 .product-info { padding: 10px; }
-.product-name {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  height: 36px;
-  overflow: hidden;
-}
-.product-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #ff6b35;
-  margin-bottom: 4px;
-}
-.product-stock {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 8px;
-}
-.qty-box {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.qty-input {
-  width: 55px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  text-align: center;
-  font-weight: 600;
-}
-.add-cart-btn {
-  flex: 1;
-  padding: 8px;
-  background: #ff6b35;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-}
+.product-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; height: 36px; overflow: hidden; }
+.product-price { font-size: 18px; font-weight: 700; color: #ff6b35; margin-bottom: 4px; }
+.product-stock { font-size: 12px; color: #666; margin-bottom: 8px; }
+.qty-box { display: flex; gap: 6px; align-items: center; }
+.qty-input { width: 55px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; text-align: center; font-weight: 600; }
+.add-cart-btn { flex: 1; padding: 8px; background: #ff6b35; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
 .add-cart-btn:disabled { background: #ccc; }
-.category-title {
-  margin:20px 12px 10px;
-  font-size:18px;
-  font-weight:700;
-}
-.cart-modal {
-  display:none;
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.5);
-  z-index:1000;
-  align-items:center;
-  justify-content:center;
-}
+.category-title { margin:20px 12px 10px; font-size:18px; font-weight:700; }
+.cart-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
 .cart-modal.active {display:flex;}
-.cart-content {
-  background:white;
-  width:90%;
-  max-width:500px;
-  max-height:80vh;
-  overflow-y:auto;
-  border-radius:12px;
-  padding:20px;
-}
-.cart-item {
-  display:flex;
-  justify-content:space-between;
-  padding:10px 0;
-  border-bottom:1px solid #eee;
-}
-.payment-section {
-  margin-top:15px;
-  padding-top:15px;
-  border-top:1px solid #eee;
-}
-.payment-section select,.payment-section input {
-  width:100%;
-  padding:10px;
-  margin-top:8px;
-  border:1px solid #ddd;
-  border-radius:6px;
-  font-size:14px;
-}
-.change-text {
-  margin-top:8px;
-  font-weight:600;
-  color:#4caf50;
-}
-.checkout-btn {
-  width:100%;
-  padding:12px;
-  background:#4caf50;
-  color:white;
-  border:none;
-  border-radius:8px;
-  font-weight:700;
-  margin-top:15px;
-  cursor:pointer;
-}
-.close-btn {
-  float:right;
-  background:none;
-  border:none;
-  font-size:24px;
-  cursor:pointer;
-}
-@media(min-width: 768px) {
-.products-grid { grid-template-columns: repeat(4, 1fr); }
-}
+.cart-content { background:white; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; border-radius:12px; padding:20px; }
+.cart-item { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee; }
+.payment-section { margin-top:15px; padding-top:15px; border-top:1px solid #eee; }
+.payment-section select,.payment-section input { width:100%; padding:10px; margin-top:8px; border:1px solid #ddd; border-radius:6px; font-size:14px; }
+.change-text { margin-top:8px; font-weight:600; color:#4caf50; }
+.checkout-btn { width:100%; padding:12px; background:#4caf50; color:white; border:none; border-radius:8px; font-weight:700; margin-top:15px; cursor:pointer; }
+.close-btn { float:right; background:none; border:none; font-size:24px; cursor:pointer; }
+.loading { text-align:center; padding:40px; color:#666; }
+@media(min-width: 768px) {.products-grid { grid-template-columns: repeat(4, 1fr); } }
 </style>
 </head>
 <body>
+
 <div class="header">
   <h1>🍢 DHAN SIOMAI</h1>
   <div class="cart-icon" onclick="openCart()">🛒 <span id="cartCount">0</span></div>
 </div>
 
-<div id="productsList"></div>
+<div id="productsList"><div class="loading">Loading products...</div></div>
 
 <div class="cart-modal" id="cartModal">
   <div class="cart-content">
     <button class="close-btn" onclick="closeCart()">×</button>
     <h3>Your Cart</h3>
     <div id="cartItems"></div>
-    
     <div class="payment-section">
       <h4>Payment Method</h4>
       <select id="paymentMethod" onchange="toggleCashInput()">
@@ -190,33 +67,67 @@ body {background:#f5f5f5;}
         <option value="GCash">GCash</option>
         <option value="Bank Transfer">Bank Transfer</option>
       </select>
-      
       <div id="cashInputDiv" style="display:block;">
         <input type="number" id="cashAmount" placeholder="Enter cash amount" oninput="calculateChange()">
         <div class="change-text" id="changeText"></div>
       </div>
     </div>
-    
     <h3 style="margin-top:15px;">Total: ₱<span id="cartTotal">0</span></h3>
     <button class="checkout-btn" onclick="checkout()">Checkout</button>
   </div>
 </div>
 
 <script>
+// ========== PALITAN MO TO NG CONFIG MO ==========
+const firebaseConfig = {
+  apiKey: "PASTE_API_KEY_DITO",
+  authDomain: "PASTE_AUTH_DOMAIN_DITO",
+  projectId: "PASTE_PROJECT_ID_DITO",
+  storageBucket: "PASTE_STORAGE_BUCKET_DITO",
+  messagingSenderId: "PASTE_MESSAGING_SENDER_ID_DITO",
+  appId: "PASTE_APP_ID_DITO"
+};
+// ================================================
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 let products = {};
+let productsArray = [];
 let cart = {};
 
 window.onload = function() {
   loadProducts();
-  renderProducts();
   updateCartCount();
 }
 
-function loadProducts() {
-  products = JSON.parse(localStorage.getItem('products') || '{}');
+async function loadProducts() {
+  try {
+    const snap = await db.collection("product").get();
+    products = {};
+    productsArray = [];
+
+    snap.forEach(doc => {
+      let p = doc.data();
+      p.id = doc.id;
+      productsArray.push(p);
+      if (!products[p.category]) products[p.category] = [];
+      products[p.category].push(p);
+    });
+
+    renderProducts();
+  } catch (error) {
+    console.error("Error loading products:", error);
+    document.getElementById('productsList').innerHTML = '<div class="loading">Error loading products. Check console.</div>';
+  }
 }
 
 function renderProducts() {
+  if (productsArray.length === 0) {
+    document.getElementById('productsList').innerHTML = '<div class="loading">No products yet. Add products in Admin Panel.</div>';
+    return;
+  }
+
   let html = '';
   Object.keys(products).forEach(cat => {
     html += `<h2 class="category-title">${cat}</h2>`;
@@ -225,14 +136,14 @@ function renderProducts() {
       let imgUrl = prod.imageUrl || 'https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai';
       html += `
       <div class="product-card">
-        <img src="${imgUrl}" alt="${prod.name}">
+        <img src="${imgUrl}" alt="${prod.name}" onerror="this.src='https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai'">
         <div class="product-info">
           <div class="product-name">${prod.name}</div>
           <div class="product-price">₱${prod.price}</div>
           <div class="product-stock">Stock: ${prod.stock}</div>
           <div class="qty-box">
-            <input type="number" min="1" max="${prod.stock}" value="1" class="qty-input" id="qty-${cat}-${idx}">
-            <button class="add-cart-btn" onclick="addToCartQty('${cat}', ${idx})" ${prod.stock <= 0? 'disabled' : ''}>
+            <input type="number" min="1" max="${prod.stock}" value="1" class="qty-input" id="qty-${prod.id}">
+            <button class="add-cart-btn" onclick="addToCartQty('${prod.id}')" ${prod.stock <= 0? 'disabled' : ''}>
               ${prod.stock <= 0? 'Out of Stock' : 'Add to Cart'}
             </button>
           </div>
@@ -244,34 +155,33 @@ function renderProducts() {
   document.getElementById('productsList').innerHTML = html;
 }
 
-function addToCartQty(cat, idx) {
-  let key = cat + '-' + idx;
-  let input = document.getElementById(`qty-${cat}-${idx}`);
+function addToCartQty(productId) {
+  let prod = productsArray.find(p => p.id === productId);
+  let input = document.getElementById(`qty-${productId}`);
   let qty = parseInt(input.value);
 
   if(!qty || qty < 1) {
     alert('Enter valid quantity');
     return;
   }
-
-  if(qty > products[cat][idx].stock) {
+  if(qty > prod.stock) {
     alert('Not enough stock!');
     return;
   }
 
-  if(!cart[key]) {
-    cart[key] = {cat: cat, idx: idx, qty: 0};
+  if(!cart[productId]) {
+    cart[productId] = {product: prod, qty: 0};
   }
 
-  if(cart[key].qty + qty > products[cat][idx].stock) {
+  if(cart[productId].qty + qty > prod.stock) {
     alert('Exceeds available stock!');
     return;
   }
 
-  cart[key].qty += qty;
+  cart[productId].qty += qty;
   input.value = 1;
   updateCartCount();
-  alert(`${qty} x ${products[cat][idx].name} added to cart!`);
+  alert(`${qty} x ${prod.name} added to cart!`);
 }
 
 function updateCartCount() {
@@ -295,7 +205,7 @@ function renderCart() {
   let total = 0;
   Object.keys(cart).forEach(k => {
     if(cart[k].qty > 0) {
-      let prod = products[cart[k].cat][cart[k].idx];
+      let prod = cart[k].product;
       let subtotal = prod.price * cart[k].qty;
       total += subtotal;
       html += `
@@ -328,58 +238,76 @@ function calculateChange() {
   document.getElementById('changeText').textContent = change >= 0? `Change: ₱${change}` : '';
 }
 
-function checkout() {
+async function checkout() {
   let total = 0;
   Object.keys(cart).forEach(k => {
     if(cart[k].qty > 0) {
-      let prod = products[cart[k].cat][cart[k].idx];
-      total += prod.price * cart[k].qty;
-      prod.stock -= cart[k].qty;
+      total += cart[k].product.price * cart[k].qty;
     }
   });
+
   if(total === 0) {
     alert('Cart is empty!');
     return;
   }
-  
+
   let method = document.getElementById('paymentMethod').value;
   let cash = parseFloat(document.getElementById('cashAmount').value) || 0;
-  
+
   if(method === 'Cash' && cash < total) {
     alert('Insufficient cash amount!');
     return;
   }
-  
-  localStorage.setItem('products', JSON.stringify(products));
-  let txn = {
-    id: 'TXN' + Date.now(),
-    date: new Date().toLocaleString(),
-    items: {},
-    total: total,
-    payment: {
-      method: method,
-      cash: method === 'Cash'? cash : 0,
-      change: method === 'Cash'? cash - total : 0
-    }
-  };
-  Object.keys(cart).forEach(k => {
-    if(cart[k].qty > 0) {
-      txn.items[products[cart[k].cat][cart[k].idx].name] = cart[k].qty;
-    }
-  });
-  let txns = JSON.parse(localStorage.getItem('transactions') || '[]');
-  txns.push(txn);
-  localStorage.setItem('transactions', JSON.stringify(txns));
-  
-  let msg = `✅ Order placed! Total: ₱${total}\nPayment: ${method}`;
-  if(method === 'Cash') msg += `\nCash: ₱${cash}\nChange: ₱${cash - total}`;
-  alert(msg);
-  
-  cart = {};
-  document.getElementById('cashAmount').value = '';
-  updateCartCount();
-  closeCart();
-  renderProducts();
+
+  try {
+    // Update stock in Firestore
+    const batch = db.batch();
+    Object.keys(cart).forEach(k => {
+      if(cart[k].qty > 0) {
+        let prod = cart[k].product;
+        let newStock = prod.stock - cart[k].qty;
+        batch.update(db.collection("product").doc(prod.id), {stock: newStock});
+      }
+    });
+    await batch.commit();
+
+    // Save transaction to localStorage lang muna
+    let txn = {
+      id: 'TXN' + Date.now(),
+      date: new Date().toLocaleString(),
+      items: {},
+      total: total,
+      payment: {
+        method: method,
+        cash: method === 'Cash'? cash : 0,
+        change: method === 'Cash'? cash - total : 0
+      }
+    };
+
+    Object.keys(cart).forEach(k => {
+      if(cart[k].qty > 0) {
+        txn.items[cart[k].product.name] = cart[k].qty;
+      }
+    });
+
+    let txns = JSON.parse(localStorage.getItem('transactions') || '[]');
+    txns.push(txn);
+    localStorage.setItem('transactions', JSON.stringify(txns));
+
+    let msg = `✅ Order placed! Total: ₱${total}\nPayment: ${method}`;
+    if(method === 'Cash') msg += `\nCash: ₱${cash}\nChange: ₱${cash - total}`;
+    alert(msg);
+
+    cart = {};
+    document.getElementById('cashAmount').value = '';
+    updateCartCount();
+    closeCart();
+    loadProducts(); // Reload products para ma-update stocks
+
+  } catch (error) {
+    console.error("Error during checkout:", error);
+    alert("Error processing order. Check console.");
+  }
 }
 </script>
 
@@ -387,8 +315,8 @@ function checkout() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-  .then(reg => console.log('SW registered'))
-  .catch(err => console.log('SW failed:', err));
+   .then(reg => console.log('SW registered'))
+   .catch(err => console.log('SW failed:', err));
   });
 }
 </script>
