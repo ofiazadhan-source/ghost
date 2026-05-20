@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin - DHAN SIOMAI POS</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
 body {background:#f5f5f5; padding:20px;}
@@ -38,6 +43,7 @@ body {background:#f5f5f5; padding:20px;}
 .expense-row input {padding:8px; border:1px solid #ddd; border-radius:6px;}
 .danger-zone {background:#fff3cd; padding:15px; border-radius:10px; border:2px solid #ffc107;}
 .prod-row {display:grid; grid-template-columns:2fr 1fr; gap:10px; padding:12px 15px; border-top:1px solid #eee; align-items:center;}
+.loading {text-align:center; padding:20px; color:#666;}
 </style>
 </head>
 <body>
@@ -67,7 +73,7 @@ body {background:#f5f5f5; padding:20px;}
 
   <div id="tab-products" class="tab-content active">
     <div class="note">💡 Tap mo yung category para mag-open. Baguhin mo price, stock, at Image URL, tapos click Save All.</div>
-    <div id="productsEditor"></div>
+    <div id="productsEditor"><div class="loading">Loading products...</div></div>
   </div>
 
   <div id="tab-production" class="tab-content">
@@ -94,6 +100,20 @@ body {background:#f5f5f5; padding:20px;}
 </div>
 
 <script>
+// ========== PALITAN MO TO NG CONFIG MO ==========
+const firebaseConfig = {
+  apiKey: "PASTE_API_KEY_DITO",
+  authDomain: "PASTE_AUTH_DOMAIN_DITO",
+  projectId: "PASTE_PROJECT_ID_DITO",
+  storageBucket: "PASTE_STORAGE_BUCKET_DITO",
+  messagingSenderId: "PASTE_MESSAGING_SENDER_ID_DITO",
+  appId: "PASTE_APP_ID_DITO"
+};
+// ================================================
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 const ADMIN_PASSWORD = "admin123";
 const defaultProducts = {
   "Siomai 65pcs": [
@@ -108,32 +128,11 @@ const defaultProducts = {
     {name:"Beef Siomai 30", price:80, stock:999, imageUrl:""},
     {name:"Shrimp Siomai 30", price:80, stock:999, imageUrl:""},
     {name:"Japanese Siomai 30", price:80, stock:999, imageUrl:""}
-  ],
-  "Big Siomai": [
-    {name:"Big Pork Siomai", price:200, stock:15, imageUrl:""},
-    {name:"Big Chicken Siomai", price:200, stock:15, imageUrl:""},
-    {name:"Big Beef Siomai", price:200, stock:15, imageUrl:""},
-    {name:"Japanese Crabstic Siomai", price:220, stock:15, imageUrl:""}
-  ],
-  "Dumplings": [
-    {name:"Gyoza Dumplings", price:180, stock:100, imageUrl:""},
-    {name:"Sharksfin Dumplings", price:180, stock:30, imageUrl:""},
-    {name:"Hakaw Dumplings", price:180, stock:30, imageUrl:""}
-  ],
-  "Siopao": [
-    {name:"Jumbo Asado Siopao", price:120, stock:15, imageUrl:""},
-    {name:"Jumbo Bola-Bola Siopao", price:120, stock:10, imageUrl:""},
-    {name:"Mini Asado Siopao", price:60, stock:0, imageUrl:""},
-    {name:"Mini Bola-Bola Siopao", price:60, stock:0, imageUrl:""}
-  ],
-  "Sauce": [
-    {name:"Chili Garlic Sauce", price:50, stock:20, imageUrl:""},
-    {name:"Siopao Sauce", price:40, stock:20, imageUrl:""}
   ]
 };
 
 let products = {};
-let expenses = {};
+let expenses = {list: []};
 let dailyProduction = {};
 let lastProductionDate = null;
 
@@ -142,7 +141,6 @@ window.onload = function() {
     showMainScreen();
   }
   loadData();
-  autoRunProduction();
 }
 
 function checkPassword() {
@@ -176,22 +174,66 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
 }
 
-function loadData() {
-  products = JSON.parse(localStorage.getItem('products') || JSON.stringify(defaultProducts));
-  expenses = JSON.parse(localStorage.getItem('expenses') || '{}');
-  dailyProduction = JSON.parse(localStorage.getItem('dailyProduction') || '{}');
-  lastProductionDate = localStorage.getItem('lastProductionDate');
-  document.getElementById('lastProdDate').textContent = lastProductionDate || 'Never';
+// ========== FIRESTORE FUNCTIONS ==========
+async function loadData() {
+  try {
+    const snap = await db.collection("product").get();
+    if (!snap.empty) {
+      let data = {};
+      snap.forEach(doc => {
+        let p = doc.data();
+        if (!data[p.category]) data[p.category] = [];
+        data[p.category].push(p);
+      });
+      products = data;
+    } else {
+      products = JSON.parse(JSON.stringify(defaultProducts));
+    }
+
+    expenses = JSON.parse(localStorage.getItem('expenses') || '{"list":[]}');
+    dailyProduction = JSON.parse(localStorage.getItem('dailyProduction') || '{}');
+    lastProductionDate = localStorage.getItem('lastProductionDate');
+    document.getElementById('lastProdDate').textContent = lastProductionDate || 'Never';
+
+    renderProducts();
+    renderProduction();
+    renderExpenses();
+  } catch (error) {
+    console.error("Error loading data:", error);
+    alert("Error loading data. Check console.");
+  }
 }
 
-function saveAll() {
-  localStorage.setItem('products', JSON.stringify(products));
-  localStorage.setItem('expenses', JSON.stringify(expenses));
-  localStorage.setItem('dailyProduction', JSON.stringify(dailyProduction));
-  alert("✅ Saved!");
+async function saveAll() {
+  try {
+    // Delete all existing products
+    const snap = await db.collection("product").get();
+    const batch = db.batch();
+    snap.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+
+    // Save all products
+    const batch2 = db.batch();
+    Object.keys(products).forEach(cat => {
+      products[cat].forEach(prod => {
+        let docRef = db.collection("product").doc();
+        batch2.set(docRef, {...prod, category: cat});
+      });
+    });
+    await batch2.commit();
+
+    // Save expenses and production to localStorage lang muna
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+    localStorage.setItem('dailyProduction', JSON.stringify(dailyProduction));
+
+    alert("✅ Saved to Firestore!");
+  } catch (error) {
+    console.error("Error saving data:", error);
+    alert("Error saving data. Check console.");
+  }
 }
 
-// Products Tab
+// ========== PRODUCTS TAB ==========
 function renderProducts() {
   let html = '';
   Object.keys(products).forEach(cat => {
@@ -218,7 +260,7 @@ function updateProduct(cat, idx, field, value) {
   }
 }
 
-// Daily Production Tab
+// ========== DAILY PRODUCTION TAB ==========
 function renderProduction() {
   let html = '';
   Object.keys(products).forEach(cat => {
@@ -240,19 +282,8 @@ function updateProduction(prodName, value) {
   dailyProduction[prodName] = parseInt(value) || 0;
 }
 
-function autoRunProduction() {
-  let today = new Date().toISOString().split('T')[0];
-  if(lastProductionDate === today) return;
-  runProduction(today);
-}
-
 function runProductionNow() {
   let today = new Date().toISOString().split('T')[0];
-  runProduction(today);
-  alert('✅ Production run complete!');
-}
-
-function runProduction(today) {
   let added = false;
   Object.keys(products).forEach(cat => {
     products[cat].forEach(prod => {
@@ -264,15 +295,15 @@ function runProduction(today) {
     });
   });
   if(added) {
-    localStorage.setItem('products', JSON.stringify(products));
     lastProductionDate = today;
     localStorage.setItem('lastProductionDate', today);
     document.getElementById('lastProdDate').textContent = today;
     renderProducts();
+    alert('✅ Production run complete!');
   }
 }
 
-// Expenses Tab
+// ========== EXPENSES TAB ==========
 function renderExpenses() {
   let html = '';
   let expArr = expenses.list || [];
@@ -304,7 +335,7 @@ function deleteExpense(idx) {
   }
 }
 
-// Reset Tab
+// ========== RESET TAB ==========
 function resetTransactions() {
   if(confirm('Delete all transactions?')) {
     localStorage.removeItem('transactions');
@@ -314,24 +345,35 @@ function resetTransactions() {
 
 function resetExpenses() {
   if(confirm('Delete all expenses?')) {
+    expenses = {list: []};
     localStorage.removeItem('expenses');
-    expenses = {};
     renderExpenses();
     alert('✅ Expenses reset!');
   }
 }
 
-function resetAll() {
-  if(confirm('Delete ALL data? Di na mabalik!')) {
-    localStorage.clear();
-    products = JSON.parse(JSON.stringify(defaultProducts));
-    expenses = {};
-    dailyProduction = {};
-    lastProductionDate = null;
-    renderProducts();
-    renderProduction();
-    renderExpenses();
-    alert('✅ All data reset!');
+async function resetAll() {
+  if(confirm('Delete ALL products from Firestore? Di na mabalik!')) {
+    try {
+      const snap = await db.collection("product").get();
+      const batch = db.batch();
+      snap.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+
+      localStorage.clear();
+      products = JSON.parse(JSON.stringify(defaultProducts));
+      expenses = {list: []};
+      dailyProduction = {};
+      lastProductionDate = null;
+
+      renderProducts();
+      renderProduction();
+      renderExpenses();
+      alert('✅ All data reset!');
+    } catch (error) {
+      console.error("Error resetting:", error);
+      alert("Error resetting data.");
+    }
   }
 }
 
