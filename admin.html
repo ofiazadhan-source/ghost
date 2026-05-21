@@ -103,13 +103,6 @@ body {background:#f5f5f5;}
 </head>
 <body>
 
-<script>
-// CHECK LOGIN - pag wala, redirect sa login page
-if(sessionStorage.getItem('adminLoggedIn')!== 'true') {
- window.location.href = '../index.html';
-}
-</script>
-
 <div class="header">
  <h1>📦 Admin Panel</h1>
  <div class="header-actions">
@@ -349,8 +342,7 @@ function resetAll() {
  });
 }
 function logout() {
- sessionStorage.removeItem('adminLoggedIn');
- window.location.href = '../index.html';
+ if(confirm("Logout?")) window.location.href = "../index.html";
 }
 </script>
 </body>
