@@ -47,47 +47,46 @@ body {background:#f5f5f5;}
 </style>
 </head>
 <body>
-
 <div class="header">
-  <h1>🍢 DHAN SIOMAI</h1>
-  <div class="cart-icon" onclick="openCart()">🛒 <span id="cartCount">0</span></div>
+<h1>🍢 DHAN SIOMAI</h1>
+<div class="cart-icon" onclick="openCart()">🛒 <span id="cartCount">0</span></div>
 </div>
 
 <div id="productsList"><div class="loading">Loading products...</div></div>
 
 <div class="cart-modal" id="cartModal">
-  <div class="cart-content">
-    <button class="close-btn" onclick="closeCart()">×</button>
-    <h3>Your Cart</h3>
-    <div id="cartItems"></div>
-    <div class="payment-section">
-      <h4>Payment Method</h4>
-      <select id="paymentMethod" onchange="toggleCashInput()">
-        <option value="Cash">Cash</option>
-        <option value="GCash">GCash</option>
-        <option value="Bank Transfer">Bank Transfer</option>
-      </select>
-      <div id="cashInputDiv" style="display:block;">
-        <input type="number" id="cashAmount" placeholder="Enter cash amount" oninput="calculateChange()">
-        <div class="change-text" id="changeText"></div>
-      </div>
-    </div>
-    <h3 style="margin-top:15px;">Total: ₱<span id="cartTotal">0</span></h3>
-    <button class="checkout-btn" onclick="checkout()">Checkout</button>
-  </div>
+<div class="cart-content">
+<button class="close-btn" onclick="closeCart()">×</button>
+<h3>Your Cart</h3>
+<div id="cartItems"></div>
+<div class="payment-section">
+<h4>Payment Method</h4>
+<select id="paymentMethod" onchange="toggleCashInput()">
+<option value="Cash">Cash</option>
+<option value="GCash">GCash</option>
+<option value="Bank Transfer">Bank Transfer</option>
+</select>
+<div id="cashInputDiv" style="display:block;">
+<input type="number" id="cashAmount" placeholder="Enter cash amount" oninput="calculateChange()">
+<div class="change-text" id="changeText"></div>
+</div>
+</div>
+<h3 style="margin-top:15px;">Total: ₱<span id="cartTotal">0</span></h3>
+<button class="checkout-btn" onclick="checkout()">Checkout</button>
+</div>
 </div>
 
 <script>
-// ========== PALITAN MO TO NG CONFIG MO ==========
+// ========== PALITAN MO TO NG CONFIG GALING SA dhan-siomai-pos-fe1e5 ==========
 const firebaseConfig = {
   apiKey: "PASTE_API_KEY_DITO",
-  authDomain: "PASTE_AUTH_DOMAIN_DITO",
-  projectId: "PASTE_PROJECT_ID_DITO",
-  storageBucket: "PASTE_STORAGE_BUCKET_DITO",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.appspot.com",
   messagingSenderId: "PASTE_MESSAGING_SENDER_ID_DITO",
   appId: "PASTE_APP_ID_DITO"
 };
-// ================================================
+// ============================================================================
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -103,10 +102,10 @@ window.onload = function() {
 
 async function loadProducts() {
   try {
-    const snap = await db.collection("product").get();
+    // FIXED: Collection name ay "dhan-pos-web" hindi "product"
+    const snap = await db.collection("dhan-pos-web").get();
     products = {};
     productsArray = [];
-
     snap.forEach(doc => {
       let p = doc.data();
       p.id = doc.id;
@@ -114,11 +113,10 @@ async function loadProducts() {
       if (!products[p.category]) products[p.category] = [];
       products[p.category].push(p);
     });
-
     renderProducts();
   } catch (error) {
     console.error("Error loading products:", error);
-    document.getElementById('productsList').innerHTML = '<div class="loading">Error loading products. Check console.</div>';
+    document.getElementById('productsList').innerHTML = '<div class="loading">Error loading products. Check console for details.</div>';
   }
 }
 
@@ -127,12 +125,11 @@ function renderProducts() {
     document.getElementById('productsList').innerHTML = '<div class="loading">No products yet. Add products in Admin Panel.</div>';
     return;
   }
-
   let html = '';
   Object.keys(products).forEach(cat => {
     html += `<h2 class="category-title">${cat}</h2>`;
     html += `<div class="products-grid">`;
-    products[cat].forEach((prod, idx) => {
+    products[cat].forEach((prod) => {
       let imgUrl = prod.imageUrl || 'https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai';
       html += `
       <div class="product-card">
@@ -159,7 +156,6 @@ function addToCartQty(productId) {
   let prod = productsArray.find(p => p.id === productId);
   let input = document.getElementById(`qty-${productId}`);
   let qty = parseInt(input.value);
-
   if(!qty || qty < 1) {
     alert('Enter valid quantity');
     return;
@@ -168,16 +164,13 @@ function addToCartQty(productId) {
     alert('Not enough stock!');
     return;
   }
-
   if(!cart[productId]) {
     cart[productId] = {product: prod, qty: 0};
   }
-
   if(cart[productId].qty + qty > prod.stock) {
     alert('Exceeds available stock!');
     return;
   }
-
   cart[productId].qty += qty;
   input.value = 1;
   updateCartCount();
@@ -245,20 +238,16 @@ async function checkout() {
       total += cart[k].product.price * cart[k].qty;
     }
   });
-
   if(total === 0) {
     alert('Cart is empty!');
     return;
   }
-
   let method = document.getElementById('paymentMethod').value;
   let cash = parseFloat(document.getElementById('cashAmount').value) || 0;
-
   if(method === 'Cash' && cash < total) {
     alert('Insufficient cash amount!');
     return;
   }
-
   try {
     // Update stock in Firestore
     const batch = db.batch();
@@ -266,12 +255,13 @@ async function checkout() {
       if(cart[k].qty > 0) {
         let prod = cart[k].product;
         let newStock = prod.stock - cart[k].qty;
-        batch.update(db.collection("product").doc(prod.id), {stock: newStock});
+        // FIXED: Collection name ay "dhan-pos-web" hindi "product"
+        batch.update(db.collection("dhan-pos-web").doc(prod.id), {stock: newStock});
       }
     });
     await batch.commit();
 
-    // Save transaction to localStorage lang muna
+    // Save transaction to localStorage
     let txn = {
       id: 'TXN' + Date.now(),
       date: new Date().toLocaleString(),
@@ -283,13 +273,11 @@ async function checkout() {
         change: method === 'Cash'? cash - total : 0
       }
     };
-
     Object.keys(cart).forEach(k => {
       if(cart[k].qty > 0) {
         txn.items[cart[k].product.name] = cart[k].qty;
       }
     });
-
     let txns = JSON.parse(localStorage.getItem('transactions') || '[]');
     txns.push(txn);
     localStorage.setItem('transactions', JSON.stringify(txns));
@@ -297,13 +285,11 @@ async function checkout() {
     let msg = `✅ Order placed! Total: ₱${total}\nPayment: ${method}`;
     if(method === 'Cash') msg += `\nCash: ₱${cash}\nChange: ₱${cash - total}`;
     alert(msg);
-
     cart = {};
     document.getElementById('cashAmount').value = '';
     updateCartCount();
     closeCart();
     loadProducts(); // Reload products para ma-update stocks
-
   } catch (error) {
     console.error("Error during checkout:", error);
     alert("Error processing order. Check console.");
