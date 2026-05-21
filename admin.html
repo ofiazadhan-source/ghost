@@ -10,21 +10,91 @@
 <style>
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
 body {background:#f5f5f5;}
-.header { background: linear-gradient(135deg, #ff6b35, #ff8c65); color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; }
+.header {
+ background: linear-gradient(135deg, #ff6b35, #ff8c65);
+ color:white;
+ padding:15px 20px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ position:sticky;
+ top:0;
+ z-index:100;
+}
 .header h1 {font-size:20px; font-weight:700;}
-.header-actions button { padding:8px 14px; border:none; border-radius:8px; font-weight:600; cursor:pointer; margin-left:8px; }
+.header-actions button {
+ padding:8px 14px;
+ border:none;
+ border-radius:8px;
+ font-weight:600;
+ cursor:pointer;
+ margin-left:8px;
+}
 .btn-save {background:#4caf50; color:white;}
 .btn-logout {background:#fff; color:#ff6b35;}
-.tabs { display:flex; gap:10px; padding:12px 15px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.08); overflow-x:auto; }
-.tab { padding:10px 18px; border:none; border-radius:8px; background:#eee; cursor:pointer; font-weight:600; white-space:nowrap; }
+.tabs {
+ display:flex;
+ gap:10px;
+ padding:12px 15px;
+ background:white;
+ box-shadow:0 2px 4px rgba(0,0,0,0.08);
+ overflow-x:auto;
+}
+.tab {
+ padding:10px 18px;
+ border:none;
+ border-radius:8px;
+ background:#eee;
+ cursor:pointer;
+ font-weight:600;
+ white-space:nowrap;
+}
 .tab.active {background:#ff6b35; color:white;}
 .container {padding:15px; max-width:1100px; margin:0 auto;}
-.notice { background:#e8f5e9; color:#2e7d32; padding:12px; border-radius:8px; margin-bottom:15px; font-size:14px; }
-.add-btn { background:#ff6b35; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; margin-bottom:15px; }
-.table { width:100%; background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); border-collapse:collapse; }
-.table th { background:#fff9c4; padding:12px; text-align:left; font-weight:700; font-size:14px; }
-.table td { padding:10px; border-bottom:1px solid #eee; }
-.table input { width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px; }
+.notice {
+ background:#e8f5e9;
+ color:#2e7d32;
+ padding:12px;
+ border-radius:8px;
+ margin-bottom:15px;
+ font-size:14px;
+}
+.add-btn {
+ background:#ff6b35;
+ color:white;
+ border:none;
+ padding:10px 16px;
+ border-radius:8px;
+ font-weight:600;
+ cursor:pointer;
+ margin-bottom:15px;
+}
+.table {
+ width:100%;
+ background:white;
+ border-radius:12px;
+ overflow:hidden;
+ box-shadow:0 2px 8px rgba(0,0,0,0.08);
+ border-collapse:collapse;
+}
+.table th {
+ background:#fff9c4;
+ padding:12px;
+ text-align:left;
+ font-weight:700;
+ font-size:14px;
+}
+.table td {
+ padding:10px;
+ border-bottom:1px solid #eee;
+}
+.table input {
+ width:100%;
+ padding:8px;
+ border:1px solid #ddd;
+ border-radius:6px;
+ font-size:14px;
+}
 .btn-del {background:#f44336; color:white; padding:6px 10px; border:none; border-radius:6px; cursor:pointer;}
 .tab-content {display:none;}
 .tab-content.active {display:block;}
@@ -39,33 +109,41 @@ body {background:#f5f5f5;}
 <button class="btn-logout" onclick="logout()">🚪 Logout</button>
 </div>
 </div>
+
 <div class="tabs">
 <button class="tab active" onclick="switchTab('products')">📦 Products</button>
 <button class="tab" onclick="switchTab('daily')">📊 Daily Prod</button>
 <button class="tab" onclick="switchTab('expenses')">💸 Expenses</button>
 <button class="tab" onclick="switchTab('reset')">⚠️ Reset Data</button>
 </div>
+
 <div class="container">
 <div id="products" class="tab-content active">
 <div class="notice">💡 Baguhin mo name, category, price, stock, image URL. Click Save All pag tapos.</div>
 <button class="add-btn" onclick="addProduct()">+ Add Product</button>
 <div id="productsList"><div class="loading">Loading...</div></div>
 </div>
+
 <div id="daily" class="tab-content">
 <div class="notice">💡 Ilagay mo daily production count dito.</div>
 <button class="add-btn" onclick="addDaily()">+ Add Daily Record</button>
 <div id="dailyList"><div class="loading">Loading...</div></div>
 </div>
+
 <div id="expenses" class="tab-content">
 <div class="notice">💡 Ilog mo lahat ng expenses dito.</div>
 <button class="add-btn" onclick="addExpense()">+ Add Expense</button>
 <div id="expensesList"><div class="loading">Loading...</div></div>
 </div>
+
 <div id="reset" class="tab-content">
-<div class="notice" style="background:#ffebee; color:#c62828;"> ⚠️ Delikado! I-delete nito lahat ng data. Gamitin lang pag kailangan. </div>
+<div class="notice" style="background:#ffebee; color:#c62828;">
+⚠️ Delikado! I-delete nito lahat ng data. Gamitin lang pag kailangan.
+</div>
 <button class="add-btn" style="background:#f44336;" onclick="resetAll()">Reset All Data</button>
 </div>
 </div>
+
 <script>
 const firebaseConfig = {
 apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
@@ -77,6 +155,7 @@ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
 let productsArray = [];
 let dailyArray = [];
 let expensesArray = [];
@@ -280,7 +359,6 @@ return amt > 0? `- ${item}${note? ' (' + note + ')' : ''}: ₱${amt}` : null;
 // Smart Alert - Per Product Breakdown
 let dailyByProduct = {};
 let totalDailyQty = 0;
-
 dailyArray.forEach(d => {
 let qtyEl = document.getElementById(`qty-${d.id}`);
 let prodEl = document.getElementById(`prod-${d.id}`);
@@ -305,7 +383,6 @@ totalStock += parseInt(p.stock) || 0;
 });
 
 let message = "✅ Saved!\n\n";
-
 if(totalDailyQty > 0){
 message += "Daily Production:\n";
 for(let prod in dailyByProduct){
@@ -313,18 +390,16 @@ message += `- ${prod}: ${dailyByProduct} pcs\n`;
 }
 message += `\nTotal Stock: ${totalStock} pcs\n`;
 }
-
 if(totalExpenseQty > 0){
 message += `\nExpenses: ₱${totalExpenses}\n`;
 if(expenseDetails) message += `\nExpenses Details:\n${expenseDetails}`;
 message += `\nProfit: ₱${-totalExpenses}`;
 }
-
 if(totalDailyQty === 0 && totalExpenseQty === 0){
 message += `Changes saved successfully!`;
 }
-
 alert(message);
+
 loadProducts();
 loadDaily();
 loadExpenses();
@@ -336,12 +411,15 @@ alert("❌ Error: " + err.message);
 function deleteProduct(id) {
 if(confirm("Delete product?")) db.collection("dhan-pos-web").doc(id).delete().then(loadProducts);
 }
+
 function deleteDaily(id) {
 if(confirm("Delete record?")) db.collection("dhan-daily").doc(id).delete().then(loadDaily);
 }
+
 function deleteExpense(id) {
 if(confirm("Delete expense?")) db.collection("dhan-expenses").doc(id).delete().then(loadExpenses);
 }
+
 function resetAll() {
 if(!confirm("DELETE ALL DATA? This cannot be undone!")) return;
 if(!confirm("Are you SURE?")) return;
@@ -354,6 +432,7 @@ alert("All data deleted!");
 location.reload();
 });
 }
+
 function logout() {
 if(confirm("Logout?")) window.location.href = "../index.html";
 }
