@@ -43,7 +43,7 @@ body {background:#f5f5f5;}
 .checkout-btn { width:100%; padding:12px; background:#4caf50; color:white; border:none; border-radius:8px; font-weight:700; margin-top:15px; cursor:pointer; }
 .close-btn { float:right; background:none; border:none; font-size:24px; cursor:pointer; }
 .loading { text-align:center; padding:40px; color:#666; }
-@media(min-width: 768px) {.products-grid { grid-template-columns: repeat(4, 1fr); } }
+@media(min-width: 768px) {.products-grid { grid-template-columns: repeat(4, 1fr); }
 </style>
 </head>
 <body>
@@ -108,8 +108,12 @@ async function loadProducts() {
     snap.forEach(doc => {
       let p = doc.data();
       p.id = doc.id;
+      
+      // Trim spaces sa fields
+      if(p.name) p.name = p.name.trim();
+      if(p.category) p.category = p.category.trim();
+      
       productsArray.push(p);
-
       let cat = p.category || "Products";
       if (!products[cat]) products[cat] = [];
       products[cat].push(p);
@@ -131,18 +135,23 @@ function renderProducts() {
     html += `<h2 class="category-title">${cat}</h2>`;
     html += `<div class="products-grid">`;
     products[cat].forEach((prod) => {
+      // Fallback values para di mag undefined
       let imgUrl = prod.imageURL || 'https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai';
+      let name = prod.name || 'No Name';
+      let price = prod.price || 0;
+      let stock = prod.stock || 0;
+      
       html += `
       <div class="product-card">
-        <img src="${imgUrl}" alt="${prod.name}" onerror="this.src='https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai'">
+        <img src="${imgUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai'">
         <div class="product-info">
-          <div class="product-name">${prod.name}</div>
-          <div class="product-price">₱${prod.price}</div>
-          <div class="product-stock">Stock: ${prod.stock}</div>
+          <div class="product-name">${name}</div>
+          <div class="product-price">₱${price}</div>
+          <div class="product-stock">Stock: ${stock}</div>
           <div class="qty-box">
-            <input type="number" min="1" max="${prod.stock}" value="1" class="qty-input" id="qty-${prod.id}">
-            <button class="add-cart-btn" onclick="addToCartQty('${prod.id}')" ${prod.stock <= 0? 'disabled' : ''}>
-              ${prod.stock <= 0? 'Out of Stock' : 'Add to Cart'}
+            <input type="number" min="1" max="${stock}" value="1" class="qty-input" id="qty-${prod.id}">
+            <button class="add-cart-btn" onclick="addToCartQty('${prod.id}')" ${stock <= 0? 'disabled' : ''}>
+              ${stock <= 0? 'Out of Stock' : 'Add to Cart'}
             </button>
           </div>
         </div>
@@ -299,8 +308,8 @@ async function checkout() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
- .then(reg => console.log('SW registered'))
- .catch(err => console.log('SW failed:', err));
+.then(reg => console.log('SW registered'))
+.catch(err => console.log('SW failed:', err));
   });
 }
 </script>
