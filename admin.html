@@ -288,39 +288,78 @@ function addExpense() {
 
 // SAVE & DELETE
 async function saveAll() {
- if(!confirm("Save all changes?")) return;
- try {
-  const batch = db.batch();
-  productsArray.forEach(prod => {
-   batch.update(db.collection("dhan-pos-web").doc(prod.id), {
-    name: document.getElementById(`name-${prod.id}`).value,
-    category: document.getElementById(`cat-${prod.id}`).value,
-    price: parseFloat(document.getElementById(`price-${prod.id}`).value) || 0,
-    stock: parseInt(document.getElementById(`stock-${prod.id}`).value) || 0,
-    imageURL: document.getElementById(`img-${prod.id}`).value
-   });
-  });
-  dailyArray.forEach(d => {
-   batch.update(db.collection("dhan-daily").doc(d.id), {
-    date: document.getElementById(`date-${d.id}`).value,
-    product: document.getElementById(`prod-${d.id}`).value,
-    qty: parseInt(document.getElementById(`qty-${d.id}`).value) || 0
-   });
-  });
-  expensesArray.forEach(e => {
-   batch.update(db.collection("dhan-expenses").doc(e.id), {
-    date: document.getElementById(`edate-${e.id}`).value,
-    item: document.getElementById(`eitem-${e.id}`).value,
-    amount: parseFloat(document.getElementById(`eamt-${e.id}`).value) || 0,
-    note: document.getElementById(`enote-${e.id}`).value
-   });
-  });
-  await batch.commit();
-  alert("✅ Saved!");
-  loadProducts(); loadDaily(); loadExpenses();
- } catch(err) {
-  alert("❌ Error: " + err.message);
- }
+  if(!confirm("Save all changes?")) return;
+  try {
+    const batch = db.batch();
+
+    // Save products
+    productsArray.forEach(prod => {
+      batch.update(db.collection("dhan-pos-web").doc(prod.id), {
+        name: document.getElementById(`name-${prod.id}`).value,
+        category: document.getElementById(`cat-${prod.id}`).value,
+        price: parseFloat(document.getElementById(`price-${prod.id}`).value) || 0,
+        stock: parseInt(document.getElementById(`stock-${prod.id}`).value) || 0,
+        imageURL: document.getElementById(`img-${prod.id}`).value
+      });
+    });
+
+    // Save daily production + compute sales
+    let totalSales = 0;
+    dailyArray.forEach(d => {
+      let qty = parseInt(document.getElementById(`qty-${d.id}`).value) || 0;
+      let prodName = document.getElementById(`prod-${d.id}`).value;
+      let prod = productsArray.find(p => p.name === prodName);
+      let price = prod? prod.price : 0;
+      totalSales += qty * price;
+
+      batch.update(db.collection("dhan-daily").doc(d.id), {
+        date: document.getElementById(`date-${d.id}`).value,
+        product: prodName,
+        qty: qty
+      });
+    });
+
+    // Save expenses + compute total expenses
+    let totalExpenses = 0;
+    expensesArray.forEach(e => {
+      let amt = parseFloat(document.getElementById(`eamt-${e.id}`).value) || 0;
+      totalExpenses += amt;
+
+      batch.update(db.collection("dhan-expenses").doc(e.id), {
+        date: document.getElementById(`edate-${e.id}`).value,
+        item: document.getElementById(`eitem-${e.id}`).value,
+        amount: amt,
+        note: document.getElementById(`enote-${e.id}`).value
+      });
+    });
+
+    // Compute profit and save summary
+    let profit = totalSales - totalExpenses;
+    batch.set(db.collection("dhan-summary").doc("today"), {
+      date: new Date().toISOString().split('T')[0],
+      sales: totalSales,
+      expenses: totalExpenses,
+      profit: profit
+    });
+
+    await batch.commit();
+// Build expense description list
+let expenseDetails = expensesArray.map(e => {
+  let item = document.getElementById(`eitem-${e.id}`).value || "No item";
+  let note = document.getElementById(`enote-${e.id}`).value || "";
+  let amt = parseFloat(document.getElementById(`eamt-${e.id}`).value) || 0;
+  return amt > 0 ? `- ${item}${note ? ' (' + note + ')' : ''}: ₱${amt}` : null;
+}).filter(x => x).join('\n');
+
+alert(`✅ Saved!
+Sales: ₱${totalSales}
+Expenses: ₱${totalExpenses}
+${expenseDetails ? '\nExpenses Details:\n' + expenseDetails : ''}
+Profit: ₱${profit}`);
+    loadProducts(); loadDaily(); loadExpenses();
+  } catch(err) {
+    alert("❌ Error: " + err.message);
+  }
 }
 function deleteProduct(id) {
  if(confirm("Delete product?")) db.collection("dhan-pos-web").doc(id).delete().then(loadProducts);
@@ -349,4 +388,3 @@ function logout() {
 </script>
 </body>
 </html>
-
