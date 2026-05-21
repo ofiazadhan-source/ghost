@@ -16,15 +16,16 @@
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
 body {background:#f5f5f5;}
 .header {
- background:#ff6b35;
+ background: linear-gradient(135deg, #ff6b35, #ff8c65);
  color:white;
  padding:15px;
  text-align:center;
  position:sticky;
  top:0;
  z-index:100;
+ box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
-.header h1 {font-size:20px;}
+.header h1 {font-size:20px; font-weight:700;}
 .cart-icon {
  position:absolute;
  right:15px;
@@ -35,20 +36,26 @@ body {background:#f5f5f5;}
  border-radius:20px;
  font-weight:700;
  cursor:pointer;
+ box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 .products-grid {
  display: grid;
  grid-template-columns: repeat(2, 1fr);
- gap: 12px;
- padding: 12px;
+ gap: 14px;
+ padding: 14px;
 }
 .product-card {
  background: white;
- border-radius: 12px;
+ border-radius: 14px;
  overflow: hidden;
- box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+ box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+ transition: transform 0.2s, box-shadow 0.2s;
  display: flex;
  flex-direction: column;
+}
+.product-card:active {
+ transform: scale(0.98);
+ box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 .product-card img {
  width: 100%;
@@ -57,11 +64,10 @@ body {background:#f5f5f5;}
  object-position: center;
  background: #fff;
  padding: 0;
- border-bottom: 1px solid #f0f0f0;
  display: block;
 }
 .product-info {
- padding: 10px;
+ padding: 12px;
  flex: 1;
  display: flex;
  flex-direction: column;
@@ -71,9 +77,10 @@ body {background:#f5f5f5;}
  font-weight: 600;
  margin-bottom: 4px;
  line-height: 1.3;
+ color: #333;
 }
 .product-price {
- font-size: 16px;
+ font-size: 18px;
  font-weight: 700;
  color: #ff6b35;
  margin-bottom: 4px;
@@ -93,25 +100,36 @@ body {background:#f5f5f5;}
  width: 55px;
  padding: 8px;
  border: 1px solid #ddd;
- border-radius: 6px;
+ border-radius: 8px;
  text-align: center;
  font-weight: 600;
+ font-size: 14px;
 }
 .add-cart-btn {
  flex: 1;
- padding: 8px;
- background: #ff6b35;
+ padding: 10px;
+ background: linear-gradient(135deg, #ff6b35, #ff8c65);
  color: white;
  border: none;
- border-radius: 6px;
+ border-radius: 8px;
  font-weight: 600;
  cursor: pointer;
+ box-shadow: 0 2px 6px rgba(255,107,53,0.3);
 }
-.add-cart-btn:disabled { background: #ccc; }
+.add-cart-btn:active {
+ transform: scale(0.96);
+}
+.add-cart-btn:disabled {
+ background: #ccc;
+ box-shadow: none;
+}
 .category-title {
- margin:20px 12px 10px;
- font-size:18px;
- font-weight:700;
+ margin: 20px 14px 12px;
+ font-size: 20px;
+ font-weight: 700;
+ color: #333;
+ text-transform: uppercase;
+ letter-spacing: 0.5px;
 }
 .cart-modal {
  display:none;
@@ -132,7 +150,7 @@ body {background:#f5f5f5;}
  max-width:500px;
  max-height:80vh;
  overflow-y:auto;
- border-radius:12px;
+ border-radius:16px;
  padding:20px;
 }
 .cart-item {
@@ -151,7 +169,7 @@ body {background:#f5f5f5;}
  padding:10px;
  margin-top:8px;
  border:1px solid #ddd;
- border-radius:6px;
+ border-radius:8px;
  font-size:14px;
 }
 .change-text {
@@ -161,26 +179,41 @@ body {background:#f5f5f5;}
 }
 .checkout-btn {
  width:100%;
- padding:12px;
- background:#4caf50;
+ padding:14px;
+ background: linear-gradient(135deg, #4caf50, #66bb6a);
  color:white;
  border:none;
- border-radius:8px;
+ border-radius:10px;
  font-weight:700;
  margin-top:15px;
  cursor:pointer;
+ font-size:16px;
+ box-shadow: 0 2px 8px rgba(76,175,80,0.3);
 }
 .close-btn {
  float:right;
  background:none;
  border:none;
- font-size:24px;
+ font-size:28px;
  cursor:pointer;
+ color: #666;
 }
 .loading {
  text-align:center;
  padding:40px;
  color:#666;
+}
+.sold-out-badge {
+ position:absolute;
+ top:10px;
+ left:10px;
+ background:#ff3b30;
+ color:white;
+ padding:5px 10px;
+ border-radius:6px;
+ font-size:12px;
+ font-weight:700;
+ box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 @media(min-width: 768px) {
 .products-grid {
@@ -274,18 +307,21 @@ function renderProducts() {
  let stock = prod.stock || 0;
  html += `
  <div class="product-card">
- <img src="${imgUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai'">
- <div class="product-info">
- <div class="product-name">${name}</div>
- <div class="product-price">₱${price}</div>
- <div class="product-stock">Stock: ${stock}</div>
- <div class="qty-box">
- <input type="number" min="1" max="${stock}" value="1" class="qty-input" id="qty-${prod.id}">
- <button class="add-cart-btn" onclick="addToCartQty('${prod.id}')" ${stock <= 0? 'disabled' : ''}>
- ${stock <= 0? 'Out of Stock' : 'Add to Cart'}
- </button>
- </div>
- </div>
+  <div style="position:relative;">
+   <img src="${imgUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai'">
+   ${stock <= 0? '<div class="sold-out-badge">SOLD OUT</div>' : ''}
+  </div>
+  <div class="product-info">
+   <div class="product-name">${name}</div>
+   <div class="product-price">₱${price}</div>
+   <div class="product-stock">Stock: ${stock}</div>
+   <div class="qty-box">
+    <input type="number" min="1" max="${stock}" value="1" class="qty-input" id="qty-${prod.id}">
+    <button class="add-cart-btn" onclick="addToCartQty('${prod.id}')" ${stock <= 0? 'disabled' : ''}>
+     ${stock <= 0? 'Out of Stock' : 'Add to Cart'}
+    </button>
+   </div>
+  </div>
  </div>`;
  });
  html += `</div>`;
