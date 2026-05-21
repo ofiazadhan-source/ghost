@@ -1,0 +1,263 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DHAN SIOMAI Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
+body {background:#f5f5f5;}
+.header {
+ background: linear-gradient(135deg, #ff6b35, #ff8c65);
+ color:white;
+ padding:15px 20px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ position:sticky;
+ top:0;
+ z-index:100;
+}
+.header h1 {font-size:20px; font-weight:700;}
+.header-actions button {
+ padding:8px 14px;
+ border:none;
+ border-radius:8px;
+ font-weight:600;
+ cursor:pointer;
+ margin-left:8px;
+}
+.btn-save {background:#4caf50; color:white;}
+.btn-logout {background:#fff; color:#ff6b35;}
+
+.container {padding:15px; max-width:1100px; margin:0 auto;}
+.notice {
+ background:#e8f5e9;
+ color:#2e7d32;
+ padding:12px;
+ border-radius:8px;
+ margin-bottom:15px;
+ font-size:14px;
+}
+
+.add-btn {
+ background:#ff6b35;
+ color:white;
+ border:none;
+ padding:10px 16px;
+ border-radius:8px;
+ font-weight:600;
+ cursor:pointer;
+ margin-bottom:15px;
+}
+
+.product-table {
+ width:100%;
+ background:white;
+ border-radius:12px;
+ overflow:hidden;
+ box-shadow:0 2px 8px rgba(0,0,0,0.08);
+ border-collapse:collapse;
+}
+.product-table th {
+ background:#fff9c4;
+ padding:12px;
+ text-align:left;
+ font-weight:700;
+ font-size:14px;
+}
+.product-table td {
+ padding:10px;
+ border-bottom:1px solid #eee;
+}
+.product-table input {
+ width:100%;
+ padding:8px;
+ border:1px solid #ddd;
+ border-radius:6px;
+ font-size:14px;
+}
+.product-table button {
+ padding:6px 10px;
+ border:none;
+ border-radius:6px;
+ cursor:pointer;
+ font-size:13px;
+}
+.btn-del {background:#f44336; color:white;}
+.loading {text-align:center; padding:40px; color:#666;}
+</style>
+</head>
+<body>
+
+<div class="header">
+ <h1>📦 Admin Panel</h1>
+ <div class="header-actions">
+  <button class="btn-save" onclick="saveAll()">💾 Save All</button>
+  <button class="btn-logout" onclick="logout()">🚪 Logout</button>
+ </div>
+</div>
+
+<div class="container">
+ <div class="notice">
+  💡 Baguhin mo name, category, price, stock, image URL. Click Save All pag tapos. 
+  Use "+ Add Product" para magdag ng Big SIOMAI, Dumplings, etc.
+ </div>
+ 
+ <button class="add-btn" onclick="addProduct()">+ Add Product</button>
+ 
+ <div id="productsList">
+  <div class="loading">Loading products...</div>
+ </div>
+</div>
+
+<script>
+const firebaseConfig = {
+ apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+ authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+ projectId: "dhan-siomai-pos-fe1e5",
+ storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+ messagingSenderId: "305932123173",
+ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let productsArray = [];
+let categories = new Set();
+
+window.onload = function() {
+ loadProducts();
+}
+
+function loadProducts() {
+ db.collection("dhan-pos-web").get().then(snap => {
+  productsArray = [];
+  categories = new Set();
+
+  snap.forEach(doc => {
+   let p = doc.data();
+   p.id = doc.id;
+   p.name = p.name || "Unnamed Product";
+   p.category = p.category || "Uncategorized";
+   productsArray.push(p);
+   categories.add(p.category);
+  });
+
+  renderProducts();
+ });
+}
+
+function renderProducts() {
+ if(productsArray.length === 0) {
+  document.getElementById('productsList').innerHTML =
+   '<div class="loading">No products yet. Click "+ Add Product" to start.</div>';
+  return;
+ }
+
+ let html = `
+  <table class="product-table">
+   <tr>
+    <th>Product Name</th>
+    <th>Category</th>
+    <th>Price</th>
+    <th>Stock</th>
+    <th>Image URL</th>
+    <th>Action</th>
+   </tr>`;
+
+ productsArray.forEach(prod => {
+  html += `
+   <tr>
+    <td><input type="text" id="name-${prod.id}" value="${prod.name}"></td>
+    <td><input type="text" id="cat-${prod.id}" value="${prod.category}" list="catList"></td>
+    <td><input type="number" id="price-${prod.id}" value="${prod.price || 0}"></td>
+    <td><input type="number" id="stock-${prod.id}" value="${prod.stock || 0}"></td>
+    <td><input type="text" id="img-${prod.id}" value="${prod.imageURL || ''}"></td>
+    <td><button class="btn-del" onclick="deleteProduct('${prod.id}')">Delete</button></td>
+   </tr>`;
+ });
+
+ html += `</table>
+ <datalist id="catList">
+  ${Array.from(categories).map(c => `<option value="${c}">`).join('')}
+ </datalist>`;
+
+ document.getElementById('productsList').innerHTML = html;
+}
+
+function addProduct() {
+ let name = prompt("Enter product name:");
+ if(!name) return;
+
+ let cat = prompt("Enter category:", "Big SIOMAI");
+ if(!cat) cat = "Uncategorized";
+
+ db.collection("dhan-pos-web").add({
+  name: name,
+  category: cat,
+  price: 0,
+  stock: 0,
+  imageURL: ""
+ }).then(() => {
+  alert("✅ Product added!");
+  loadProducts();
+ }).catch(err => {
+  alert("❌ Error: " + err.message);
+ });
+}
+
+async function saveAll() {
+ if(!confirm("Save all changes?")) return;
+
+ try {
+  const batch = db.batch();
+
+  productsArray.forEach(prod => {
+   let name = document.getElementById(`name-${prod.id}`).value;
+   let category = document.getElementById(`cat-${prod.id}`).value;
+   let price = parseFloat(document.getElementById(`price-${prod.id}`).value) || 0;
+   let stock = parseInt(document.getElementById(`stock-${prod.id}`).value) || 0;
+   let imageURL = document.getElementById(`img-${prod.id}`).value;
+
+   const ref = db.collection("dhan-pos-web").doc(prod.id);
+   batch.update(ref, {
+    name: name,
+    category: category,
+    price: price,
+    stock: stock,
+    imageURL: imageURL
+   });
+  });
+
+  await batch.commit();
+  alert("✅ Saved successfully!");
+  loadProducts();
+ } catch(err) {
+  console.error(err);
+  alert("❌ Error saving: " + err.message);
+ }
+}
+
+function deleteProduct(id) {
+ if(!confirm("Delete this product?")) return;
+ 
+ db.collection("dhan-pos-web").doc(id).delete().then(() => {
+  alert("Deleted!");
+  loadProducts();
+ });
+}
+
+function logout() {
+ if(confirm("Logout?")) {
+  window.location.href = "../index.html";
+ }
+}
+</script>
+
+</body>
+</html>
