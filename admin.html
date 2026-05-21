@@ -303,21 +303,27 @@ async function saveAll() {
       });
     });
 
-    // Save daily production + compute sales
-    let totalSales = 0;
-    dailyArray.forEach(d => {
-      let qty = parseInt(document.getElementById(`qty-${d.id}`).value) || 0;
-      let prodName = document.getElementById(`prod-${d.id}`).value;
-      let prod = productsArray.find(p => p.name === prodName);
-      let price = prod? prod.price : 0;
-      totalSales += qty * price;
-
-      batch.update(db.collection("dhan-daily").doc(d.id), {
-        date: document.getElementById(`date-${d.id}`).value,
-        product: prodName,
-        qty: qty
-      });
+// Save daily production - IDAGDAG SA STOCKS
+let totalSales = 0;
+dailyArray.forEach(d => {
+  let qty = parseInt(document.getElementById(`qty-${d.id}`).value) || 0;
+  let prodName = document.getElementById(`prod-${d.id}`).value;
+  let prod = productsArray.find(p => p.name.trim().toLowerCase() === prodName.trim().toLowerCase());
+  
+  if(prod){
+    // IDAGDAG sa stock
+    let newStock = (prod.stock || 0) + qty;
+    batch.update(db.collection("dhan-pos-web").doc(prod.id), {
+      stock: newStock
     });
+  }
+
+  batch.update(db.collection("dhan-daily").doc(d.id), {
+    date: document.getElementById(`date-${d.id}`).value,
+    product: prodName,
+    qty: qty
+  });
+});
 
     // Save expenses + compute total expenses
     let totalExpenses = 0;
