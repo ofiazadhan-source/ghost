@@ -10,48 +10,48 @@
   <style>
     * {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
     body {background:#f5f5f5;}
-   .header {
+  .header {
       background: linear-gradient(135deg, #ff6b35, #ff8c65);
       color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center;
       position:sticky; top:0; z-index:100;
     }
-   .header h1 {font-size:20px; font-weight:700;}
-   .header-actions button {
+  .header h1 {font-size:20px; font-weight:700;}
+  .header-actions button {
       padding:8px 14px; border:none; border-radius:8px; font-weight:600; cursor:pointer; margin-left:8px;
     }
-   .btn-save {background:#4caf50; color:white;}
-   .btn-logout {background:#fff; color:#ff6b35;}
-   .tabs {
+  .btn-save {background:#4caf50; color:white;}
+  .btn-logout {background:#fff; color:#ff6b35;}
+  .tabs {
       display:flex; gap:10px; padding:12px 15px; background:white;
       box-shadow:0 2px 4px rgba(0,0,0,0.08); overflow-x:auto;
     }
-   .tab {
+  .tab {
       padding:10px 18px; border:none; border-radius:8px; background:#eee;
       cursor:pointer; font-weight:600; white-space:nowrap;
     }
-   .tab.active {background:#ff6b35; color:white;}
-   .container {padding:15px; max-width:1100px; margin:0 auto;}
-   .notice {
+  .tab.active {background:#ff6b35; color:white;}
+  .container {padding:15px; max-width:1100px; margin:0 auto;}
+  .notice {
       background:#e8f5e9; color:#2e7d32; padding:12px; border-radius:8px;
       margin-bottom:15px; font-size:14px;
     }
-   .add-btn {
+  .add-btn {
       background:#ff6b35; color:white; border:none; padding:10px 16px;
       border-radius:8px; font-weight:600; cursor:pointer; margin-bottom:15px;
     }
-   .table {
+  .table {
       width:100%; background:white; border-radius:12px; overflow:hidden;
       box-shadow:0 2px 8px rgba(0,0,0,0.08); border-collapse:collapse;
     }
-   .table th {
+  .table th {
       background:#fff9c4; padding:12px; text-align:left; font-weight:700; font-size:14px;
     }
-   .table td { padding:10px; border-bottom:1px solid #eee; }
-   .table input { width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px; }
-   .btn-del {background:#f44336; color:white; padding:6px 10px; border:none; border-radius:6px; cursor:pointer;}
-   .tab-content {display:none;}
-   .tab-content.active {display:block;}
-   .loading {text-align:center; padding:40px; color:#666;}
+  .table td { padding:10px; border-bottom:1px solid #eee; }
+  .table input { width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:14px; }
+  .btn-del {background:#f44336; color:white; padding:6px 10px; border:none; border-radius:6px; cursor:pointer;}
+  .tab-content {display:none;}
+  .tab-content.active {display:block;}
+  .loading {text-align:center; padding:40px; color:#666;}
   </style>
 </head>
 <body>
@@ -78,7 +78,7 @@
     </div>
 
     <div id="daily" class="tab-content">
-      <div class="notice">💡 Ilagay mo daily production count dito.</div>
+      <div class="notice">💡 Ilagay mo daily production count dito. Dadagdag lang ito sa stock.</div>
       <button class="add-btn" onclick="addDaily()">+ Add Daily Record</button>
       <div id="dailyList"><div class="loading">Loading...</div></div>
     </div>
@@ -127,6 +127,7 @@
       document.getElementById(tab).classList.add('active');
     }
 
+    // PRODUCTS
     function loadProducts() {
       db.collection("dhan-pos-web").get().then(snap => {
         productsArray = [];
@@ -170,6 +171,7 @@
       db.collection("dhan-pos-web").add({name, category:cat, price:0, stock:0, imageURL:""}).then(loadProducts);
     }
 
+    // DAILY PROD
     function loadDaily() {
       db.collection("dhan-daily").orderBy("date", "desc").get().then(snap => {
         dailyArray = [];
@@ -204,6 +206,7 @@
       db.collection("dhan-daily").add({date, product:"", qty:0}).then(loadDaily);
     }
 
+    // EXPENSES
     function loadExpenses() {
       db.collection("dhan-expenses").orderBy("date", "desc").get().then(snap => {
         expensesArray = [];
@@ -239,11 +242,13 @@
       db.collection("dhan-expenses").add({date, item:"", amount:0, note:""}).then(loadExpenses);
     }
 
+    // SAVE & DELETE
     async function saveAll() {
       if(!confirm("Save all changes?")) return;
       try {
         const batch = db.batch();
 
+        // Save products
         productsArray.forEach(prod => {
           batch.update(db.collection("dhan-pos-web").doc(prod.id), {
             name: document.getElementById(`name-${prod.id}`).value,
@@ -254,16 +259,18 @@
           });
         });
 
-        let totalSales = 0;
+        // Save daily production - DAGDAG LANG SA STOCK
         dailyArray.forEach(d => {
           let qty = parseInt(document.getElementById(`qty-${d.id}`).value) || 0;
           let prodName = document.getElementById(`prod-${d.id}`).value;
+
           let prod = productsArray.find(p => p.name.trim().toLowerCase() === prodName.trim().toLowerCase());
           if(prod){
             let newStock = (prod.stock || 0) + qty;
             batch.update(db.collection("dhan-pos-web").doc(prod.id), { stock: newStock });
             prod.stock = newStock;
           }
+
           batch.update(db.collection("dhan-daily").doc(d.id), {
             date: document.getElementById(`date-${d.id}`).value,
             product: prodName,
@@ -271,6 +278,7 @@
           });
         });
 
+        // Save expenses
         let totalExpenses = 0;
         expensesArray.forEach(e => {
           let amt = parseFloat(document.getElementById(`eamt-${e.id}`).value) || 0;
@@ -283,20 +291,20 @@
           });
         });
 
-        let profit = totalSales - totalExpenses;
+        // Save summary - Sales = 0, kasi wala pang sales input
         batch.set(db.collection("dhan-summary").doc("today"), {
           date: new Date().toISOString().split('T')[0],
-          sales: totalSales,
+          sales: 0,
           expenses: totalExpenses,
-          profit: profit
+          profit: 0 - totalExpenses
         });
 
         await batch.commit();
 
-        // Wala nang alert dito. Tahimik na magre-reload.
         loadProducts();
         loadDaily();
         loadExpenses();
+        alert("✅ Saved!");
 
       } catch(err) {
         alert("❌ Error: " + err.message);
@@ -334,3 +342,4 @@
   </script>
 </body>
 </html>
+
