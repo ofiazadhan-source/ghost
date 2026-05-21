@@ -32,24 +32,7 @@ body {background:#f5f5f5;}
 }
 .btn-save {background:#4caf50; color:white;}
 .btn-logout {background:#fff; color:#ff6b35;}
-.tabs {
- display:flex;
- gap:10px;
- padding:12px 15px;
- background:white;
- box-shadow:0 2px 4px rgba(0,0,0,0.08);
- overflow-x:auto;
-}
-.tab {
- padding:10px 18px;
- border:none;
- border-radius:8px;
- background:#eee;
- cursor:pointer;
- font-weight:600;
- white-space:nowrap;
-}
-.tab.active {background:#ff6b35; color:white;}
+
 .container {padding:15px; max-width:1100px; margin:0 auto;}
 .notice {
  background:#e8f5e9;
@@ -59,6 +42,7 @@ body {background:#f5f5f5;}
  margin-bottom:15px;
  font-size:14px;
 }
+
 .add-btn {
  background:#ff6b35;
  color:white;
@@ -69,7 +53,8 @@ body {background:#f5f5f5;}
  cursor:pointer;
  margin-bottom:15px;
 }
-.table {
+
+.product-table {
  width:100%;
  background:white;
  border-radius:12px;
@@ -77,27 +62,32 @@ body {background:#f5f5f5;}
  box-shadow:0 2px 8px rgba(0,0,0,0.08);
  border-collapse:collapse;
 }
-.table th {
+.product-table th {
  background:#fff9c4;
  padding:12px;
  text-align:left;
  font-weight:700;
  font-size:14px;
 }
-.table td {
+.product-table td {
  padding:10px;
  border-bottom:1px solid #eee;
 }
-.table input {
+.product-table input {
  width:100%;
  padding:8px;
  border:1px solid #ddd;
  border-radius:6px;
  font-size:14px;
 }
-.btn-del {background:#f44336; color:white; padding:6px 10px; border:none; border-radius:6px; cursor:pointer;}
-.tab-content {display:none;}
-.tab-content.active {display:block;}
+.product-table button {
+ padding:6px 10px;
+ border:none;
+ border-radius:6px;
+ cursor:pointer;
+ font-size:13px;
+}
+.btn-del {background:#f44336; color:white;}
 .loading {text-align:center; padding:40px; color:#666;}
 </style>
 </head>
@@ -111,37 +101,16 @@ body {background:#f5f5f5;}
  </div>
 </div>
 
-<div class="tabs">
- <button class="tab active" onclick="switchTab('products')">📦 Products</button>
- <button class="tab" onclick="switchTab('daily')">📊 Daily Prod</button>
- <button class="tab" onclick="switchTab('expenses')">💸 Expenses</button>
- <button class="tab" onclick="switchTab('reset')">⚠️ Reset Data</button>
-</div>
-
 <div class="container">
- <div id="products" class="tab-content active">
-  <div class="notice">💡 Baguhin mo name, category, price, stock, image URL. Click Save All pag tapos.</div>
-  <button class="add-btn" onclick="addProduct()">+ Add Product</button>
-  <div id="productsList"><div class="loading">Loading...</div></div>
+ <div class="notice">
+  💡 Baguhin mo name, category, price, stock, image URL. Click Save All pag tapos. 
+  Use "+ Add Product" para magdag ng Big SIOMAI, Dumplings, etc.
  </div>
-
- <div id="daily" class="tab-content">
-  <div class="notice">💡 Ilagay mo daily production count dito.</div>
-  <button class="add-btn" onclick="addDaily()">+ Add Daily Record</button>
-  <div id="dailyList"><div class="loading">Loading...</div></div>
- </div>
-
- <div id="expenses" class="tab-content">
-  <div class="notice">💡 Ilog mo lahat ng expenses dito.</div>
-  <button class="add-btn" onclick="addExpense()">+ Add Expense</button>
-  <div id="expensesList"><div class="loading">Loading...</div></div>
- </div>
-
- <div id="reset" class="tab-content">
-  <div class="notice" style="background:#ffebee; color:#c62828;">
-    ⚠️ Delikado! I-delete nito lahat ng data. Gamitin lang pag kailangan.
-  </div>
-  <button class="add-btn" style="background:#f44336;" onclick="resetAll()">Reset All Data</button>
+ 
+ <button class="add-btn" onclick="addProduct()">+ Add Product</button>
+ 
+ <div id="productsList">
+  <div class="loading">Loading products...</div>
  </div>
 </div>
 
@@ -158,192 +127,136 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let productsArray = [];
-let dailyArray = [];
-let expensesArray = [];
 let categories = new Set();
 
 window.onload = function() {
  loadProducts();
- loadDaily();
- loadExpenses();
 }
 
-function switchTab(tab) {
- document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
- document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
- document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
- document.getElementById(tab).classList.add('active');
-}
-
-// PRODUCTS
 function loadProducts() {
  db.collection("dhan-pos-web").get().then(snap => {
   productsArray = [];
   categories = new Set();
+
   snap.forEach(doc => {
    let p = doc.data();
    p.id = doc.id;
-   p.name = p.name || "Unnamed";
+   p.name = p.name || "Unnamed Product";
    p.category = p.category || "Uncategorized";
    productsArray.push(p);
    categories.add(p.category);
   });
+
   renderProducts();
  });
 }
+
 function renderProducts() {
  if(productsArray.length === 0) {
-  document.getElementById('productsList').innerHTML = '<div class="loading">No products yet</div>';
+  document.getElementById('productsList').innerHTML =
+   '<div class="loading">No products yet. Click "+ Add Product" to start.</div>';
   return;
  }
- let html = `<table class="table"><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Image URL</th><th>Action</th></tr>`;
+
+ let html = `
+  <table class="product-table">
+   <tr>
+    <th>Product Name</th>
+    <th>Category</th>
+    <th>Price</th>
+    <th>Stock</th>
+    <th>Image URL</th>
+    <th>Action</th>
+   </tr>`;
+
  productsArray.forEach(prod => {
-  html += `<tr>
-   <td><input id="name-${prod.id}" value="${prod.name}"></td>
-   <td><input id="cat-${prod.id}" value="${prod.category}" list="catList"></td>
-   <td><input type="number" id="price-${prod.id}" value="${prod.price || 0}"></td>
-   <td><input type="number" id="stock-${prod.id}" value="${prod.stock || 0}"></td>
-   <td><input id="img-${prod.id}" value="${prod.imageURL || ''}"></td>
-   <td><button class="btn-del" onclick="deleteProduct('${prod.id}')">Delete</button></td>
-  </tr>`;
+  html += `
+   <tr>
+    <td><input type="text" id="name-${prod.id}" value="${prod.name}"></td>
+    <td><input type="text" id="cat-${prod.id}" value="${prod.category}" list="catList"></td>
+    <td><input type="number" id="price-${prod.id}" value="${prod.price || 0}"></td>
+    <td><input type="number" id="stock-${prod.id}" value="${prod.stock || 0}"></td>
+    <td><input type="text" id="img-${prod.id}" value="${prod.imageURL || ''}"></td>
+    <td><button class="btn-del" onclick="deleteProduct('${prod.id}')">Delete</button></td>
+   </tr>`;
  });
- html += `</table><datalist id="catList">${Array.from(categories).map(c => `<option value="${c}">`).join('')}</datalist>`;
+
+ html += `</table>
+ <datalist id="catList">
+  ${Array.from(categories).map(c => `<option value="${c}">`).join('')}
+ </datalist>`;
+
  document.getElementById('productsList').innerHTML = html;
 }
+
 function addProduct() {
- let name = prompt("Product name:");
+ let name = prompt("Enter product name:");
  if(!name) return;
- let cat = prompt("Category:", "Big SIOMAI");
- db.collection("dhan-pos-web").add({name, category:cat, price:0, stock:0, imageURL:""}).then(loadProducts);
+
+ let cat = prompt("Enter category:", "Big SIOMAI");
+ if(!cat) cat = "Uncategorized";
+
+ db.collection("dhan-pos-web").add({
+  name: name,
+  category: cat,
+  price: 0,
+  stock: 0,
+  imageURL: ""
+ }).then(() => {
+  alert("✅ Product added!");
+  loadProducts();
+ }).catch(err => {
+  alert("❌ Error: " + err.message);
+ });
 }
 
-// DAILY PROD
-function loadDaily() {
- db.collection("dhan-daily").orderBy("date", "desc").get().then(snap => {
-  dailyArray = [];
-  snap.forEach(doc => {
-   let d = doc.data();
-   d.id = doc.id;
-   dailyArray.push(d);
-  });
-  renderDaily();
- });
-}
-function renderDaily() {
- if(dailyArray.length === 0) {
-  document.getElementById('dailyList').innerHTML = '<div class="loading">No records yet</div>';
-  return;
- }
- let html = `<table class="table"><tr><th>Date</th><th>Product</th><th>Qty</th><th>Action</th></tr>`;
- dailyArray.forEach(d => {
-  html += `<tr>
-   <td><input type="date" id="date-${d.id}" value="${d.date}"></td>
-   <td><input id="prod-${d.id}" value="${d.product}"></td>
-   <td><input type="number" id="qty-${d.id}" value="${d.qty || 0}"></td>
-   <td><button class="btn-del" onclick="deleteDaily('${d.id}')">Delete</button></td>
-  </tr>`;
- });
- document.getElementById('dailyList').innerHTML = html;
-}
-function addDaily() {
- let date = new Date().toISOString().split('T')[0];
- db.collection("dhan-daily").add({date, product:"", qty:0}).then(loadDaily);
-}
-
-// EXPENSES
-function loadExpenses() {
- db.collection("dhan-expenses").orderBy("date", "desc").get().then(snap => {
-  expensesArray = [];
-  snap.forEach(doc => {
-   let e = doc.data();
-   e.id = doc.id;
-   expensesArray.push(e);
-  });
-  renderExpenses();
- });
-}
-function renderExpenses() {
- if(expensesArray.length === 0) {
-  document.getElementById('expensesList').innerHTML = '<div class="loading">No expenses yet</div>';
-  return;
- }
- let html = `<table class="table"><tr><th>Date</th><th>Item</th><th>Amount</th><th>Note</th><th>Action</th></tr>`;
- expensesArray.forEach(e => {
-  html += `<tr>
-   <td><input type="date" id="edate-${e.id}" value="${e.date}"></td>
-   <td><input id="eitem-${e.id}" value="${e.item}"></td>
-   <td><input type="number" id="eamt-${e.id}" value="${e.amount || 0}"></td>
-   <td><input id="enote-${e.id}" value="${e.note || ''}"></td>
-   <td><button class="btn-del" onclick="deleteExpense('${e.id}')">Delete</button></td>
-  </tr>`;
- });
- document.getElementById('expensesList').innerHTML = html;
-}
-function addExpense() {
- let date = new Date().toISOString().split('T')[0];
- db.collection("dhan-expenses").add({date, item:"", amount:0, note:""}).then(loadExpenses);
-}
-
-// SAVE & DELETE
 async function saveAll() {
  if(!confirm("Save all changes?")) return;
+
  try {
   const batch = db.batch();
+
   productsArray.forEach(prod => {
-   batch.update(db.collection("dhan-pos-web").doc(prod.id), {
-    name: document.getElementById(`name-${prod.id}`).value,
-    category: document.getElementById(`cat-${prod.id}`).value,
-    price: parseFloat(document.getElementById(`price-${prod.id}`).value) || 0,
-    stock: parseInt(document.getElementById(`stock-${prod.id}`).value) || 0,
-    imageURL: document.getElementById(`img-${prod.id}`).value
+   let name = document.getElementById(`name-${prod.id}`).value;
+   let category = document.getElementById(`cat-${prod.id}`).value;
+   let price = parseFloat(document.getElementById(`price-${prod.id}`).value) || 0;
+   let stock = parseInt(document.getElementById(`stock-${prod.id}`).value) || 0;
+   let imageURL = document.getElementById(`img-${prod.id}`).value;
+
+   const ref = db.collection("dhan-pos-web").doc(prod.id);
+   batch.update(ref, {
+    name: name,
+    category: category,
+    price: price,
+    stock: stock,
+    imageURL: imageURL
    });
   });
-  dailyArray.forEach(d => {
-   batch.update(db.collection("dhan-daily").doc(d.id), {
-    date: document.getElementById(`date-${d.id}`).value,
-    product: document.getElementById(`prod-${d.id}`).value,
-    qty: parseInt(document.getElementById(`qty-${d.id}`).value) || 0
-   });
-  });
-  expensesArray.forEach(e => {
-   batch.update(db.collection("dhan-expenses").doc(e.id), {
-    date: document.getElementById(`edate-${e.id}`).value,
-    item: document.getElementById(`eitem-${e.id}`).value,
-    amount: parseFloat(document.getElementById(`eamt-${e.id}`).value) || 0,
-    note: document.getElementById(`enote-${e.id}`).value
-   });
-  });
+
   await batch.commit();
-  alert("✅ Saved!");
-  loadProducts(); loadDaily(); loadExpenses();
+  alert("✅ Saved successfully!");
+  loadProducts();
  } catch(err) {
-  alert("❌ Error: " + err.message);
+  console.error(err);
+  alert("❌ Error saving: " + err.message);
  }
 }
+
 function deleteProduct(id) {
- if(confirm("Delete product?")) db.collection("dhan-pos-web").doc(id).delete().then(loadProducts);
-}
-function deleteDaily(id) {
- if(confirm("Delete record?")) db.collection("dhan-daily").doc(id).delete().then(loadDaily);
-}
-function deleteExpense(id) {
- if(confirm("Delete expense?")) db.collection("dhan-expenses").doc(id).delete().then(loadExpenses);
-}
-function resetAll() {
- if(!confirm("DELETE ALL DATA? This cannot be undone!")) return;
- if(!confirm("Are you SURE?")) return;
- let promises = [];
- productsArray.forEach(p => promises.push(db.collection("dhan-pos-web").doc(p.id).delete()));
- dailyArray.forEach(d => promises.push(db.collection("dhan-daily").doc(d.id).delete()));
- expensesArray.forEach(e => promises.push(db.collection("dhan-expenses").doc(e.id).delete()));
- Promise.all(promises).then(() => {
-  alert("All data deleted!");
-  location.reload();
+ if(!confirm("Delete this product?")) return;
+ 
+ db.collection("dhan-pos-web").doc(id).delete().then(() => {
+  alert("Deleted!");
+  loadProducts();
  });
 }
+
 function logout() {
- if(confirm("Logout?")) window.location.href = "../index.html";
+ if(confirm("Logout?")) {
+  window.location.href = "../index.html";
+ }
 }
 </script>
+
 </body>
 </html>
