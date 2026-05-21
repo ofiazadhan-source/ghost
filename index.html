@@ -77,16 +77,16 @@ body {background:#f5f5f5;}
 </div>
 
 <script>
-// ========== PALITAN MO TO NG CONFIG GALING SA dhan-siomai-pos-fe1e5 ==========
+// ========== FIREBASE CONFIG ==========
 const firebaseConfig = {
-  apiKey: "PASTE_API_KEY_DITO",
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
   authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
   projectId: "dhan-siomai-pos-fe1e5",
-  storageBucket: "dhan-siomai-pos-fe1e5.appspot.com",
-  messagingSenderId: "PASTE_MESSAGING_SENDER_ID_DITO",
-  appId: "PASTE_APP_ID_DITO"
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
-// ============================================================================
+// =====================================
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -102,7 +102,6 @@ window.onload = function() {
 
 async function loadProducts() {
   try {
-    // FIXED: Collection name ay "dhan-pos-web" hindi "product"
     const snap = await db.collection("dhan-pos-web").get();
     products = {};
     productsArray = [];
@@ -249,19 +248,16 @@ async function checkout() {
     return;
   }
   try {
-    // Update stock in Firestore
     const batch = db.batch();
     Object.keys(cart).forEach(k => {
       if(cart[k].qty > 0) {
         let prod = cart[k].product;
         let newStock = prod.stock - cart[k].qty;
-        // FIXED: Collection name ay "dhan-pos-web" hindi "product"
         batch.update(db.collection("dhan-pos-web").doc(prod.id), {stock: newStock});
       }
     });
     await batch.commit();
 
-    // Save transaction to localStorage
     let txn = {
       id: 'TXN' + Date.now(),
       date: new Date().toLocaleString(),
@@ -289,7 +285,7 @@ async function checkout() {
     document.getElementById('cashAmount').value = '';
     updateCartCount();
     closeCart();
-    loadProducts(); // Reload products para ma-update stocks
+    loadProducts();
   } catch (error) {
     console.error("Error during checkout:", error);
     alert("Error processing order. Check console.");
@@ -301,8 +297,8 @@ async function checkout() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-   .then(reg => console.log('SW registered'))
-   .catch(err => console.log('SW failed:', err));
+  .then(reg => console.log('SW registered'))
+  .catch(err => console.log('SW failed:', err));
   });
 }
 </script>
