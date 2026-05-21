@@ -109,13 +109,15 @@ async function loadProducts() {
       let p = doc.data();
       p.id = doc.id;
       productsArray.push(p);
-      if (!products[p.category]) products[p.category] = [];
-      products[p.category].push(p);
+
+      let cat = p.category || "Products";
+      if (!products[cat]) products[cat] = [];
+      products[cat].push(p);
     });
     renderProducts();
   } catch (error) {
     console.error("Error loading products:", error);
-    document.getElementById('productsList').innerHTML = '<div class="loading">Error loading products. Check console for details.</div>';
+    document.getElementById('productsList').innerHTML = '<div class="loading">Error loading products. Check console.</div>';
   }
 }
 
@@ -129,7 +131,7 @@ function renderProducts() {
     html += `<h2 class="category-title">${cat}</h2>`;
     html += `<div class="products-grid">`;
     products[cat].forEach((prod) => {
-      let imgUrl = prod.imageUrl || 'https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai';
+      let imgUrl = prod.imageURL || 'https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai';
       html += `
       <div class="product-card">
         <img src="${imgUrl}" alt="${prod.name}" onerror="this.src='https://via.placeholder.com/300x300/ff6b35/ffffff?text=Siomai'">
@@ -297,8 +299,8 @@ async function checkout() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-  .then(reg => console.log('SW registered'))
-  .catch(err => console.log('SW failed:', err));
+ .then(reg => console.log('SW registered'))
+ .catch(err => console.log('SW failed:', err));
   });
 }
 </script>
