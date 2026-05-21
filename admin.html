@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +20,6 @@ body {background:#f5f5f5;}
  position:sticky;
  top:0;
  z-index:100;
- box-shadow:0 2px 8px rgba(0,0,0,0.15);
 }
 .header h1 {font-size:20px; font-weight:700;}
 .header-actions button {
@@ -34,7 +32,6 @@ body {background:#f5f5f5;}
 }
 .btn-save {background:#4caf50; color:white;}
 .btn-logout {background:#fff; color:#ff6b35;}
-
 .tabs {
  display:flex;
  gap:10px;
@@ -53,7 +50,6 @@ body {background:#f5f5f5;}
  white-space:nowrap;
 }
 .tab.active {background:#ff6b35; color:white;}
-
 .container {padding:15px; max-width:1100px; margin:0 auto;}
 .notice {
  background:#e8f5e9;
@@ -73,7 +69,6 @@ body {background:#f5f5f5;}
  cursor:pointer;
  margin-bottom:15px;
 }
-
 .table {
  width:100%;
  background:white;
@@ -108,6 +103,13 @@ body {background:#f5f5f5;}
 </head>
 <body>
 
+<script>
+// CHECK LOGIN - pag wala, redirect sa login page
+if(sessionStorage.getItem('adminLoggedIn')!== 'true') {
+ window.location.href = '../index.html';
+}
+</script>
+
 <div class="header">
  <h1>📦 Admin Panel</h1>
  <div class="header-actions">
@@ -124,36 +126,30 @@ body {background:#f5f5f5;}
 </div>
 
 <div class="container">
-
- <!-- PRODUCTS TAB -->
  <div id="products" class="tab-content active">
   <div class="notice">💡 Baguhin mo name, category, price, stock, image URL. Click Save All pag tapos.</div>
   <button class="add-btn" onclick="addProduct()">+ Add Product</button>
   <div id="productsList"><div class="loading">Loading...</div></div>
  </div>
 
- <!-- DAILY PROD TAB -->
  <div id="daily" class="tab-content">
   <div class="notice">💡 Ilagay mo daily production count dito.</div>
   <button class="add-btn" onclick="addDaily()">+ Add Daily Record</button>
   <div id="dailyList"><div class="loading">Loading...</div></div>
  </div>
 
- <!-- EXPENSES TAB -->
  <div id="expenses" class="tab-content">
   <div class="notice">💡 Ilog mo lahat ng expenses dito.</div>
   <button class="add-btn" onclick="addExpense()">+ Add Expense</button>
   <div id="expensesList"><div class="loading">Loading...</div></div>
  </div>
 
- <!-- RESET TAB -->
  <div id="reset" class="tab-content">
   <div class="notice" style="background:#ffebee; color:#c62828;">
     ⚠️ Delikado! I-delete nito lahat ng data. Gamitin lang pag kailangan.
   </div>
   <button class="add-btn" style="background:#f44336;" onclick="resetAll()">Reset All Data</button>
  </div>
-
 </div>
 
 <script>
@@ -186,7 +182,7 @@ function switchTab(tab) {
  document.getElementById(tab).classList.add('active');
 }
 
-// ========== PRODUCTS ==========
+// PRODUCTS
 function loadProducts() {
  db.collection("dhan-pos-web").get().then(snap => {
   productsArray = [];
@@ -202,7 +198,6 @@ function loadProducts() {
   renderProducts();
  });
 }
-
 function renderProducts() {
  if(productsArray.length === 0) {
   document.getElementById('productsList').innerHTML = '<div class="loading">No products yet</div>';
@@ -222,18 +217,14 @@ function renderProducts() {
  html += `</table><datalist id="catList">${Array.from(categories).map(c => `<option value="${c}">`).join('')}</datalist>`;
  document.getElementById('productsList').innerHTML = html;
 }
-
 function addProduct() {
  let name = prompt("Product name:");
  if(!name) return;
  let cat = prompt("Category:", "Big SIOMAI");
- db.collection("dhan-pos-web").add({name, category:cat, price:0, stock:0, imageURL:""}).then(() => {
-  alert("✅ Added!");
-  loadProducts();
- });
+ db.collection("dhan-pos-web").add({name, category:cat, price:0, stock:0, imageURL:""}).then(loadProducts);
 }
 
-// ========== DAILY PROD ==========
+// DAILY PROD
 function loadDaily() {
  db.collection("dhan-daily").orderBy("date", "desc").get().then(snap => {
   dailyArray = [];
@@ -245,7 +236,6 @@ function loadDaily() {
   renderDaily();
  });
 }
-
 function renderDaily() {
  if(dailyArray.length === 0) {
   document.getElementById('dailyList').innerHTML = '<div class="loading">No records yet</div>';
@@ -262,15 +252,12 @@ function renderDaily() {
  });
  document.getElementById('dailyList').innerHTML = html;
 }
-
 function addDaily() {
  let date = new Date().toISOString().split('T')[0];
- db.collection("dhan-daily").add({date, product:"", qty:0}).then(() => {
-  loadDaily();
- });
+ db.collection("dhan-daily").add({date, product:"", qty:0}).then(loadDaily);
 }
 
-// ========== EXPENSES ==========
+// EXPENSES
 function loadExpenses() {
  db.collection("dhan-expenses").orderBy("date", "desc").get().then(snap => {
   expensesArray = [];
@@ -282,7 +269,6 @@ function loadExpenses() {
   renderExpenses();
  });
 }
-
 function renderExpenses() {
  if(expensesArray.length === 0) {
   document.getElementById('expensesList').innerHTML = '<div class="loading">No expenses yet</div>';
@@ -300,23 +286,18 @@ function renderExpenses() {
  });
  document.getElementById('expensesList').innerHTML = html;
 }
-
 function addExpense() {
  let date = new Date().toISOString().split('T')[0];
- db.collection("dhan-expenses").add({date, item:"", amount:0, note:""}).then(() => {
-  loadExpenses();
- });
+ db.collection("dhan-expenses").add({date, item:"", amount:0, note:""}).then(loadExpenses);
 }
 
-// ========== SAVE & DELETE ==========
+// SAVE & DELETE
 async function saveAll() {
  if(!confirm("Save all changes?")) return;
  try {
   const batch = db.batch();
-
   productsArray.forEach(prod => {
-   let ref = db.collection("dhan-pos-web").doc(prod.id);
-   batch.update(ref, {
+   batch.update(db.collection("dhan-pos-web").doc(prod.id), {
     name: document.getElementById(`name-${prod.id}`).value,
     category: document.getElementById(`cat-${prod.id}`).value,
     price: parseFloat(document.getElementById(`price-${prod.id}`).value) || 0,
@@ -324,36 +305,28 @@ async function saveAll() {
     imageURL: document.getElementById(`img-${prod.id}`).value
    });
   });
-
   dailyArray.forEach(d => {
-   let ref = db.collection("dhan-daily").doc(d.id);
-   batch.update(ref, {
+   batch.update(db.collection("dhan-daily").doc(d.id), {
     date: document.getElementById(`date-${d.id}`).value,
     product: document.getElementById(`prod-${d.id}`).value,
     qty: parseInt(document.getElementById(`qty-${d.id}`).value) || 0
    });
   });
-
   expensesArray.forEach(e => {
-   let ref = db.collection("dhan-expenses").doc(e.id);
-   batch.update(ref, {
+   batch.update(db.collection("dhan-expenses").doc(e.id), {
     date: document.getElementById(`edate-${e.id}`).value,
     item: document.getElementById(`eitem-${e.id}`).value,
     amount: parseFloat(document.getElementById(`eamt-${e.id}`).value) || 0,
     note: document.getElementById(`enote-${e.id}`).value
    });
   });
-
   await batch.commit();
   alert("✅ Saved!");
-  loadProducts();
-  loadDaily();
-  loadExpenses();
+  loadProducts(); loadDaily(); loadExpenses();
  } catch(err) {
   alert("❌ Error: " + err.message);
  }
 }
-
 function deleteProduct(id) {
  if(confirm("Delete product?")) db.collection("dhan-pos-web").doc(id).delete().then(loadProducts);
 }
@@ -363,24 +336,21 @@ function deleteDaily(id) {
 function deleteExpense(id) {
  if(confirm("Delete expense?")) db.collection("dhan-expenses").doc(id).delete().then(loadExpenses);
 }
-
 function resetAll() {
  if(!confirm("DELETE ALL DATA? This cannot be undone!")) return;
  if(!confirm("Are you SURE?")) return;
-
  let promises = [];
  productsArray.forEach(p => promises.push(db.collection("dhan-pos-web").doc(p.id).delete()));
  dailyArray.forEach(d => promises.push(db.collection("dhan-daily").doc(d.id).delete()));
  expensesArray.forEach(e => promises.push(db.collection("dhan-expenses").doc(e.id).delete()));
-
  Promise.all(promises).then(() => {
   alert("All data deleted!");
   location.reload();
  });
 }
-
 function logout() {
- if(confirm("Logout?")) window.location.href = "../index.html";
+ sessionStorage.removeItem('adminLoggedIn');
+ window.location.href = '../index.html';
 }
 </script>
 </body>
