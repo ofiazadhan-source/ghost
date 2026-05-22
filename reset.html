@@ -1,1 +1,109 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reset Data - DHAN SIOMAI</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:#f5f5f5;padding:15px;display:flex;justify-content:center;align-items:center;min-height:100vh;}
+.card{background:white;padding:25px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);max-width:400px;width:100%;text-align:center;}
+h2{color:#ff6b35;margin-bottom:10px;}
+p{color:#666;margin-bottom:20px;font-size:14px;}
+input,button{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:10px;}
+button{border:none;font-weight:600;cursor:pointer;}
+.btn-reset{background:#ff4757;color:white;}
+.btn-cancel{background:#ddd;color:#333;}
+.btn-login{background:#ff6b35;color:white;}
+.warning{background:#fff3cd;border:1px solid #ffeaa7;padding:10px;border-radius:8px;margin-bottom:15px;color:#856404;font-size:13px;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="card" id="loginBox">
+<h2>🔒 Admin Only</h2>
+<p>Enter admin password to access reset page</p>
+<input type="password" id="password" placeholder="Enter password">
+<button class="btn-login" onclick="checkPassword()">Login</button>
+<p id="loginError" style="color:red;font-size:13px;"></p>
+</div>
+
+<!-- Reset Screen -->
+<div class="card hidden" id="resetBox">
+<h2>⚠️ Reset Data</h2>
+<div class="warning">
+<strong>Babala:</strong> Buburahin nito lahat ng Sales at Expenses records. 
+Hindi mabubura ang Products at Stock.
+Hindi na mababalik pag na-delete.
+</div>
+<p>Sigurado ka ba na gusto mo i-reset ang data?</p>
+<button class="btn-reset" onclick="resetData()">Oo, I-reset Lahat</button>
+<button class="btn-cancel" onclick="logout()">Logout</button>
+<div id="status"></div>
+</div>
+
+<script>
+const firebaseConfig = {
+ apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+ authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+ projectId: "dhan-siomai-pos-fe1e5",
+ storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+ messagingSenderId: "305932123173",
+ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ITO ANG PASSWORD MO - palitan mo to kung gusto mo
+const ADMIN_PASSWORD = "dhan2026";
+
+function checkPassword(){
+  let pass = document.getElementById('password').value;
+  if(pass === ADMIN_PASSWORD){
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('resetBox').classList.remove('hidden');
+  } else {
+    document.getElementById('loginError').innerText = "Mali ang password!";
+  }
+}
+
+function logout(){
+  document.getElementById('resetBox').classList.add('hidden');
+  document.getElementById('loginBox').classList.remove('hidden');
+  document.getElementById('password').value = "";
+}
+
+async function resetData(){
+  if(!confirm("Last check: Sure ka na burahin lahat ng Sales at Expenses?")) return;
+  
+  document.getElementById('status').innerText = "Deleting... please wait";
+  
+  try{
+    let salesSnap = await db.collection('dhan-sales').get();
+    let batch = db.batch();
+    salesSnap.forEach(doc=>{
+      batch.delete(doc.ref);
+    });
+    
+    let expSnap = await db.collection('dhan-expenses').get();
+    expSnap.forEach(doc=>{
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+    
+    document.getElementById('status').innerHTML = "<p style='color:green;margin-top:15px;'>✅ Data reset complete! Ready for new day.</p>";
+    
+  }catch(err){
+    document.getElementById('status').innerHTML = "<p style='color:red;margin-top:15px;'>Error: "+err.message+"</p>";
+  }
+}
+</script>
+</body>
+</html>
