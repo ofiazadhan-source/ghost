@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Report - DHAN SIOMAI</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:#f5f5f5;padding:15px;}
+.header{background:#ff6b35;color:white;padding:15px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;}
+.header a{color:white;text-decoration:none;font-weight:600;}
+.card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
+.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:15px;}
+.box{background:#fff;border-radius:10px;padding:15px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+.box h4{font-size:13px;color:#666;margin-bottom:5px;}
+.box h2{font-size:20px;color:#ff6b35;}
+input,select,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
+button{background:#ff6b35;color:white;border:none;font-weight:600;cursor:pointer;}
+canvas{max-height:300px;}
+.profit{color:green;}
+.loss{color:red;}
+</style>
+</head>
+<body>
+<div class="header">
+<h3>📈 Monthly Report</h3>
+<a href="index.html">← Back</a>
+</div>
+
+<div class="card">
+<h4>Select Month</h4>
+<input type="month" id="monthPicker" onchange="loadMonthly()">
+<button onclick="loadMonthly()">View Report</button>
+</div>
+
+<div class="summary">
+  <div class="box">
+    <h4>Total Sales</h4>
+    <h2 id="totalSales">₱0</h2>
+  </div>
+  <div class="box">
+    <h4>Total Expenses</h4>
+    <h2 id="totalExpenses">₱0</h2>
+  </div>
+  <div class="box">
+    <h4>Net Profit</h4>
+    <h2 id="netProfit">₱0</h2>
+  </div>
+</div>
+
+<div class="card">
+<h4>Sales vs Expenses Chart</h4>
+<canvas id="salesChart"></canvas>
+</div>
+
+<script>
+const firebaseConfig = {
+ apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+ authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+ projectId: "dhan-siomai-pos-fe1e5",
+ storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+ messagingSenderId: "305932123173",
+ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let chart;
+
+window.onload = function(){
+  let now = new Date();
+  let month = now.toISOString().slice(0,7); // YYYY-MM
+  document.getElementById('monthPicker').value = month;
+  loadMonthly();
+}
+
+async function loadMonthly(){
+  let month = document.getElementById('monthPicker').value;
+  if(!month){alert('Pick a month');return;}
+
+  let [year, mon] = month.split('-');
+  let start = new Date(year, mon-1, 1);
+  let end = new Date(year, mon, 0, 23, 59, 59);
+
+  let dailySales = {};
+  let dailyExpenses = {};
+
+  // Get sales
+  const salesSnap = await db.collection('dhan-sales')
+  .where('timestamp','>=',start)
+  .where('timestamp','<=',end)
+  .get();
+
+  salesSnap.forEach(doc=>{
+    let s = doc.data();
+    let date = new Date(s.timestamp.toDate()).toISOString().split('T')[0];
+    dailySales[date] = (dailySales[date] || 0) + s.total;
+  });
+
+  // Get expenses
+  const expSnap = await db.collection('dhan-expenses')
+  .where('date','>=',month+'-01')
+  .where('date','<=',month+'-31')
+  .get();
+
+  expSnap.forEach(doc=>{
+    let e = doc.data();
+    dailyExpenses[e.date] = (dailyExpenses[e.date] || 0) + parseFloat(e.amount);
+  });
+
+  // Combine dates
+  let allDates = [...new Set([...Object.keys(dailySales),...Object.keys(dailyExpenses)])].sort();
+
+  let salesData = [];
+  let expenseData = [];
+  let profitData = [];
+  let labels = [];
+
+  let totalSales = 0;
+  let totalExpenses = 0;
+
+  allDates.forEach(date=>{
+    let s = dailySales[date] || 0;
+    let e = dailyExpenses[date] || 0;
+    labels.push(date.slice(5)); // MM-DD
+    salesData.push(s);
+    expenseData.push(e);
+    profitData.push(s-e);
+    totalSales += s;
+    totalExpenses += e;
+  });
+
+  // Update summary
+  let netProfit = totalSales - totalExpenses;
+  document.getElementById('totalSales').innerText = '₱' + totalSales;
+  document.getElementById('totalExpenses').innerText = '₱' + totalExpenses;
+  document.getElementById('netProfit').innerText = '₱' + netProfit;
+  document.getElementById('netProfit').className = netProfit >= 0? 'profit' : 'loss';
+
+  // Draw chart
+  drawChart(labels, salesData, expenseData, profitData);
+}
+
+function drawChart(labels, salesData, expenseData, profitData){
+  if(chart) chart.destroy();
+
+  const ctx = document.getElementById('salesChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {label:'Sales', data:salesData, borderColor:'#ff6b35', tension:0.3},
+        {label:'Expenses', data:expenseData, borderColor:'#ff4757', tension:0.3},
+        {label:'Profit', data:profitData, borderColor:'#2ed573', tension:0.3}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'bottom'}},
+      scales:{y:{beginAtZero:true}}
+    }
+  });
+}
+</script>
+</body>
+</html>
