@@ -15,8 +15,13 @@ body{background:#f5f5f5;padding:15px;}
 .card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
 .product-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;}
 .product-item button{background:#ff6b35;color:white;border:none;padding:8px 15px;border-radius:8px;font-weight:600;cursor:pointer;}
-.cart-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
-input,select,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
+.cart-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee;gap:10px;}
+.cart-item-left{flex:1;}
+.qty-control{display:flex;align-items:center;gap:5px;margin-top:5px;}
+.qty-control button{width:32px;height:32px;padding:0;border:none;background:#ff6b35;color:white;border-radius:6px;font-weight:700;cursor:pointer;font-size:16px;}
+.qty-control input{width:70px;text-align:center;border:1px solid #ddd;border-radius:6px;padding:6px;font-size:15px;}
+.remove-btn{background:#ff4757;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:14px;}
+input,select,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;font-size:15px;}
 button.checkout{background:#2ed573;color:white;border:none;font-weight:600;cursor:pointer;}
 button.checkout:disabled{background:#ccc;cursor:not-allowed;}
 .category-header{background:#f8f8f8;padding:12px;margin:10px 0;font-weight:600;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
@@ -24,6 +29,7 @@ button.checkout:disabled{background:#ccc;cursor:not-allowed;}
 .category-items.hidden{display:none;}
 .arrow{transition:0.3s;}
 .arrow.rotated{transform:rotate(180deg);}
+.empty-cart{text-align:center;color:#999;padding:20px;}
 </style>
 </head>
 <body>
@@ -39,189 +45,197 @@ button.checkout:disabled{background:#ccc;cursor:not-allowed;}
 
 <div class="card">
 <h4>Cart</h4>
-<div id="cartItems">Empty</div>
+<div id="cartItems"><p class="empty-cart">Empty</p></div>
 <h3 id="total">Total: ₱0</h3>
 <select id="paymentMethod">
-  <option value="Cash">Cash</option>
-  <option value="GCash">GCash</option>
+<option value="Cash">Cash</option>
+<option value="GCash">GCash</option>
 </select>
-<input type="number" id="cashReceived" placeholder="Cash Received" oninput="calcChange()">
+<input type="number" id="cashReceived" placeholder="Cash Received" oninput="calcChange()" min="0">
 <p>Change: ₱<span id="change">0</span></p>
 <button class="checkout" id="checkoutBtn" onclick="checkout()" disabled>Checkout</button>
 </div>
 
 <script>
 const firebaseConfig = {
- apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
- authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
- projectId: "dhan-siomai-pos-fe1e5",
- storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
- messagingSenderId: "305932123173",
- appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
 let products = [];
 let cart = [];
 
 async function loadProducts(){
-  const snapshot = await db.collection('dhan-pos-web').get();
-  products = [];
-
-  snapshot.forEach(doc=>{
-    let data = doc.data();
-    let stockNum = parseInt(data.stock) || 0;
-
-    if(stockNum > 0){
-      products.push({
-        id: doc.id,
-        name: data.name || 'No Name',
-        category: (data.category || 'Uncategorized').trim(),
-        price: parseFloat(data.price) || 0,
-        stock: stockNum
-      });
-    }
-  });
-
-  renderProducts();
+const snapshot = await db.collection('dhan-pos-web').get();
+products = [];
+snapshot.forEach(doc=>{
+let data = doc.data();
+let stockNum = parseInt(data.stock) || 0;
+if(stockNum > 0){
+products.push({
+id: doc.id,
+name: data.name || 'No Name',
+category: (data.category || 'Uncategorized').trim(),
+price: parseFloat(data.price) || 0,
+stock: stockNum
+});
+}
+});
+renderProducts();
 }
 
 function renderProducts(){
-  if(products.length === 0){
-    document.getElementById('productList').innerHTML = '<p style="text-align:center;color:#666;">No products available</p>';
-    return;
-  }
-
-  let grouped = {};
-  products.forEach(p=>{
-    let cat = p.category.trim().toLowerCase();
-    if(!grouped[cat]) grouped[cat] = {display: p.category.trim(), items: []};
-    grouped[cat].items.push(p);
-  });
-
-  let sortedCats = Object.keys(grouped).sort();
-  let html = '';
-
-  sortedCats.forEach(cat=>{
-    let safeId = btoa(cat).replace(/[^a-zA-Z0-9]/g, '');
-    let displayName = grouped[cat].display;
-    let items = grouped[cat].items;
-
-    html += `
-    <div class="category-header" onclick="toggleCat('${safeId}')">
-      <span>${displayName} (${items.length} items)</span>
-      <span class="arrow" id="arrow-${safeId}">▼</span>
-    </div>
-    <div class="category-items" id="cat-${safeId}">
-    `;
-
-    items.forEach(p=>{
-      html += `<div class="product-item">
-        <div>
-          <strong>${p.name}</strong><br>
-          <small>₱${p.price} | Stock: ${p.stock}</small>
-        </div>
-        <button onclick="addToCart('${p.id}')">Add</button>
-      </div>`;
-    });
-
-    html += `</div>`;
-  });
-
-  document.getElementById('productList').innerHTML = html;
+if(products.length === 0){
+document.getElementById('productList').innerHTML = '<p style="text-align:center;color:#666;padding:20px;">No products available</p>';
+return;
+}
+let grouped = {};
+products.forEach(p=>{
+let cat = p.category.trim().toLowerCase();
+if(!grouped[cat]) grouped[cat] = {display: p.category.trim(), items: []};
+grouped[cat].items.push(p);
+});
+let sortedCats = Object.keys(grouped).sort();
+let html = '';
+sortedCats.forEach(cat=>{
+let safeId = btoa(cat).replace(/[^a-zA-Z0-9]/g, '');
+let displayName = grouped[cat].display;
+let items = grouped[cat].items;
+html += `
+<div class="category-header" onclick="toggleCat('${safeId}')">
+<span>${displayName} (${items.length} items)</span>
+<span class="arrow" id="arrow-${safeId}">▼</span>
+</div>
+<div class="category-items" id="cat-${safeId}">
+`;
+items.forEach(p=>{
+html += `<div class="product-item">
+<div>
+<strong>${p.name}</strong><br>
+<small>₱${p.price} | Stock: ${p.stock}</small>
+</div>
+<button onclick="addToCart('${p.id}')">Add</button>
+</div>`;
+});
+html += `</div>`;
+});
+document.getElementById('productList').innerHTML = html;
 }
 
 function toggleCat(catId){
-  let items = document.getElementById('cat-'+catId);
-  let arrow = document.getElementById('arrow-'+catId);
-  if(items){
-    items.classList.toggle('hidden');
-    arrow.classList.toggle('rotated');
-  }
+let items = document.getElementById('cat-'+catId);
+let arrow = document.getElementById('arrow-'+catId);
+if(items){
+items.classList.toggle('hidden');
+arrow.classList.toggle('rotated');
+}
 }
 
 function addToCart(id){
-  let product = products.find(p=>p.id===id);
-  if(!product) return;
-
-  let cartItem = cart.find(c=>c.id===id);
-  if(cartItem){
-    if(cartItem.qty < product.stock){
-      cartItem.qty++;
-    }else{
-      alert('Not enough stock');
-      return;
-    }
-  }else{
-    cart.push({...product, qty:1});
-  }
-  renderCart();
+let product = products.find(p=>p.id===id);
+if(!product) return;
+let cartItem = cart.find(c=>c.id===id);
+if(cartItem){
+if(cartItem.qty < product.stock){
+cartItem.qty++;
+}else{
+alert('Not enough stock');
+return;
+}
+}else{
+cart.push({...product, qty:1});
+}
+renderCart();
 }
 
 function renderCart(){
-  if(cart.length===0){
-    document.getElementById('cartItems').innerHTML='Empty';
-    document.getElementById('total').innerText='Total: ₱0';
-    document.getElementById('checkoutBtn').disabled=true;
-    return;
-  }
+if(cart.length===0){
+document.getElementById('cartItems').innerHTML='<p class="empty-cart">Empty</p>';
+document.getElementById('total').innerText='Total: ₱0';
+document.getElementById('checkoutBtn').disabled=true;
+return;
+}
+let html='';
+let total=0;
+cart.forEach((item, i)=>{
+let subtotal=item.price*item.qty;
+total+=subtotal;
+html+=`<div class="cart-item">
+<div class="cart-item-left">
+<strong>${item.name}</strong><br>
+<small>₱${item.price} x ${item.qty} = ₱${subtotal}</small>
+<div class="qty-control">
+<button onclick="updateQty(${i}, -1)">-</button>
+<input type="number" value="${item.qty}" min="1" max="${item.stock}"
+onchange="setQty(${i}, this.value)" onfocus="this.select()">
+<button onclick="updateQty(${i}, 1)">+</button>
+</div>
+</div>
+<button class="remove-btn" onclick="removeFromCart(${i})">✕</button>
+</div>`;
+});
+document.getElementById('cartItems').innerHTML=html;
+document.getElementById('total').innerText='Total: ₱'+total;
+document.getElementById('checkoutBtn').disabled=false;
+calcChange();
+}
 
-  let html='';
-  let total=0;
-  cart.forEach(item=>{
-    let subtotal=item.price*item.qty;
-    total+=subtotal;
-    html+=`<div class="cart-item">
-      <span>${item.name} x${item.qty}</span>
-      <span>₱${subtotal}</span>
-    </div>`;
-  });
+function updateQty(index, change){
+cart[index].qty += change;
+if(cart[index].qty < 1) cart[index].qty = 1;
+if(cart[index].qty > cart[index].stock) cart[index].qty = cart[index].stock;
+renderCart();
+}
 
-  document.getElementById('cartItems').innerHTML=html;
-  document.getElementById('total').innerText='Total: ₱'+total;
-  document.getElementById('checkoutBtn').disabled=false;
-  calcChange();
+function setQty(index, value){
+let qty = parseInt(value);
+if(isNaN(qty) || qty < 1) qty = 1;
+if(qty > cart[index].stock) qty = cart[index].stock;
+cart[index].qty = qty;
+renderCart();
+}
+
+function removeFromCart(index){
+cart.splice(index, 1);
+renderCart();
 }
 
 function calcChange(){
-  let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
-  let received=parseFloat(document.getElementById('cashReceived').value)||0;
-  document.getElementById('change').innerText=Math.max(0,received-total);
+let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
+let received=parseFloat(document.getElementById('cashReceived').value)||0;
+document.getElementById('change').innerText=Math.max(0,received-total);
 }
 
 async function checkout(){
-  if(cart.length===0) return;
-
-  let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
-  let payment=document.getElementById('paymentMethod').value;
-
-  try{
-    let batch=db.batch();
-    batch.set(db.collection('dhan-sales').doc(),{
-      items:cart,
-      total:total,
-      payment:payment,
-      timestamp:firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    cart.forEach(item=>{
-      batch.update(db.collection('dhan-pos-web').doc(item.id),{
-        stock:firebase.firestore.FieldValue.increment(-item.qty)
-      });
-    });
-
-    await batch.commit();
-    alert('Sale completed!');
-    cart=[];
-    document.getElementById('cashReceived').value='';
-    loadProducts();
-    renderCart();
-  }catch(err){
-    alert('Error: '+err.message);
-  }
+if(cart.length===0) return;
+let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
+let payment=document.getElementById('paymentMethod').value;
+try{
+let batch=db.batch();
+batch.set(db.collection('dhan-sales').doc(),{
+items:cart.map(i=>({name:i.name,price:i.price,qty:i.qty})),
+total:total,
+payment:payment,
+timestamp:firebase.firestore.FieldValue.serverTimestamp()
+});
+cart.forEach(item=>{
+batch.update(db.collection('dhan-pos-web').doc(item.id),{
+stock:firebase.firestore.FieldValue.increment(-item.qty)
+});
+await batch.commit();
+alert('Sale completed!');
+cart=[];
+document.getElementById('cashReceived').value='';
+loadProducts();
+renderCart();
+}catch(err){
+alert('Error: '+err.message);
 }
-
 loadProducts();
 </script>
 </body>
