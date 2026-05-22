@@ -95,24 +95,28 @@ function renderProducts(){
 
   let grouped = {};
   products.forEach(p=>{
-    if(!grouped[p.category]) grouped[p.category] = [];
-    grouped[p.category].push(p);
+    let cat = p.category.trim().toLowerCase();
+    if(!grouped[cat]) grouped[cat] = {display: p.category.trim(), items: []};
+    grouped[cat].items.push(p);
   });
 
   let sortedCats = Object.keys(grouped).sort();
   let html = '';
 
   sortedCats.forEach(cat=>{
-    let safeId = cat.replace(/\s+/g, '-');
+    let safeId = btoa(cat).replace(/[^a-zA-Z0-9]/g, '');
+    let displayName = grouped[cat].display;
+    let items = grouped[cat].items;
+
     html += `
     <div class="category-header" onclick="toggleCat('${safeId}')">
-      <span>${cat} (${grouped[cat].length} items)</span>
+      <span>${displayName} (${items.length} items)</span>
       <span class="arrow" id="arrow-${safeId}">▼</span>
     </div>
     <div class="category-items" id="cat-${safeId}">
     `;
 
-    grouped[cat].forEach(p=>{
+    items.forEach(p=>{
       html += `<div class="product-item">
         <div>
           <strong>${p.name}</strong><br>
@@ -131,8 +135,10 @@ function renderProducts(){
 function toggleCat(catId){
   let items = document.getElementById('cat-'+catId);
   let arrow = document.getElementById('arrow-'+catId);
-  items.classList.toggle('hidden');
-  arrow.classList.toggle('rotated');
+  if(items){
+    items.classList.toggle('hidden');
+    arrow.classList.toggle('rotated');
+  }
 }
 
 function addToCart(id){
