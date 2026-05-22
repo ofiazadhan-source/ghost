@@ -18,6 +18,22 @@ button{background:#ff6b35;color:white;border:none;padding:8px 15px;border-radius
 .cart-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
 select,input{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
 .hidden{display:none;}
+
+/* Receipt Modal */
+#receiptModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center;z-index:999;}
+.receipt{background:white;padding:20px;width:300px;font-size:13px;}
+.receipt h3{text-align:center;margin-bottom:5px;}
+.receipt .line{border-top:1px dashed #000;margin:8px 0;}
+.receipt-row{display:flex;justify-content:space-between;margin:3px 0;}
+.btn-row{display:flex;gap:10px;margin-top:15px;}
+.btn-row button{flex:1;}
+
+/* Print styles */
+@media print{
+  body *{visibility:hidden;}
+  #printArea,#printArea *{visibility:visible;}
+  #printArea{position:absolute;left:0;top:0;width:58mm;}
+}
 </style>
 </head>
 <body>
@@ -53,6 +69,11 @@ select,input{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-r
 <button onclick="checkout()">Checkout</button>
 </div>
 
+<!-- Receipt Modal -->
+<div id="receiptModal">
+  <div id="printArea" class="receipt"></div>
+</div>
+
 <script>
 const firebaseConfig = {
  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
@@ -66,10 +87,11 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let cart = [];
+let lastSale = null;
 
 window.onload = function(){
   loadProducts();
-  togglePaymentFields(); // <-- eto yung fix, para lumabas agad Cash fields
+  togglePaymentFields();
 }
 
 async function loadProducts(){
@@ -130,7 +152,7 @@ async function checkout(){
 
  if(method === 'Cash'){
   let cash = parseFloat(document.getElementById('cashAmount').value) || 0;
-  if(cash < total){alert(' Kulang ang cash. Need ₱'+total);return;}
+  if(cash < total){alert('Kulang ang cash. Need ₱'+total);return;}
   paymentData.cashReceived = cash;
   paymentData.change = cash - total;
  }
@@ -141,11 +163,13 @@ async function checkout(){
   paymentData.gcashRef = ref;
  }
 
- await db.collection('dhan-sales').add({
+ let saleData = {
   items:cart,
   ...paymentData,
   timestamp:firebase.firestore.FieldValue.serverTimestamp()
- });
+ };
+
+ await db.collection('dhan-sales').add(saleData);
  
  for(let i of cart){
   let ref = db.collection('dhan-pos-web').doc(i.id);
@@ -154,13 +178,48 @@ async function checkout(){
   await ref.update({stock:newStock});
  }
  
- alert('Checkout success!');
+ lastSale = {items:[...cart],...paymentData,date:new Date()};
+ showReceipt();
+ 
  cart = [];
  document.getElementById('cashAmount').value='';
  document.getElementById('gcashRef').value='';
  updateCart();
  loadProducts();
  togglePaymentFields();
+}
+
+function showReceipt(){
+ let html = `<h3>DHAN SIOMAI</h3>
+ <p style="text-align:center;">Thank you!</p>
+ <div class="line"></div>
+ <p>${lastSale.date.toLocaleString()}</p>
+ <div class="line"></div>`;
+ 
+ lastSale.items.forEach(i=>{
+  html += `<div class="receipt-row"><span>${i.name} x${i.qty}</span><span>₱${i.price*i.qty}</span></div>`;
+ });
+ 
+ html += `<div class="line"></div>
+ <div class="receipt-row"><strong>Total</strong><strong>₱${lastSale.total}</strong></div>
+ <div class="receipt-row"><span>Payment</span><span>${lastSale.method}</span></div>`;
+ 
+ if(lastSale.method==='Cash'){
+  html += `<div class="receipt-row"><span>Cash</span><span>₱${lastSale.cashReceived}</span></div>
+  <div class="receipt-row"><span>Change</span><span>₱${lastSale.change}</span></div>`;
+ }
+ if(lastSale.method==='GCash'){
+  html += `<div class="receipt-row"><span>Ref</span><span>${lastSale.gcashRef}</span></div>`;
+ }
+ 
+ html += `<div class="line"></div>
+ <div class="btn-row">
+  <button onclick="window.print()">Print</button>
+  <button onclick="document.getElementById('receiptModal').style.display='none'">Close</button>
+ </div>`;
+ 
+ document.getElementById('printArea').innerHTML = html;
+ document.getElementById('receiptModal').style.display='flex';
 }
 </script>
 </body>
