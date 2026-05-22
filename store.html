@@ -41,7 +41,7 @@ select,input{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-r
   <option value="GCash">GCash</option>
 </select>
 
-<div id="cashFields" class="hidden">
+<div id="cashFields">
   <input type="number" id="cashAmount" placeholder="Cash Received" oninput="computeChange()">
   <p id="changeText">Change: ₱0</p>
 </div>
@@ -66,7 +66,11 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let cart = [];
-window.onload = loadProducts;
+
+window.onload = function(){
+  loadProducts();
+  togglePaymentFields(); // <-- eto yung fix, para lumabas agad Cash fields
+}
 
 async function loadProducts(){
  const snap = await db.collection('dhan-pos-web').where('stock','>',0).get();
@@ -100,12 +104,14 @@ function updateCart(){
  });
  document.getElementById('cartList').innerHTML = html || 'Empty';
  document.getElementById('total').innerText = `Total: ₱${total}`;
+ computeChange();
 }
 
 function togglePaymentFields(){
  let method = document.getElementById('paymentMethod').value;
  document.getElementById('cashFields').classList.toggle('hidden', method !== 'Cash');
  document.getElementById('gcashFields').classList.toggle('hidden', method !== 'GCash');
+ computeChange();
 }
 
 function computeChange(){
@@ -124,7 +130,7 @@ async function checkout(){
 
  if(method === 'Cash'){
   let cash = parseFloat(document.getElementById('cashAmount').value) || 0;
-  if(cash < total){alert('Insufficient cash');return;}
+  if(cash < total){alert(' Kulang ang cash. Need ₱'+total);return;}
   paymentData.cashReceived = cash;
   paymentData.change = cash - total;
  }
@@ -135,14 +141,12 @@ async function checkout(){
   paymentData.gcashRef = ref;
  }
 
- // Save sale to dhan-sales
  await db.collection('dhan-sales').add({
   items:cart,
   ...paymentData,
   timestamp:firebase.firestore.FieldValue.serverTimestamp()
  });
  
- // Deduct stock
  for(let i of cart){
   let ref = db.collection('dhan-pos-web').doc(i.id);
   let snap = await ref.get();
