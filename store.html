@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,17 +13,27 @@ body{background:#f5f5f5;padding:15px;}
 .header{background:#ff6b35;color:white;padding:15px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;}
 .header a{color:white;text-decoration:none;font-weight:600;}
 .card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
-.product-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;}
-.product-item button{background:#ff6b35;color:white;border:none;padding:8px 15px;border-radius:8px;font-weight:600;cursor:pointer;}
+.product{padding:10px;border:1px solid #ddd;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+button{background:#ff6b35;color:white;border:none;padding:8px 15px;border-radius:8px;font-weight:600;cursor:pointer;}
 .cart-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
-input,select,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
-button.checkout{background:#2ed573;color:white;border:none;font-weight:600;cursor:pointer;}
-button.checkout:disabled{background:#ccc;cursor:not-allowed;}
-.category-header{background:#f8f8f8;padding:12px;margin:10px 0;font-weight:600;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
-.category-items{display:block;}
-.category-items.hidden{display:none;}
-.arrow{transition:0.3s;}
-.arrow.rotated{transform:rotate(180deg);}
+select,input{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
+.hidden{display:none;}
+
+/* Receipt Modal */
+#receiptModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center;z-index:999;}
+.receipt{background:white;padding:20px;width:300px;font-size:13px;}
+.receipt h3{text-align:center;margin-bottom:5px;}
+.receipt .line{border-top:1px dashed #000;margin:8px 0;}
+.receipt-row{display:flex;justify-content:space-between;margin:3px 0;}
+.btn-row{display:flex;gap:10px;margin-top:15px;}
+.btn-row button{flex:1;}
+
+/* Print styles */
+@media print{
+  body *{visibility:hidden;}
+  #printArea,#printArea *{visibility:visible;}
+  #printArea{position:absolute;left:0;top:0;width:58mm;}
+}
 </style>
 </head>
 <body>
@@ -35,20 +44,41 @@ button.checkout:disabled{background:#ccc;cursor:not-allowed;}
 
 <div class="card">
 <h4>Products</h4>
-<div id="productList">Loading products...</div>
+<div id="productList">Loading...</div>
 </div>
 
 <div class="card">
 <h4>Cart</h4>
-<div id="cartItems">Empty</div>
+<div id="cartList">Empty</div>
 <h3 id="total">Total: ₱0</h3>
-<select id="paymentMethod">
+
+<select id="paymentMethod" onchange="togglePaymentFields()">
   <option value="Cash">Cash</option>
   <option value="GCash">GCash</option>
 </select>
-<input type="number" id="cashReceived" placeholder="Cash Received" oninput="calcChange()">
-<p>Change: ₱<span id="change">0</span></p>
-<button class="checkout" id="checkoutBtn" onclick="checkout()" disabled>Checkout</button>
+
+<div id="cashFields">
+  <input type="number" id="cashAmount" placeholder="Cash Received" oninput="computeChange()">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;">
+  <button type="button" onclick="setCash(10)" style="flex:1;padding:8px;background:#eee;border:none;border-radius:8px;">₱10</button>
+  <button type="button" onclick="setCash(50)" style="flex:1;padding:8px;background:#eee;border:none;border-radius:8px;">₱50</button>
+  <button type="button" onclick="setCash(100)" style="flex:1;padding:8px;background:#eee;border:none;border-radius:8px;">₱100</button>
+  <button type="button" onclick="setCash(500)" style="flex:1;padding:8px;background:#eee;border:none;border-radius:8px;">₱500</button>
+  <button type="button" onclick="setCash(1000)" style="flex:1;padding:8px;background:#eee;border:none;border-radius:8px;">₱1000</button>
+</div>
+  <p id="changeText">Change: ₱0</p>
+</div>
+
+<div id="gcashFields" class="hidden">
+  <input type="text" id="gcashRef" placeholder="GCash Reference No.">
+</div>
+
+<button onclick="checkout()">Checkout</button>
+</div>
+
+<!-- Receipt Modal -->
+<div id="receiptModal">
+  <div id="printArea" class="receipt"></div>
 </div>
 
 <script>
@@ -63,167 +93,141 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-let products = [];
 let cart = [];
+let lastSale = null;
+
+window.onload = function(){
+  loadProducts();
+  togglePaymentFields();
+}
 
 async function loadProducts(){
-  const snapshot = await db.collection('dhan-pos-web').get();
-  products = [];
-
-  snapshot.forEach(doc=>{
-    let data = doc.data();
-    let stockNum = parseInt(data.stock) || 0;
-
-    if(stockNum > 0){
-      products.push({
-        id: doc.id,
-        name: data.name || 'No Name',
-        category: (data.category || 'Uncategorized').trim(),
-        price: parseFloat(data.price) || 0,
-        stock: stockNum
-      });
-    }
-  });
-
-  renderProducts();
-}
-
-function renderProducts(){
-  if(products.length === 0){
-    document.getElementById('productList').innerHTML = '<p style="text-align:center;color:#666;">No products available</p>';
-    return;
-  }
-
-  let grouped = {};
-  products.forEach(p=>{
-    let cat = p.category.trim().toLowerCase();
-    if(!grouped[cat]) grouped[cat] = {display: p.category.trim(), items: []};
-    grouped[cat].items.push(p);
-  });
-
-  let sortedCats = Object.keys(grouped).sort();
-  let html = '';
-
-  sortedCats.forEach(cat=>{
-    let safeId = btoa(cat).replace(/[^a-zA-Z0-9]/g, '');
-    let displayName = grouped[cat].display;
-    let items = grouped[cat].items;
-
-    html += `
-    <div class="category-header" onclick="toggleCat('${safeId}')">
-      <span>${displayName} (${items.length} items)</span>
-      <span class="arrow" id="arrow-${safeId}">▼</span>
+ const snap = await db.collection('dhan-pos-web').where('stock','>',0).get();
+ let html = '';
+ snap.forEach(doc=>{
+  let p = doc.data();
+  html += `<div class="product">
+    <div>
+      <strong>${p.name}</strong><br>
+      ₱${p.price} | Stock: ${p.stock}
     </div>
-    <div class="category-items" id="cat-${safeId}">
-    `;
-
-    items.forEach(p=>{
-      html += `<div class="product-item">
-        <div>
-          <strong>${p.name}</strong><br>
-          <small>₱${p.price} | Stock: ${p.stock}</small>
-        </div>
-        <button onclick="addToCart('${p.id}')">Add</button>
-      </div>`;
-    });
-
-    html += `</div>`;
-  });
-
-  document.getElementById('productList').innerHTML = html;
+    <button onclick="addToCart('${doc.id}','${p.name}',${p.price})">Add</button>
+  </div>`;
+ });
+ document.getElementById('productList').innerHTML = html || 'No products available';
 }
 
-function toggleCat(catId){
-  let items = document.getElementById('cat-'+catId);
-  let arrow = document.getElementById('arrow-'+catId);
-  if(items){
-    items.classList.toggle('hidden');
-    arrow.classList.toggle('rotated');
-  }
+function addToCart(id,name,price){
+ let item = cart.find(i=>i.id===id);
+ if(item){item.qty++;}
+ else{cart.push({id,name,price,qty:1});}
+ updateCart();
 }
 
-function addToCart(id){
-  let product = products.find(p=>p.id===id);
-  if(!product) return;
-
-  let cartItem = cart.find(c=>c.id===id);
-  if(cartItem){
-    if(cartItem.qty < product.stock){
-      cartItem.qty++;
-    }else{
-      alert('Not enough stock');
-      return;
-    }
-  }else{
-    cart.push({...product, qty:1});
-  }
-  renderCart();
+function updateCart(){
+ let html = '';
+ let total = 0;
+ cart.forEach(i=>{
+  html += `<div class="cart-item"><span>${i.name} x${i.qty}</span><span>₱${i.price*i.qty}</span></div>`;
+  total += i.price*i.qty;
+ });
+ document.getElementById('cartList').innerHTML = html || 'Empty';
+ document.getElementById('total').innerText = `Total: ₱${total}`;
+ computeChange();
 }
 
-function renderCart(){
-  if(cart.length===0){
-    document.getElementById('cartItems').innerHTML='Empty';
-    document.getElementById('total').innerText='Total: ₱0';
-    document.getElementById('checkoutBtn').disabled=true;
-    return;
-  }
-
-  let html='';
-  let total=0;
-  cart.forEach(item=>{
-    let subtotal=item.price*item.qty;
-    total+=subtotal;
-    html+=`<div class="cart-item">
-      <span>${item.name} x${item.qty}</span>
-      <span>₱${subtotal}</span>
-    </div>`;
-  });
-
-  document.getElementById('cartItems').innerHTML=html;
-  document.getElementById('total').innerText='Total: ₱'+total;
-  document.getElementById('checkoutBtn').disabled=false;
-  calcChange();
+function togglePaymentFields(){
+ let method = document.getElementById('paymentMethod').value;
+ document.getElementById('cashFields').classList.toggle('hidden', method !== 'Cash');
+ document.getElementById('gcashFields').classList.toggle('hidden', method !== 'GCash');
+ computeChange();
 }
 
-function calcChange(){
-  let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
-  let received=parseFloat(document.getElementById('cashReceived').value)||0;
-  document.getElementById('change').innerText=Math.max(0,received-total);
+function computeChange(){
+ let total = cart.reduce((sum,i)=>sum+i.price*i.qty,0);
+ let cash = parseFloat(document.getElementById('cashAmount').value) || 0;
+ let change = cash - total;
+ document.getElementById('changeText').innerText = `Change: ₱${change >= 0 ? change : 0}`;
 }
 
 async function checkout(){
-  if(cart.length===0) return;
+ if(cart.length===0){alert('Cart empty');return;}
+ 
+ let method = document.getElementById('paymentMethod').value;
+ let total = cart.reduce((sum,i)=>sum+i.price*i.qty,0);
+ let paymentData = {method,total};
 
-  let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
-  let payment=document.getElementById('paymentMethod').value;
+ if(method === 'Cash'){
+  let cash = parseFloat(document.getElementById('cashAmount').value) || 0;
+  if(cash < total){alert('Kulang ang cash. Need ₱'+total);return;}
+  paymentData.cashReceived = cash;
+  paymentData.change = cash - total;
+ }
+ 
+ if(method === 'GCash'){
+  let ref = document.getElementById('gcashRef').value.trim();
+  if(!ref){alert('Enter GCash Reference No.');return;}
+  paymentData.gcashRef = ref;
+ }
 
-  try{
-    let batch=db.batch();
-    batch.set(db.collection('dhan-sales').doc(),{
-      items:cart,
-      total:total,
-      payment:payment,
-      timestamp:firebase.firestore.FieldValue.serverTimestamp()
-    });
+ let saleData = {
+  items:cart,
+  ...paymentData,
+  timestamp:firebase.firestore.FieldValue.serverTimestamp()
+ };
 
-    cart.forEach(item=>{
-      batch.update(db.collection('dhan-pos-web').doc(item.id),{
-        stock:firebase.firestore.FieldValue.increment(-item.qty)
-      });
-    });
-
-    await batch.commit();
-    alert('Sale completed!');
-    cart=[];
-    document.getElementById('cashReceived').value='';
-    loadProducts();
-    renderCart();
-  }catch(err){
-    alert('Error: '+err.message);
-  }
+ await db.collection('dhan-sales').add(saleData);
+ 
+ for(let i of cart){
+  let ref = db.collection('dhan-pos-web').doc(i.id);
+  let snap = await ref.get();
+  let newStock = snap.data().stock - i.qty;
+  await ref.update({stock:newStock});
+ }
+ 
+ lastSale = {items:[...cart],...paymentData,date:new Date()};
+ showReceipt();
+ 
+ cart = [];
+ document.getElementById('cashAmount').value='';
+ document.getElementById('gcashRef').value='';
+ updateCart();
+ loadProducts();
+ togglePaymentFields();
 }
 
-loadProducts();
+function showReceipt(){
+ let html = `<h3>DHAN SIOMAI</h3>
+ <p style="text-align:center;">Thank you!</p>
+ <div class="line"></div>
+ <p>${lastSale.date.toLocaleString()}</p>
+ <div class="line"></div>`;
+ 
+ lastSale.items.forEach(i=>{
+  html += `<div class="receipt-row"><span>${i.name} x${i.qty}</span><span>₱${i.price*i.qty}</span></div>`;
+ });
+ 
+ html += `<div class="line"></div>
+ <div class="receipt-row"><strong>Total</strong><strong>₱${lastSale.total}</strong></div>
+ <div class="receipt-row"><span>Payment</span><span>${lastSale.method}</span></div>`;
+ 
+ if(lastSale.method==='Cash'){
+  html += `<div class="receipt-row"><span>Cash</span><span>₱${lastSale.cashReceived}</span></div>
+  <div class="receipt-row"><span>Change</span><span>₱${lastSale.change}</span></div>`;
+ }
+ if(lastSale.method==='GCash'){
+  html += `<div class="receipt-row"><span>Ref</span><span>${lastSale.gcashRef}</span></div>`;
+ }
+ 
+ html += `<div class="line"></div>
+ <div class="btn-row">
+  <button onclick="window.print()">Print</button>
+  <button onclick="document.getElementById('receiptModal').style.display='none'">Close</button>
+ </div>`;
+ 
+ document.getElementById('printArea').innerHTML = html;
+ document.getElementById('receiptModal').style.display='flex';
+}
 </script>
 </body>
-</html>
+</html><input type="number" id="cashReceived" placeholder="Cash Received" oninput="calcChange()">
