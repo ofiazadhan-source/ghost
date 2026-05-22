@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products - DHAN SIOMAI</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:#f5f5f5;padding:15px;}
+.header{background:#ff6b35;color:white;padding:15px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;}
+.header a{color:white;text-decoration:none;font-weight:600;}
+.card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
+input,select{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;}
+button{background:#ff6b35;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:10px;text-align:left;border-bottom:1px solid #eee;}
+th{background:#f8f8f8;}
+</style>
+</head>
+<body>
+<div class="header">
+<h3>📦 Products</h3>
+<a href="index.html">← Back</a>
+</div>
+
+<div class="card">
+<h4>Add Product</h4>
+<input type="text" id="pName" placeholder="Product Name">
+<input type="text" id="pCategory" placeholder="Category">
+<input type="number" id="pPrice" placeholder="Price">
+<input type="number" id="pStock" placeholder="Initial Stock">
+<button onclick="addProduct()">Add Product</button>
+</div>
+
+<div class="card">
+<h4>Product List</h4>
+<div id="productList">Loading...</div>
+</div>
+
+<script>
+const firebaseConfig = {
+ apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+ authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+ projectId: "dhan-siomai-pos-fe1e5",
+ storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+ messagingSenderId: "305932123173",
+ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+window.onload = loadProducts;
+
+async function addProduct(){
+ const name = document.getElementById('pName').value;
+ const category = document.getElementById('pCategory').value;
+ const price = parseFloat(document.getElementById('pPrice').value);
+ const stock = parseInt(document.getElementById('pStock').value);
+ 
+ if(!name||!category||isNaN(price)||isNaN(stock)){alert('Fill all fields');return;}
+ 
+ await db.collection('dhan-pos-web').add({name,category,price,stock});
+ alert('Product added!');
+ document.getElementById('pName').value='';
+ document.getElementById('pCategory').value='';
+ document.getElementById('pPrice').value='';
+ document.getElementById('pStock').value='';
+ loadProducts();
+}
+
+async function loadProducts(){
+ const snap = await db.collection('dhan-pos-web').get();
+ let html = '<table><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th></tr>';
+ snap.forEach(doc=>{
+  let p = doc.data();
+  html += `<tr><td>${p.name}</td><td>${p.category}</td><td>₱${p.price}</td><td>${p.stock}</td></tr>`;
+ });
+ html += '</table>';
+ document.getElementById('productList').innerHTML = html || 'No products yet';
+}
+</script>
+</body>
+</html>
