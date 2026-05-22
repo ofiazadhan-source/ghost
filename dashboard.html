@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - DHAN SIOMAI</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:#f5f5f5;padding:15px;}
+.header{background:#ff6b35;color:white;padding:15px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;}
+.header a{color:white;text-decoration:none;font-weight:600;}
+.card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
+.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:15px;}
+.box{background:#fff;border-radius:10px;padding:15px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+.box h4{font-size:13px;color:#666;margin-bottom:5px;}
+.box h2{font-size:20px;color:#ff6b35;}
+input,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
+button{background:#ff6b35;color:white;border:none;font-weight:600;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th,td{padding:8px;text-align:left;border-bottom:1px solid #eee;}
+th{background:#f8f8f8;}
+.profit{color:green;}
+.loss{color:red;}
+</style>
+</head>
+<body>
+<div class="header">
+<h3>📊 Dashboard</h3>
+<a href="index.html">← Back</a>
+</div>
+
+<div class="card">
+<h4>Select Date</h4>
+<input type="date" id="datePicker" onchange="loadReport()">
+<button onclick="loadReport()">View Report</button>
+</div>
+
+<div class="summary">
+  <div class="box">
+    <h4>Total Sales</h4>
+    <h2 id="totalSales">₱0</h2>
+  </div>
+  <div class="box">
+    <h4>Total Expenses</h4>
+    <h2 id="totalExpenses">₱0</h2>
+  </div>
+  <div class="box">
+    <h4>Net Profit</h4>
+    <h2 id="netProfit">₱0</h2>
+  </div>
+</div>
+
+<div class="card">
+<h4>Sales Details</h4>
+<div id="salesDetails">Select a date</div>
+</div>
+
+<div class="card">
+<h4>Expenses Details</h4>
+<div id="expenseDetails">Select a date</div>
+</div>
+
+<script>
+const firebaseConfig = {
+ apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+ authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+ projectId: "dhan-siomai-pos-fe1e5",
+ storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+ messagingSenderId: "305932123173",
+ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Set today as default
+window.onload = function(){
+  let today = new Date().toISOString().split('T')[0];
+  document.getElementById('datePicker').value = today;
+  loadReport();
+}
+
+async function loadReport(){
+  let selectedDate = document.getElementById('datePicker').value;
+  if(!selectedDate){alert('Pick a date');return;}
+
+  // Get start and end of day
+  let start = new Date(selectedDate + 'T00:00:00');
+  let end = new Date(selectedDate + 'T23:59:59');
+
+  let totalSales = 0;
+  let totalExpenses = 0;
+
+  // Load Sales
+  const salesSnap = await db.collection('dhan-sales')
+   .where('timestamp','>=',start)
+   .where('timestamp','<=',end)
+   .get();
+
+  let salesHtml = '<table><tr><th>Time</th><th>Items</th><th>Amount</th></tr>';
+  salesSnap.forEach(doc=>{
+    let s = doc.data();
+    let time = s.timestamp? new Date(s.timestamp.toDate()).toLocaleTimeString() : '-';
+    let items = s.items.map(i=>`${i.name}x${i.qty}`).join(', ');
+    salesHtml += `<tr><td>${time}</td><td>${items}</td><td>₱${s.total}</td></tr>`;
+    totalSales += s.total;
+  });
+  salesHtml += '</table>';
+  document.getElementById('salesDetails').innerHTML = salesSnap.empty? 'No sales' : salesHtml;
+
+  // Load Expenses
+  const expSnap = await db.collection('dhan-expenses')
+   .where('date','>=',selectedDate)
+   .where('date','<=',selectedDate)
+   .get();
+
+  let expHtml = '<table><tr><th>Item</th><th>Amount</th></tr>';
+  expSnap.forEach(doc=>{
+    let e = doc.data();
+    expHtml += `<tr><td>${e.item}</td><td>₱${e.amount}</td></tr>`;
+    totalExpenses += parseFloat(e.amount);
+  });
+  expHtml += '</table>';
+  document.getElementById('expenseDetails').innerHTML = expSnap.empty? 'No expenses' : expHtml;
+
+  // Update summary
+  let netProfit = totalSales - totalExpenses;
+  document.getElementById('totalSales').innerText = '₱' + totalSales;
+  document.getElementById('totalExpenses').innerText = '₱' + totalExpenses;
+  document.getElementById('netProfit').innerText = '₱' + netProfit;
+  document.getElementById('netProfit').className = netProfit >= 0? 'profit' : 'loss';
+}
+</script>
+</body>
+</html>
