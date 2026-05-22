@@ -73,7 +73,9 @@
   let cart = [];
 
   async function loadProducts(){
-    const snap = await getDocs(query(collection(db, 'dhan-pos-web'), where('stock', '>', 0)));
+    const snap = await getDocs(query
+  (collection(db, 'products'),
+  where('stock', '>', 0)));
 
     var grouped = {};
     snap.forEach(function(doc){
