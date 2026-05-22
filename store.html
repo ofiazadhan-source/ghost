@@ -1,155 +1,229 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Store - DHAN SIOMAI</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background: #fafafa;
-  }
-  h2 {
-    text-align: center;
-    margin-bottom: 20px;
-  }
- .product {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    background: white;
-    border-bottom: 1px solid #eee;
-  }
- .cart {
-    margin-top: 30px;
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-  }
-  button {
-    padding: 8px 14px;
-    background: #4caf50;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  button:hover {
-    background: #45a049;
-  }
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:#f5f5f5;padding:15px;}
+.header{background:#ff6b35;color:white;padding:15px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;}
+.header a{color:white;text-decoration:none;font-weight:600;}
+.card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
+.product-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;}
+.product-item button{background:#ff6b35;color:white;border:none;padding:8px 15px;border-radius:8px;font-weight:600;cursor:pointer;}
+.cart-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
+input,select,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
+button.checkout{background:#2ed573;color:white;border:none;font-weight:600;cursor:pointer;}
+button.checkout:disabled{background:#ccc;cursor:not-allowed;}
+.category-header{background:#f8f8f8;padding:12px;margin:10px 0;font-weight:600;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+.category-items{display:block;}
+.category-items.hidden{display:none;}
+.arrow{transition:0.3s;}
+.arrow.rotated{transform:rotate(180deg);}
 </style>
 </head>
 <body>
-
-<h2>Store</h2>
-<div id="productList">Loading products...</div>
-
-<div class="cart">
-  <h3>Cart</h3>
-  <div id="cartItems">Cart is empty</div>
-  <h4>Total: ₱<span id="cartTotal">0</span></h4>
-  <button onclick="checkout()">Checkout</button>
+<div class="header">
+<h3>🏪 Store</h3>
+<a href="index.html">← Back</a>
 </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<div class="card">
+<h4>Products</h4>
+<div id="productList">Loading products...</div>
+</div>
 
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
+<div class="card">
+<h4>Cart</h4>
+<div id="cartItems">Empty</div>
+<h3 id="total">Total: ₱0</h3>
+<select id="paymentMethod">
+  <option value="Cash">Cash</option>
+  <option value="GCash">GCash</option>
+</select>
+<input type="number" id="cashReceived" placeholder="Cash Received" oninput="calcChange()">
+<p>Change: ₱<span id="change">0</span></p>
+<button class="checkout" id="checkoutBtn" onclick="checkout()" disabled>Checkout</button>
+</div>
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+<script>
+const firebaseConfig = {
+ apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+ authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+ projectId: "dhan-siomai-pos-fe1e5",
+ storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+ messagingSenderId: "305932123173",
+ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-  let cart = [];
+let products = [];
+let cart = [];
 
-  async function loadProducts(){
-    const snap = await getDocs(query
-  (collection(db, 'products'),
-  where('stock', '>', 0)));
+async function loadProducts(){
+  const snapshot = await db.collection('dhan-pos-web').get();
+  products = [];
 
-    var grouped = {};
-    snap.forEach(function(doc){
-      var p = doc.data();
-      var cat = (p.category || 'Uncategorized').trim();
-      if(!grouped[cat]) grouped[cat] = [];
-      grouped[cat].push({
+  snapshot.forEach(doc=>{
+    let data = doc.data();
+    let stockNum = parseInt(data.stock) || 0;
+
+    if(stockNum > 0){
+      products.push({
         id: doc.id,
-        name: p.name,
-        price: p.price,
-        stock: p.stock
+        name: data.name || 'No Name',
+        category: (data.category || 'Uncategorized').trim(),
+        price: parseFloat(data.price) || 0,
+        stock: stockNum
       });
-    });
-
-    var html = '';
-    Object.keys(grouped).sort().forEach(function(cat){
-      html += '<div style="background:#f8f8f8;padding:10px;margin:10px 0;font-weight:600;border-radius:8px;">' + cat + '</div>';
-
-      grouped[cat].forEach(function(p){
-        html += '<div class="product">' +
-          '<div style="flex:1">' +
-            '<strong>' + p.name + '</strong><br>' +
-            '₱' + p.price + ' | Stock: ' + p.stock +
-          '</div>' +
-          '<div style="display:flex;gap:5px;align-items:center;">' +
-            '<input type="number" id="qty-' + p.id + '" value="1" min="1" max="' + p.stock + '" style="width:60px;padding:6px;border:1px solid #ddd;border-radius:8px;text-align:center;">' +
-            '<button onclick="addToCart(\'' + p.id + '\')">Add</button>' +
-          '</div>' +
-        '</div>';
-      });
-    });
-
-    document.getElementById('productList').innerHTML = html || '<p style="text-align:center;padding:20px;color:#888;">No products available</p>';
-  }
-
-  window.addToCart = function(productId){
-    const qty = parseInt(document.getElementById('qty-' + productId).value);
-    if(qty <= 0) return;
-
-    // Hanapin yung product sa cart
-    const existing = cart.find(item => item.id === productId);
-    if(existing){
-      existing.qty += qty;
-    } else {
-      cart.push({id: productId, qty: qty});
     }
-    renderCart();
+  });
+
+  renderProducts();
+}
+
+function renderProducts(){
+  if(products.length === 0){
+    document.getElementById('productList').innerHTML = '<p style="text-align:center;color:#666;">No products available</p>';
+    return;
   }
 
-  function renderCart(){
-    if(cart.length === 0){
-      document.getElementById('cartItems').innerHTML = 'Cart is empty';
-      document.getElementById('cartTotal').innerText = '0';
+  let grouped = {};
+  products.forEach(p=>{
+    let cat = p.category.trim().toLowerCase();
+    if(!grouped[cat]) grouped[cat] = {display: p.category.trim(), items: []};
+    grouped[cat].items.push(p);
+  });
+
+  let sortedCats = Object.keys(grouped).sort();
+  let html = '';
+
+  sortedCats.forEach(cat=>{
+    let safeId = btoa(cat).replace(/[^a-zA-Z0-9]/g, '');
+    let displayName = grouped[cat].display;
+    let items = grouped[cat].items;
+
+    html += `
+    <div class="category-header" onclick="toggleCat('${safeId}')">
+      <span>${displayName} (${items.length} items)</span>
+      <span class="arrow" id="arrow-${safeId}">▼</span>
+    </div>
+    <div class="category-items" id="cat-${safeId}">
+    `;
+
+    items.forEach(p=>{
+      html += `<div class="product-item">
+        <div>
+          <strong>${p.name}</strong><br>
+          <small>₱${p.price} | Stock: ${p.stock}</small>
+        </div>
+        <button onclick="addToCart('${p.id}')">Add</button>
+      </div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  document.getElementById('productList').innerHTML = html;
+}
+
+function toggleCat(catId){
+  let items = document.getElementById('cat-'+catId);
+  let arrow = document.getElementById('arrow-'+catId);
+  if(items){
+    items.classList.toggle('hidden');
+    arrow.classList.toggle('rotated');
+  }
+}
+
+function addToCart(id){
+  let product = products.find(p=>p.id===id);
+  if(!product) return;
+
+  let cartItem = cart.find(c=>c.id===id);
+  if(cartItem){
+    if(cartItem.qty < product.stock){
+      cartItem.qty++;
+    }else{
+      alert('Not enough stock');
       return;
     }
+  }else{
+    cart.push({...product, qty:1});
+  }
+  renderCart();
+}
 
-    let html = '';
-    let total = 0;
-    cart.forEach(function(item){
-      html += '<div>' + item.id + ' x' + item.qty + '</div>';
-      // Note: Need mo i-fetch price dito kung gusto mo accurate total
-      total += item.qty * 0;
+function renderCart(){
+  if(cart.length===0){
+    document.getElementById('cartItems').innerHTML='Empty';
+    document.getElementById('total').innerText='Total: ₱0';
+    document.getElementById('checkoutBtn').disabled=true;
+    return;
+  }
+
+  let html='';
+  let total=0;
+  cart.forEach(item=>{
+    let subtotal=item.price*item.qty;
+    total+=subtotal;
+    html+=`<div class="cart-item">
+      <span>${item.name} x${item.qty}</span>
+      <span>₱${subtotal}</span>
+    </div>`;
+  });
+
+  document.getElementById('cartItems').innerHTML=html;
+  document.getElementById('total').innerText='Total: ₱'+total;
+  document.getElementById('checkoutBtn').disabled=false;
+  calcChange();
+}
+
+function calcChange(){
+  let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
+  let received=parseFloat(document.getElementById('cashReceived').value)||0;
+  document.getElementById('change').innerText=Math.max(0,received-total);
+}
+
+async function checkout(){
+  if(cart.length===0) return;
+
+  let total=cart.reduce((sum,item)=>sum+item.price*item.qty,0);
+  let payment=document.getElementById('paymentMethod').value;
+
+  try{
+    let batch=db.batch();
+    batch.set(db.collection('dhan-sales').doc(),{
+      items:cart,
+      total:total,
+      payment:payment,
+      timestamp:firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    document.getElementById('cartItems').innerHTML = html;
-    document.getElementById('cartTotal').innerText = total;
-  }
+    cart.forEach(item=>{
+      batch.update(db.collection('dhan-pos-web').doc(item.id),{
+        stock:firebase.firestore.FieldValue.increment(-item.qty)
+      });
+    });
 
-  window.checkout = function(){
-    alert('Checkout function dito');
+    await batch.commit();
+    alert('Sale completed!');
+    cart=[];
+    document.getElementById('cashReceived').value='';
+    loadProducts();
+    renderCart();
+  }catch(err){
+    alert('Error: '+err.message);
   }
+}
 
-  loadProducts();
+loadProducts();
 </script>
-
 </body>
 </html>
