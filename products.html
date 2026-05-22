@@ -11,13 +11,20 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
 body{background:#f5f5f5;padding:15px;}
 .header{background:#ff6b35;color:white;padding:15px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;}
-.header a{color:white;text-decoration:none;font-weight:600;}
+.header a{color:white;text-decoration:none;font-weight:600;font-size:14px;}
 .card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
-input,select{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;}
-button{background:#ff6b35;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;}
-table{width:100%;border-collapse:collapse;}
-th,td{padding:10px;text-align:left;border-bottom:1px solid #eee;}
-th{background:#f8f8f8;}
+input,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
+button{background:#ff6b35;color:white;border:none;font-weight:600;cursor:pointer;}
+button.edit{background:#3498db;font-size:12px;padding:5px 8px;width:auto;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th,td{padding:8px;text-align:left;border-bottom:1px solid #eee;}
+th{background:#f8f8f8;font-size:13px;}
+.category-block{margin-bottom:10px;border:1px solid #eee;border-radius:8px;}
+.category-header{background:#f8f8f8;padding:12px;font-weight:600;cursor:pointer;border-radius:8px;display:flex;justify-content:space-between;align-items:center;}
+.category-items{padding:10px;}
+#searchBox{margin-bottom:10px;}
+.stock-low{color:red;font-weight:600;}
+.stock-ok{color:green;}
 </style>
 </head>
 <body>
@@ -28,15 +35,16 @@ th{background:#f8f8f8;}
 
 <div class="card">
 <h4>Add Product</h4>
-<input type="text" id="pName" placeholder="Product Name">
-<input type="text" id="pCategory" placeholder="Category">
-<input type="number" id="pPrice" placeholder="Price">
-<input type="number" id="pStock" placeholder="Initial Stock">
+<input type="text" id="productName" placeholder="Product Name">
+<input type="text" id="productCategory" placeholder="Category">
+<input type="number" id="productPrice" placeholder="Price">
+<input type="number" id="productStock" placeholder="Initial Stock">
 <button onclick="addProduct()">Add Product</button>
 </div>
 
 <div class="card">
 <h4>Product List</h4>
+<input type="text" id="searchBox" placeholder="🔍 Search product or category..." onkeyup="renderProducts()">
 <div id="productList">Loading...</div>
 </div>
 
@@ -52,35 +60,100 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-window.onload = loadProducts;
+let productsCache = [];
 
 async function addProduct(){
- const name = document.getElementById('pName').value;
- const category = document.getElementById('pCategory').value;
- const price = parseFloat(document.getElementById('pPrice').value);
- const stock = parseInt(document.getElementById('pStock').value);
- 
- if(!name||!category||isNaN(price)||isNaN(stock)){alert('Fill all fields');return;}
- 
- await db.collection('dhan-pos-web').add({name,category,price,stock});
- alert('Product added!');
- document.getElementById('pName').value='';
- document.getElementById('pCategory').value='';
- document.getElementById('pPrice').value='';
- document.getElementById('pStock').value='';
- loadProducts();
+  const name = document.getElementById('productName').value.trim();
+  const category = document.getElementById('productCategory').value.trim();
+  const price = document.getElementById('productPrice').value;
+  const stock = document.getElementById('productStock').value;
+
+  if(!name ||!category ||!price){alert('Fill all fields');return;}
+
+  await db.collection('dhan-pos-web').add({
+    name:name,
+    category:category,
+    price:parseFloat(price),
+    stock:parseInt(stock) || 0
+  });
+
+  document.getElementById('productName').value='';
+  document.getElementById('productCategory').value='';
+  document.getElementById('productPrice').value='';
+  document.getElementById('productStock').value='';
+
+  loadProducts();
 }
 
 async function loadProducts(){
- const snap = await db.collection('dhan-pos-web').get();
- let html = '<table><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th></tr>';
- snap.forEach(doc=>{
-  let p = doc.data();
-  html += `<tr><td>${p.name}</td><td>${p.category}</td><td>₱${p.price}</td><td>${p.stock}</td></tr>`;
- });
- html += '</table>';
- document.getElementById('productList').innerHTML = html || 'No products yet';
+  const snapshot = await db.collection('dhan-pos-web').get();
+  productsCache = [];
+  snapshot.forEach(doc=>{
+    productsCache.push({id:doc.id,...doc.data()});
+  });
+  renderProducts();
 }
+
+function renderProducts(){
+  let search = document.getElementById('searchBox').value.toLowerCase();
+  let filtered = productsCache.filter(p =>
+    p.name.toLowerCase().includes(search) ||
+    p.category.toLowerCase().includes(search)
+  );
+
+  filtered.sort((a,b)=> a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+
+  let grouped = {};
+  filtered.forEach(p=>{
+    if(!grouped[p.category]) grouped[p.category] = [];
+    grouped[p.category].push(p);
+  });
+
+  let html = '';
+  for(let cat in grouped){
+    html += `<div class="category-block">
+      <div class="category-header" onclick="toggleCat('${cat}')">
+        <span>${cat}</span>
+        <span>${grouped[cat].length} items ▼</span>
+      </div>
+      <div class="category-items" id="cat-${cat}">
+        <table>
+        <tr><th>Name</th><th>Price</th><th>Stock</th><th></th></tr>`;
+    grouped[cat].forEach(p=>{
+      let stockClass = p.stock == 0? 'stock-low' : p.stock < 10? 'stock-low' : 'stock-ok';
+      html += `<tr>
+        <td>${p.name}</td>
+        <td>₱${p.price}</td>
+        <td class="${stockClass}">${p.stock}</td>
+        <td><button class="edit" onclick="editProduct('${p.id}')">Edit</button></td>
+      </tr>`;
+    });
+    html += `</table></div></div>`;
+  }
+
+  document.getElementById('productList').innerHTML = html || '<p style="text-align:center;color:#666;padding:20px;">No products found</p>';
+}
+
+function toggleCat(cat){
+  let el = document.getElementById('cat-'+cat);
+  el.style.display = el.style.display === 'none'? 'block' : 'none';
+}
+
+async function editProduct(id){
+  let product = productsCache.find(p=>p.id===id);
+  let newPrice = prompt(`Update price for ${product.name}`, product.price);
+  let newStock = prompt(`Update stock for ${product.name}`, product.stock);
+
+  if(newPrice!== null && newStock!== null){
+    await db.collection('dhan-pos-web').doc(id).update({
+      price:parseFloat(newPrice),
+      stock:parseInt(newStock)
+    });
+    loadProducts();
+  }
+}
+
+loadProducts();
 </script>
 </body>
 </html>
