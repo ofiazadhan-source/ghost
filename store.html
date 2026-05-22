@@ -16,6 +16,8 @@ body{background:#f5f5f5;padding:15px;}
 .product{padding:10px;border:1px solid #ddd;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
 button{background:#ff6b35;color:white;border:none;padding:8px 15px;border-radius:8px;font-weight:600;cursor:pointer;}
 .cart-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
+select,input{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
+.hidden{display:none;}
 </style>
 </head>
 <body>
@@ -33,6 +35,21 @@ button{background:#ff6b35;color:white;border:none;padding:8px 15px;border-radius
 <h4>Cart</h4>
 <div id="cartList">Empty</div>
 <h3 id="total">Total: ₱0</h3>
+
+<select id="paymentMethod" onchange="togglePaymentFields()">
+  <option value="Cash">Cash</option>
+  <option value="GCash">GCash</option>
+</select>
+
+<div id="cashFields" class="hidden">
+  <input type="number" id="cashAmount" placeholder="Cash Received" oninput="computeChange()">
+  <p id="changeText">Change: ₱0</p>
+</div>
+
+<div id="gcashFields" class="hidden">
+  <input type="text" id="gcashRef" placeholder="GCash Reference No.">
+</div>
+
 <button onclick="checkout()">Checkout</button>
 </div>
 
@@ -49,7 +66,6 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let cart = [];
-
 window.onload = loadProducts;
 
 async function loadProducts(){
@@ -86,13 +102,43 @@ function updateCart(){
  document.getElementById('total').innerText = `Total: ₱${total}`;
 }
 
+function togglePaymentFields(){
+ let method = document.getElementById('paymentMethod').value;
+ document.getElementById('cashFields').classList.toggle('hidden', method !== 'Cash');
+ document.getElementById('gcashFields').classList.toggle('hidden', method !== 'GCash');
+}
+
+function computeChange(){
+ let total = cart.reduce((sum,i)=>sum+i.price*i.qty,0);
+ let cash = parseFloat(document.getElementById('cashAmount').value) || 0;
+ let change = cash - total;
+ document.getElementById('changeText').innerText = `Change: ₱${change >= 0 ? change : 0}`;
+}
+
 async function checkout(){
  if(cart.length===0){alert('Cart empty');return;}
  
+ let method = document.getElementById('paymentMethod').value;
+ let total = cart.reduce((sum,i)=>sum+i.price*i.qty,0);
+ let paymentData = {method,total};
+
+ if(method === 'Cash'){
+  let cash = parseFloat(document.getElementById('cashAmount').value) || 0;
+  if(cash < total){alert('Insufficient cash');return;}
+  paymentData.cashReceived = cash;
+  paymentData.change = cash - total;
+ }
+ 
+ if(method === 'GCash'){
+  let ref = document.getElementById('gcashRef').value.trim();
+  if(!ref){alert('Enter GCash Reference No.');return;}
+  paymentData.gcashRef = ref;
+ }
+
  // Save sale to dhan-sales
  await db.collection('dhan-sales').add({
   items:cart,
-  total:cart.reduce((sum,i)=>sum+i.price*i.qty,0),
+  ...paymentData,
   timestamp:firebase.firestore.FieldValue.serverTimestamp()
  });
  
@@ -106,8 +152,11 @@ async function checkout(){
  
  alert('Checkout success!');
  cart = [];
+ document.getElementById('cashAmount').value='';
+ document.getElementById('gcashRef').value='';
  updateCart();
  loadProducts();
+ togglePaymentFields();
 }
 </script>
 </body>
