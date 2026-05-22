@@ -91,21 +91,253 @@ togglePaymentFields();
 }
 
 async function loadProducts(){
-const snap = await db.collection('dhan-pos-web').where('stock','>',0).get();
-let html = '';
-snap.forEach(doc=>{
-let p = doc.data();
-html += `<div class="product">
-  <div style="flex:1">
-    <strong>${p.name}</strong><br>
-    ₱${p.price} | Stock: ${p.stock}
-  </div>
-  <div style="display:flex;gap:5px;align-items:center;">
-    <input type="number" id="qty-${doc.id}" value="1" min="1" max="${p.stock}" 
-      style="width:60px;padding:6px;border:1px solid #ddd;border-radius:8px;text-align:center;">
-    <button onclick="addToCart('${doc.id}')">Add</button>
-  </div>
-</div>`;
+  const snap = await db.collection('dhan-pos-web').where('stock','>',0).get();
+
+  var grouped = {};
+  snap.forEach(function(doc){
+    var p = doc.data();
+    var cat = (p.category || 'Uncategorized').trim();
+    if(!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push({
+      id: doc.id, 
+      name: p.name, 
+      price: p.price, 
+      stock: p.stock
+    });
+  });
+
+  var html = '';
+  Object.keys(grouped).sort().forEach(function(cat){
+    html += '<div style="background:#f8f8f8;padding:10px;margin:10px 0;font-weight:600;border-radius:8px;">' + cat + '</div>';
+
+    grouped[cat].forEach(function(p){
+      html += '<div class="product">' +
+        '<div style="flex:1">' +
+          '<strong>' + p.name + '</strong><br>' +
+          '₱' + p.price + ' | Stock: ' + p.stock +
+        '</div>' +
+        '<div style="display:flex;gap:5px;align-items:center;">' +
+          '<input type="number" id="qty-' + p.id + '" value="1" min="1" max="' + p.stock + '" style="width:60px;padding:6px;border:1px solid #ddd;border-radius:8px;text-align:center;">' +
+          '<button onclick="addToCart(\'' + p.id + '\')">Add</button>' +
+        '</div>' +
+      '</div>';
+    });
+  });
+
+  document.getElementById('productList').innerHTML = html || 'No products available';
+}
+
+  document.getElementById('productList').innerHTML = html || 'No products available';
+}
+        ₱${p.price} | Stock: ${p.stock}
+      </div>
+      <div style="display:flex;gap:5px;align-items:center;">
+        <input type="number" id="qty-${p.id}" value="1" min="1" max="${p.stock}"
+          style="width:60px;padding:6px;border:1px solid #ddd;border-radius:8px;text-align:center;">
+        <button onclick="addToCart('${p.id}')">Add</button>
+      </div>
+    </div>`;
+  });
+});
+
+document.getElementById('productList').innerHTML = html || 'No products available';
+
+  grouped[cat].forEach(p=>{
+    html += `<div class="product">
+      <div style="flex:1">
+        <strong>${p.name}</strong><br>
+        ₱${p.price} | Stock: ${p.stock}
+      </div>
+      <div style="display:flex;gap:5px;align-items:center;">
+        <input type="number" id="qty-${p.id}" value="1" min="1" max="${p.stock}"
+          style="width:60px;padding:6px;border:1px solid #ddd;border-radius:8px;text-align:center;">
+        <button onclick="addToCart('${p.id}')">Add</button>
+      </div>
+    </div>`;
+  });
+});
+
+document.getElementById('productList').innerHTML = html || 'No products available';
+  if(products.length === 0){
+    document.getElementById('productList').innerHTML = 'No products available';
+    return;
+  }
+
+  // Group by category
+  let grouped = {};
+  products.forEach(p=>{
+    let cat = p.category.toLowerCase();
+    if(!grouped[cat]) grouped[cat] = {display: p.category, items: []};
+    grouped[cat].items.push(p);
+  });
+
+  let sortedCats = Object.keys(grouped).sort();
+  let html = '';
+
+  sortedCats.forEach(cat=>{
+    let safeId = btoa(cat).replace(/[^a-zA-Z0-9]/g, '');
+    let displayName = grouped[cat].display;
+    let items = grouped[cat].items;
+
+    html += `
+    <div class="category-header" onclick="toggleCat('${safeId}')"
+      style="background:#f8f8f8;padding:12px;margin:10px 0;font-weight:600;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+      <span>${displayName} (${items.length} items)</span>
+      <span class="arrow" id="arrow-${safeId}">▼</span>
+    </div>
+    <div class="category-items" id="cat-${safeId}" style="display:block;">`;
+
+    items.forEach(p=>{
+      html += `<div class="product">
+        <div style="flex:1">
+          <strong>${p.name}</strong><br>
+          ₱${p.price} | Stock: ${p.stock}
+        </div>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <input type="number" id="qty-${p.id}" value="1" min="1" max="${p.stock}"
+            style="width:60px;padding:6px;border:1px solid #ddd;border-radius:8px;text-align:center;">
+          <button onclick="addToCart('${p.id}')">Add</button>
+        </div>
+      </div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  document.getElementById('productList').innerHTML = html;
+}
+
+function toggleCat(catId){
+  let items = document.getElementById('cat-'+catId);
+  let arrow = document.getElementById('arrow-'+catId);
+  if(items.style.display === 'none'){
+    items.style.display = 'block';
+    arrow.style.transform = 'rotate(0deg)';
+  } else {
+    items.style.display = 'none';
+    arrow.style.transform = 'rotate(-90deg)';
+  }
+}
+
+  if(products.length === 0){
+    document.getElementById('productList').innerHTML = 'No products available';
+    return;
+  }
+
+  let grouped = {};
+  products.forEach(p=>{
+    let cat = p.category.toLowerCase();
+    if(!grouped[cat]) grouped[cat] = {display: p.category, items: []};
+    grouped[cat].items.push(p);
+  });
+
+  let sortedCats = Object.keys(grouped).sort();
+  let html = '';
+
+  sortedCats.forEach(cat=>{
+    let safeId = btoa(cat).replace(/[^a-zA-Z0-9]/g, '');
+    let displayName = grouped[cat].display;
+    let items = grouped[cat].items;
+
+    html += `
+    <div class="category-header" onclick="toggleCat('${safeId}')"
+      style="background:#f8f8f8;padding:12px;margin:10px 0;font-weight:600;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+      <span>${displayName} (${items.length} items)</span>
+      <span class="arrow" id="arrow-${safeId}">▼</span>
+    </div>
+    <div class="category-items" id="cat-${safeId}" style="display:block;">`;
+
+    items.forEach(p=>{
+      html += `<div class="product">
+        <div style="flex:1">
+          <strong>${p.name}</strong><br>
+          ₱${p.price} | Stock: ${p.stock}
+        </div>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <input type="number" id="qty-${p.id}" value="1" min="1" max="${p.stock}"
+            style="width:60px;padding:6px;border:1px solid #ddd;border-radius:8px;text-align:center;">
+          <button onclick="addToCart('${p.id}')">Add</button>
+        </div>
+      </div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  document.getElementById('productList').innerHTML = html;
+}
+
+function toggleCat(catId){
+  let items = document.getElementById('cat-'+catId);
+  let arrow = document.getElementById('arrow-'+catId);
+  if(items.style.display === 'none'){
+    items.style.display = 'block';
+    arrow.style.transform = 'rotate(0deg)';
+  } else {
+    items.style.display = 'none';
+    arrow.style.transform = 'rotate(-90deg)';
+  }
+}
+
+  if(products.length === 0){
+    document.getElementById('productList').innerHTML = 'No products available';
+    return;
+  }
+
+  let grouped = {};
+  products.forEach(p=>{
+    let cat = p.category.toLowerCase();
+    if(!grouped[cat]) grouped[cat] = {display: p.category, items: []};
+    grouped[cat].items.push(p);
+  });
+
+  let sortedCats = Object.keys(grouped).sort();
+  let html = '';
+
+  sortedCats.forEach(cat=>{
+    let safeId = btoa(cat).replace(/[^a-zA-Z0-9]/g, '');
+    let displayName = grouped[cat].display;
+    let items = grouped[cat].items;
+
+    html += `
+    <div class="category-header" onclick="toggleCat('${safeId}')"
+      style="background:#f8f8f8;padding:12px;margin:10px 0;font-weight:600;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+      <span>${displayName} (${items.length} items)</span>
+      <span class="arrow" id="arrow-${safeId}">▼</span>
+    </div>
+    <div class="category-items" id="cat-${safeId}" style="display:block;">`;
+
+    items.forEach(p=>{
+      html += `<div class="product">
+        <div style="flex:1">
+          <strong>${p.name}</strong><br>
+          ₱${p.price} | Stock: ${p.stock}
+        </div>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <input type="number" id="qty-${p.id}" value="1" min="1" max="${p.stock}"
+            style="width:60px;padding:6px;border:1px solid #ddd;border-radius:8px;text-align:center;">
+          <button onclick="addToCart('${p.id}')">Add</button>
+        </div>
+      </div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  document.getElementById('productList').innerHTML = html;
+}
+
+function toggleCat(catId){
+  let items = document.getElementById('cat-'+catId);
+  let arrow = document.getElementById('arrow-'+catId);
+  if(items.style.display === 'none'){
+    items.style.display = 'block';
+    arrow.style.transform = 'rotate(0deg)';
+  } else {
+    items.style.display = 'none';
+    arrow.style.transform = 'rotate(-90deg)';
+  }
+}
 });
 document.getElementById('productList').innerHTML = html || 'No products available';
 }
