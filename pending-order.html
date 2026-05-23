@@ -1,1 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pending Orders - DHAN SIOMAI</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:#FFF8E1;padding:15px;}
+.header{background:linear-gradient(135deg, #D32F2F, #B71C1C);color:white;padding:18px;border-radius:12px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;}
+.header a{color:white;text-decoration:none;font-weight:600;}
+.order{background:white;padding:15px;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,0.1);margin-bottom:15px;}
+.order-header{font-weight:700;color:#D32F2F;margin-bottom:8px;font-size:16px;}
+.order-detail{margin:5px 0;font-size:14px;color:#333;}
+.status{color:red;font-weight:700;}
+.btn-confirm{background:linear-gradient(135deg, #28a745, #218838);color:white;border:none;padding:12px;border-radius:10px;width:100%;margin-top:10px;font-size:16px;font-weight:600;cursor:pointer;}
+.btn-confirm:hover{opacity:0.9;}
+.no-orders{text-align:center;color:#666;padding:50px;font-size:16px;}
+.refresh-btn{background:#FFC107;color:#333;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;margin-bottom:15px;}
+</style>
+</head>
+<body>
+<div class="header">
+<h3>📋 Pending Orders</h3>
+<a href="index.html">← Back</a>
+</div>
+<button class="refresh-btn" onclick="loadPendingOrders()">🔄 Refresh</button>
+<div id="ordersList">Loading...</div>
+<script>
+const firebaseConfig = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
+async function loadPendingOrders(){
+const container = document.getElementById('ordersList');
+container.innerHTML = 'Loading...';
+try {
+const snap = await db.collection('dhan-sales')
+.where('status','==','Pending')
+.orderBy('timestamp','desc')
+.get();
+if(snap.empty){
+container.innerHTML = '<div class="no-orders">No pending orders</div>';
+return;
+}
+let html = '';
+snap.forEach(doc=>{
+const order = doc.data();
+const orderId = doc.id;
+let itemsHtml = order.items.map(i => `${i.name} x${i.qty} - ₱${i.price * i.qty}` ).join('<br>');
+let dateStr = order.timestamp ? order.timestamp.toDate().toLocaleString() : 'N/A';
+html += `
+<div class="order">
+<div class="order-header">Order #${orderId.substring(0, 8)}</div>
+<div class="order-detail"><strong>Date:</strong> ${dateStr}</div>
+<div class="order-detail"><strong>Customer:</strong> ${order.customerName}</div>
+<div class="order-detail"><strong>Phone:</strong> ${order.customerPhone}</div>
+<div class="order-detail"><strong>Address:</strong> ${order.customerAddress}</div>
+<div class="order-detail"><strong>Items:</strong><br>${itemsHtml}</div>
+<div class="order-detail"><strong>Total:</strong> ₱${order.total}</div>
+<div class="order-detail"><strong>GCash Ref:</strong> ${order.gcashRef}</div>
+<div class="order-detail"><strong>Status:</strong> <span class="status">${order.status}</span></div>
+<button class="btn-confirm" onclick="confirmOrder('${orderId}')">Confirm & Deduct Stock</button>
+</div>
+`;
+});
+container.innerHTML = html;
+} catch(e){
+container.innerHTML = '<div class="no-orders">Error loading orders</div>';
+console.error(e);
+}
+}
+
+async function confirmOrder(orderId){
+if(!confirm("Confirm this order? Stock will be deducted automatically.")) return;
+
+try {
+await db.runTransaction(async (transaction) => {
+const orderRef = db.collection('dhan-sales').doc(orderId);
+const orderSnap = await transaction.get(orderRef);
+
+if(!orderSnap.exists) throw "Order not found";
+
+const order = orderSnap.data();
+
+if(order.status !== 'Pending') throw "Order already confirmed";
+
+// 1. READ MUNA LAHAT NG STOCK
+const stockReads = [];
+for(const item of order.items){
+const stockRef = db.collection('dhan-pos-web').doc(item.id);
+stockReads.push({ref: stockRef, snap: await transaction.get(stockRef), item});
+}
+
+// 2. CHECK KUNG SAKTO STOCK
+for(const s of stockReads){
+if(!s.snap.exists) throw `Product not found: ${s.item.name}`;
+const currentStock = s.snap.data().stock;
+const newStock = currentStock - s.item.qty;
+if(newStock < 0) throw `Not enough stock for ${s.item.name}. Available: ${currentStock}`;
+}
+
+// 3. UPDATE LAHAT NG STOCK
+for(const s of stockReads){
+const newStock = s.snap.data().stock - s.item.qty;
+transaction.update(s.ref, { stock: newStock });
+}
+
+// 4. LAST NA UPDATE YUNG ORDER
+transaction.update(orderRef, { 
+status: "Confirmed",
+confirmedAt: firebase.firestore.FieldValue.serverTimestamp()
+});
+});
+
+alert("Order confirmed! Stock updated.");
+loadPendingOrders();
+} catch(e){
+alert("Error: " + e);
+console.error(e);
+}
+}
+
+window.onload = loadPendingOrders;
+</script>
+</body>
+</html>
