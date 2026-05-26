@@ -16,9 +16,9 @@ body{background:#FFF8E1;padding:15px;}
 .order-header{font-weight:700;color:#D32F2F;margin-bottom:8px;font-size:16px;}
 .order-detail{margin:5px 0;font-size:14px;color:#333;}
 .status{color:red;font-weight:700;}
-.btn-group{display:flex;gap:10px;margin-top:10px;} /* DAGDAG TO */
+.btn-group{display:flex;gap:10px;margin-top:10px;}
 .btn-confirm{flex:1;background:linear-gradient(135deg, #28a745, #218838);color:white;border:none;padding:12px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;}
-.btn-reject{flex:1;background:linear-gradient(135deg, #dc3545, #c82333);color:white;border:none;padding:12px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;} /* DAGDAG TO */
+.btn-reject{flex:1;background:linear-gradient(135deg, #dc3545, #c82333);color:white;border:none;padding:12px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;}
 .btn-confirm:hover,.btn-reject:hover{opacity:0.9;}
 .no-orders{text-align:center;color:#666;padding:50px;font-size:16px;}
 .refresh-btn{background:#FFC107;color:#333;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;margin-bottom:15px;}
@@ -99,7 +99,7 @@ const orderRef = db.collection('dhan-sales').doc(orderId);
 const orderSnap = await transaction.get(orderRef);
 if(!orderSnap.exists) throw "Order not found";
 const order = orderSnap.data();
-if(order.status !== 'Pending') throw "Order already confirmed";
+if(order.status !== 'Pending') throw "Order already processed";
 
 const stockReads = [];
 for(const item of order.items){
@@ -123,15 +123,15 @@ transaction.update(orderRef, {
 status: "Confirmed",
 confirmedAt: firebase.firestore.FieldValue.serverTimestamp()
 });
+}); // <- ITO YUNG NAWALA
 alert("Order confirmed! Stock updated.");
 loadPendingOrders();
 } catch(e){
 alert("Error: " + e);
 console.error(e);
 }
-}
+} // <- AT ITO DIN
 
-// DAGDAG NA FUNCTION PARA SA REJECT
 async function rejectOrder(orderId){
 const reason = prompt("Reason for rejection? Optional:");
 if(reason === null) return;
