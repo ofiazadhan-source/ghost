@@ -34,8 +34,12 @@ input:focus,textarea:focus{outline:none;border-color:#FFC107;}
 .receipt-row{display:flex;justify-content:space-between;margin:3px 0;}
 .btn-row{display:flex;gap:10px;margin-top:15px;}
 .btn-row button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:600;cursor:pointer;}
-.proof-preview{max-width:100%;border-radius:8px;margin-top:8px;display:none;}
-@media print{ body *{visibility:hidden;} #printArea,#printArea *{visibility:visible;} #printArea{position:absolute;left:0;top:0;width:58mm;} }
+.proof-preview{max-width:100%;max-height:120px;object-fit:contain;border-radius:8px;margin-top:8px;display:none;} /* ginawa kong maliit */
+@media print{
+ body *{visibility:hidden;}
+ #printArea,#printArea *{visibility:visible;}
+ #printArea{position:absolute;left:0;top:0;width:58mm;}
+}
 </style>
 </head>
 <body>
@@ -79,6 +83,10 @@ input:focus,textarea:focus{outline:none;border-color:#FFC107;}
 <input type="file" id="proofFile" accept="image/*" required>
 <img id="proofPreview" class="proof-preview">
 
+<!-- ITO YUNG DINAGDAG -->
+<div class="label">GCash Reference No.</div>
+<input type="text" id="gcashRef" placeholder="Enter reference number" required>
+<button class="checkout-btn" onclick="checkout()">Place Order</button>
 
 </div>
 
@@ -106,15 +114,15 @@ window.onload = loadProducts;
 
 // Preview uploaded image
 document.getElementById('proofFile').onchange = function(e){
-  const file = e.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = function(e){
-      document.getElementById('proofPreview').src = e.target.result;
-      document.getElementById('proofPreview').style.display = 'block';
-    }
-    reader.readAsDataURL(file);
-  }
+const file = e.target.files[0];
+if(file){
+const reader = new FileReader();
+reader.onload = function(e){
+document.getElementById('proofPreview').src = e.target.result;
+document.getElementById('proofPreview').style.display = 'block';
+}
+reader.readAsDataURL(file);
+}
 }
 
 async function loadProducts(){
@@ -161,7 +169,6 @@ html += `<div class="product">
 </div>
 </div>`;
 });
-}); // <-- ITO YUNG NAWALA DATI
 document.getElementById('productList').innerHTML = html || '<p style="text-align:center;padding:30px;font-size:16px;color:#666;">No products found</p>';
 }
 
@@ -205,7 +212,8 @@ let gcashRef = document.getElementById('gcashRef').value.trim();
 let proofFile = document.getElementById('proofFile').files[0];
 
 if(!customerName ||!customerPhone ||!customerAddress){
-alert('Please fill in all delivery details'); return;
+alert('Please fill in all delivery details');
+return;
 }
 if(!gcashRef){alert('Please enter GCash Reference No.'); return;}
 if(!proofFile){alert('Please upload GCash proof of payment'); return;}
@@ -251,6 +259,7 @@ customerMessage: ''
 };
 
 showReceipt();
+
 cart = [];
 document.getElementById('gcashRef').value='';
 document.getElementById('proofFile').value='';
@@ -280,7 +289,6 @@ html += `<div class="receipt-row"><span>${i.name} x${i.qty}</span><span>₱${i.p
 html += `<div class="receipt-row"><span>Payment</span><span>GCash - ${lastSale.status}</span></div>
 <div class="receipt-row"><span>Ref No.</span><span>${lastSale.gcashRef}</span></div>`;
 
-// Show admin message if rejected
 if(lastSale.customerMessage){
 html += `<div class="line"></div>
 <div style="color:red;background:#ffea;padding:8px;border-radius:6px;margin:8px 0;">
