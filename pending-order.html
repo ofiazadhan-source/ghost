@@ -16,10 +16,13 @@ body{background:#FFF8E1;padding:15px;}
 .order-header{font-weight:700;color:#D32F2F;margin-bottom:8px;font-size:16px;}
 .order-detail{margin:5px 0;font-size:14px;color:#333;}
 .status{color:red;font-weight:700;}
-.btn-confirm{background:linear-gradient(135deg, #28a745, #218838);color:white;border:none;padding:12px;border-radius:10px;width:100%;margin-top:10px;font-size:16px;font-weight:600;cursor:pointer;}
-.btn-confirm:hover{opacity:0.9;}
+.btn-group{display:flex;gap:10px;margin-top:10px;}
+.btn-confirm{flex:1;background:linear-gradient(135deg, #28a745, #218838);color:white;border:none;padding:12px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;}
+.btn-reject{flex:1;background:linear-gradient(135deg, #dc3545, #c82333);color:white;border:none;padding:12px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;}
+.btn-confirm:hover,.btn-reject:hover{opacity:0.9;}
 .no-orders{text-align:center;color:#666;padding:50px;font-size:16px;}
 .refresh-btn{background:#FFC107;color:#333;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;margin-bottom:15px;}
+.proof-img{max-width:100%;border-radius:8px;margin-top:8px;border:2px solid #0077ff;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -29,6 +32,7 @@ body{background:#FFF8E1;padding:15px;}
 </div>
 <button class="refresh-btn" onclick="loadPendingOrders()">🔄 Refresh</button>
 <div id="ordersList">Loading...</div>
+
 <script>
 const firebaseConfig = {
 apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
@@ -59,6 +63,7 @@ const order = doc.data();
 const orderId = doc.id;
 let itemsHtml = order.items.map(i => `${i.name} x${i.qty} - ₱${i.price * i.qty}` ).join('<br>');
 let dateStr = order.timestamp ? order.timestamp.toDate().toLocaleString() : 'N/A';
+
 html += `
 <div class="order">
 <div class="order-header">Order #${orderId.substring(0, 8)}</div>
@@ -68,9 +73,14 @@ html += `
 <div class="order-detail"><strong>Address:</strong> ${order.customerAddress}</div>
 <div class="order-detail"><strong>Items:</strong><br>${itemsHtml}</div>
 <div class="order-detail"><strong>Total:</strong> ₱${order.total}</div>
-<div class="order-detail"><strong>GCash Ref:</strong> ${order.gcashRef}</div>
+<div class="order-detail"><strong>GCash Ref:</strong> ${order.gcashRef || 'N/A'}</div>
+${order.proofOfPayment ? `<img src="${order.proofOfPayment}" class="proof-img" onclick="window.open('${order.proofOfPayment}')">` : ''}
 <div class="order-detail"><strong>Status:</strong> <span class="status">${order.status}</span></div>
+
+<div class="btn-group">
 <button class="btn-confirm" onclick="confirmOrder('${orderId}')">Confirm & Deduct Stock</button>
+<button class="btn-reject" onclick="rejectOrder('${orderId}')">Reject Order</button>
+</div>
 </div>
 `;
 });
@@ -83,16 +93,12 @@ console.error(e);
 
 async function confirmOrder(orderId){
 if(!confirm("Confirm this order? Stock will be deducted automatically.")) return;
-
 try {
 await db.runTransaction(async (transaction) => {
 const orderRef = db.collection('dhan-sales').doc(orderId);
 const orderSnap = await transaction.get(orderRef);
-
 if(!orderSnap.exists) throw "Order not found";
-
 const order = orderSnap.data();
-
 if(order.status !== 'Pending') throw "Order already confirmed";
 
 // 1. READ MUNA LAHAT NG STOCK
@@ -117,13 +123,38 @@ transaction.update(s.ref, { stock: newStock });
 }
 
 // 4. LAST NA UPDATE YUNG ORDER
-transaction.update(orderRef, { 
+transaction.update(orderRef, {
 status: "Confirmed",
 confirmedAt: firebase.firestore.FieldValue.serverTimestamp()
 });
+alert("Order confirmed! Stock updated.");
+loadPendingOrders();
+} catch(e){
+alert("Error: " + e);
+console.error(e);
+}
+}
+
+async function rejectOrder(orderId){
+const reason = prompt("Reason for rejection? Optional:");
+if(reason === null) return; // Cancelled
+
+if(!confirm("Reject this order? This cannot be undone.")) return;
+
+try {
+// OPTION 1: Mark as Rejected - RECOMMENDED para may record
+await db.collection('dhan-sales').doc(orderId).update({
+status: "Rejected",
+rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+rejectReason: reason || "No reason provided"
 });
 
-alert("Order confirmed! Stock updated.");
+/*
+// OPTION 2: Delete completely - uncomment mo to kung gusto mo burahin
+await db.collection('dhan-sales').doc(orderId).delete();
+*/
+
+alert("Order rejected.");
 loadPendingOrders();
 } catch(e){
 alert("Error: " + e);
