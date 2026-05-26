@@ -22,7 +22,6 @@ body{background:#FFF8E1;padding:15px;}
 .btn-confirm:hover,.btn-reject:hover{opacity:0.9;}
 .no-orders{text-align:center;color:#666;padding:50px;font-size:16px;}
 .refresh-btn{background:#FFC107;color:#333;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;margin-bottom:15px;}
-.proof-img{max-width:100%;border-radius:8px;margin-top:8px;border:2px solid #0077ff;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -53,15 +52,17 @@ const snap = await db.collection('dhan-sales')
 .where('status','==','Pending')
 .orderBy('timestamp','desc')
 .get();
+
 if(snap.empty){
 container.innerHTML = '<div class="no-orders">No pending orders</div>';
 return;
 }
+
 let html = '';
 snap.forEach(doc=>{
 const order = doc.data();
 const orderId = doc.id;
-let itemsHtml = order.items.map(i => `${i.name} x${i.qty} - ₱${i.price * i.qty}` ).join('<br>');
+let itemsHtml = order.items.map(i => `${i.name} x${i.qty} - ₱${i.price * i.qty}`).join('<br>');
 let dateStr = order.timestamp ? order.timestamp.toDate().toLocaleString() : 'N/A';
 
 html += `
@@ -74,7 +75,6 @@ html += `
 <div class="order-detail"><strong>Items:</strong><br>${itemsHtml}</div>
 <div class="order-detail"><strong>Total:</strong> ₱${order.total}</div>
 <div class="order-detail"><strong>GCash Ref:</strong> ${order.gcashRef || 'N/A'}</div>
-${order.proofOfPayment ? `<img src="${order.proofOfPayment}" class="proof-img" onclick="window.open('${order.proofOfPayment}')">` : ''}
 <div class="order-detail"><strong>Status:</strong> <span class="status">${order.status}</span></div>
 
 <div class="btn-group">
@@ -99,16 +99,15 @@ const orderRef = db.collection('dhan-sales').doc(orderId);
 const orderSnap = await transaction.get(orderRef);
 if(!orderSnap.exists) throw "Order not found";
 const order = orderSnap.data();
-if(order.status !== 'Pending') throw "Order already confirmed";
+if(order.status !== 'Pending') throw "Order already processed";
 
-// 1. READ MUNA LAHAT NG STOCK
+// Check and deduct stock
 const stockReads = [];
 for(const item of order.items){
 const stockRef = db.collection('dhan-pos-web').doc(item.id);
 stockReads.push({ref: stockRef, snap: await transaction.get(stockRef), item});
 }
 
-// 2. CHECK KUNG SAKTO STOCK
 for(const s of stockReads){
 if(!s.snap.exists) throw `Product not found: ${s.item.name}`;
 const currentStock = s.snap.data().stock;
@@ -116,13 +115,11 @@ const newStock = currentStock - s.item.qty;
 if(newStock < 0) throw `Not enough stock for ${s.item.name}. Available: ${currentStock}`;
 }
 
-// 3. UPDATE LAHAT NG STOCK
 for(const s of stockReads){
 const newStock = s.snap.data().stock - s.item.qty;
 transaction.update(s.ref, { stock: newStock });
 }
 
-// 4. LAST NA UPDATE YUNG ORDER
 transaction.update(orderRef, {
 status: "Confirmed",
 confirmedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -137,23 +134,16 @@ console.error(e);
 
 async function rejectOrder(orderId){
 const reason = prompt("Reason for rejection? Optional:");
-if(reason === null) return; // Cancelled
+if(reason === null) return;
 
-if(!confirm("Reject this order? This cannot be undone.")) return;
+if(!confirm("Reject this order? This will not delete it, just mark as rejected.")) return;
 
 try {
-// OPTION 1: Mark as Rejected - RECOMMENDED para may record
 await db.collection('dhan-sales').doc(orderId).update({
 status: "Rejected",
 rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
 rejectReason: reason || "No reason provided"
 });
-
-/*
-// OPTION 2: Delete completely - uncomment mo to kung gusto mo burahin
-await db.collection('dhan-sales').doc(orderId).delete();
-*/
-
 alert("Order rejected.");
 loadPendingOrders();
 } catch(e){
