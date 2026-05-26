@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Online Order - DHAN </title>
+<title>Online Order - DHAN</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -34,7 +34,7 @@ input:focus,textarea:focus{outline:none;border-color:#FFC107;}
 .receipt-row{display:flex;justify-content:space-between;margin:3px 0;}
 .btn-row{display:flex;gap:10px;margin-top:15px;}
 .btn-row button{flex:1;padding:10px;border:none;border-radius:8px;font-weight:600;cursor:pointer;}
-.proof-preview{max-width:100%;max-height:120px;object-fit:contain;border-radius:8px;margin-top:8px;display:none;} /* ginawa kong maliit */
+.proof-preview{max-width:100%;max-height:120px;object-fit:contain;border-radius:8px;margin-top:8px;display:none;}
 @media print{
  body *{visibility:hidden;}
  #printArea,#printArea *{visibility:visible;}
@@ -43,6 +43,7 @@ input:focus,textarea:focus{outline:none;border-color:#FFC107;}
 </style>
 </head>
 <body>
+
 <div class="header">
 <h3>🛒 Online Order</h3>
 <a href="index.html">← Back</a>
@@ -83,7 +84,6 @@ input:focus,textarea:focus{outline:none;border-color:#FFC107;}
 <input type="file" id="proofFile" accept="image/*" required>
 <img id="proofPreview" class="proof-preview">
 
-<!-- ITO YUNG DINAGDAG -->
 <div class="label">GCash Reference No.</div>
 <input type="text" id="gcashRef" placeholder="Enter reference number" required>
 <button class="checkout-btn" onclick="checkout()">Place Order</button>
@@ -141,6 +141,7 @@ function renderProducts(){
 let search = document.getElementById('searchBox').value.toLowerCase();
 let filtered = allProducts.filter(p => p.name.toLowerCase().includes(search));
 let grouped = { "65's": [], "30's": [], "Big SIOMAI": [], "Dumplings": [], "Siopao": [], "Sauce": [], "Others": [] };
+
 filtered.forEach(p=>{
 let name = p.name.toLowerCase();
 let cat = p.category? p.category.toLowerCase() : '';
@@ -152,6 +153,7 @@ else if(name.includes("20's") || name.includes('20s')) { grouped["Big SIOMAI"].p
 else if(name.includes('dumpling') || name.includes('dumlings')) { grouped["Dumplings"].push(p); }
 else { grouped["Others"].push(p); }
 });
+
 let html = '';
 let order = ["65's", "30's", "Big SIOMAI", "Dumplings", "Siopao", "Sauce", "Others"];
 order.forEach(groupName=>{
@@ -169,6 +171,8 @@ html += `<div class="product">
 </div>
 </div>`;
 });
+}); // <- DITO YUNG FIX
+
 document.getElementById('productList').innerHTML = html || '<p style="text-align:center;padding:30px;font-size:16px;color:#666;">No products found</p>';
 }
 
@@ -218,7 +222,6 @@ return;
 if(!gcashRef){alert('Please enter GCash Reference No.'); return;}
 if(!proofFile){alert('Please upload GCash proof of payment'); return;}
 
-// Convert image to base64
 const proofBase64 = await new Promise((resolve)=>{
 const reader = new FileReader();
 reader.onload = e => resolve(e.target.result);
