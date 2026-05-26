@@ -19,9 +19,10 @@ body{background:#FFF8E1;padding:15px;}
 .btn-group{display:flex;gap:10px;margin-top:10px;}
 .btn-confirm{flex:1;background:linear-gradient(135deg, #28a745, #218838);color:white;border:none;padding:12px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;}
 .btn-reject{flex:1;background:linear-gradient(135deg, #dc3545, #c82333);color:white;border:none;padding:12px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;}
-.proof-img{max-width:100%;border-radius:8px;margin-top:8px;border:2px solid #D32F2F;cursor:pointer;}
+.btn-confirm:hover,.btn-reject:hover{opacity:0.9;}
 .no-orders{text-align:center;color:#666;padding:50px;font-size:16px;}
 .refresh-btn{background:#FFC107;color:#333;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;margin-bottom:15px;}
+.proof-img{max-width:100%;border-radius:8px;margin-top:8px;border:2px solid #D32F2F;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -124,13 +125,14 @@ transaction.update(orderRef, {
 status: "Confirmed",
 confirmedAt: firebase.firestore.FieldValue.serverTimestamp()
 });
+}); // <-- ito yung nawala dati
 alert("Order confirmed! Stock updated.");
 loadPendingOrders();
 } catch(e){
 alert("Error: " + e);
 console.error(e);
 }
-}
+} // <-- at ito rin
 
 async function rejectOrder(orderId){
 const message = prompt("Type message to customer:\nExample: 'Invalid GCash ref. Please send correct screenshot.'");
