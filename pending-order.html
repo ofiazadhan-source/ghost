@@ -16,9 +16,9 @@ body{background:#FFF8E1;padding:15px;}
 .order-header{font-weight:700;color:#D32F2F;margin-bottom:8px;font-size:16px;}
 .order-detail{margin:5px 0;font-size:14px;color:#333;}
 .status{color:red;font-weight:700;}
-.btn-group{display:flex;gap:10px;margin-top:10px;}
+.btn-group{display:flex;gap:10px;margin-top:10px;} /* DAGDAG TO */
 .btn-confirm{flex:1;background:linear-gradient(135deg, #28a745, #218838);color:white;border:none;padding:12px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;}
-.btn-reject{flex:1;background:linear-gradient(135deg, #dc3545, #c82333);color:white;border:none;padding:12px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;}
+.btn-reject{flex:1;background:linear-gradient(135deg, #dc3545, #c82333);color:white;border:none;padding:12px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;} /* DAGDAG TO */
 .btn-confirm:hover,.btn-reject:hover{opacity:0.9;}
 .no-orders{text-align:center;color:#666;padding:50px;font-size:16px;}
 .refresh-btn{background:#FFC107;color:#333;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;margin-bottom:15px;}
@@ -74,7 +74,7 @@ html += `
 <div class="order-detail"><strong>Address:</strong> ${order.customerAddress}</div>
 <div class="order-detail"><strong>Items:</strong><br>${itemsHtml}</div>
 <div class="order-detail"><strong>Total:</strong> ₱${order.total}</div>
-<div class="order-detail"><strong>GCash Ref:</strong> ${order.gcashRef || 'N/A'}</div>
+<div class="order-detail"><strong>GCash Ref:</strong> ${order.gcashRef}</div>
 <div class="order-detail"><strong>Status:</strong> <span class="status">${order.status}</span></div>
 
 <div class="btn-group">
@@ -99,9 +99,8 @@ const orderRef = db.collection('dhan-sales').doc(orderId);
 const orderSnap = await transaction.get(orderRef);
 if(!orderSnap.exists) throw "Order not found";
 const order = orderSnap.data();
-if(order.status !== 'Pending') throw "Order already processed";
+if(order.status !== 'Pending') throw "Order already confirmed";
 
-// Check and deduct stock
 const stockReads = [];
 for(const item of order.items){
 const stockRef = db.collection('dhan-pos-web').doc(item.id);
@@ -132,11 +131,12 @@ console.error(e);
 }
 }
 
+// DAGDAG NA FUNCTION PARA SA REJECT
 async function rejectOrder(orderId){
 const reason = prompt("Reason for rejection? Optional:");
 if(reason === null) return;
 
-if(!confirm("Reject this order? This will not delete it, just mark as rejected.")) return;
+if(!confirm("Reject this order?")) return;
 
 try {
 await db.collection('dhan-sales').doc(orderId).update({
