@@ -322,6 +322,7 @@ customerMessage: ''
 
 let docRef = await db.collection('dhan-sales').add(saleData);
 localStorage.setItem('lastOrder', JSON.stringify({id: docRef.id}));
+localStorage.setItem('customerPhone', customerPhone);
 
 alert('Order placed! Wait for confirmation.');
 
@@ -356,7 +357,7 @@ function showReceipt(){
 let html = `<h3>DHAN SIOMAI - ONLINE ORDER</h3>
 <p style="text-align:center;">Thank you!</p>
 <div class="line"></div>
-<p>${lastSale.date.toLocaleString()}</p>
+<p>${new Date().toLocaleString()}</p>
 <div class="line"></div>
 <p><strong>To:</strong> ${lastSale.customerName}</p>
 <p><strong>Phone:</strong> ${lastSale.customerPhone}</p>
@@ -390,14 +391,30 @@ document.getElementById('printArea').innerHTML = html;
 document.getElementById('receiptModal').style.display='flex';
 }
 
-// Floating Mail Functions
+// Floating Mail Functions - FIXED
 function checkMessage(){
 let lastOrder = JSON.parse(localStorage.getItem('lastOrder'));
-if(!lastOrder) return;
+let phone = localStorage.getItem('customerPhone');
 
-db.collection('dhan-sales').doc(lastOrder.id).get().then(doc=>{
-if(!doc.exists) return;
-let data = doc.data();
+if(!lastOrder &&!phone) return;
+
+let queryPromise;
+if(lastOrder){
+  queryPromise = db.collection('dhan-sales').doc(lastOrder.id).get();
+} else {
+  queryPromise = db.collection('dhan-sales').where('customerPhone', '==', phone).orderBy('timestamp', 'desc').limit(1).get();
+}
+
+queryPromise.then(result=>{
+let data;
+if(lastOrder){
+  if(!result.exists) return;
+  data = result.data();
+} else {
+  if(result.empty) return;
+  data = result.docs[0].data();
+}
+
 if(data.customerMessage && data.customerMessage.trim()!== ''){
 document.getElementById('mailDot').style.display = 'block';
 document.getElementById('messageContent').innerHTML = `
@@ -406,7 +423,7 @@ document.getElementById('messageContent').innerHTML = `
 <small>Date: ${data.timestamp?.toDate().toLocaleString() || ''}</small>
 `;
 }
-});
+}).catch(err=>console.log(err));
 }
 
 function openMessage(){
