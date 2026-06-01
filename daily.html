@@ -3,157 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Production - DHAN SIOMAI</title>
+<title>DHAN SIOMAI POS - Main Menu</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
-body{background:#f5f5f5;padding:15px;}
-.header{background:#ff6b35;color:white;padding:15px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;}
-.header a{color:white;text-decoration:none;font-weight:600;}
-.card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
-input{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;font-size:16px;}
-button{background:#ff6b35;color:white;border:none;padding:12px 20px;border-radius:8px;font-weight:600;cursor:pointer;width:100%;font-size:16px;}
-button:disabled{opacity:0.6;cursor:not-allowed;}
-.success{color:green;font-size:13px;margin-top:10px;text-align:center;display:none;}
-.product-preview{display:flex;align-items:center;gap:12px;margin-bottom:15px;padding:12px;background:#fff3e0;border-radius:10px;border:2px solid #ff9800;display:none;}
-.product-preview img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #ff6b35;}
-.product-preview div{flex:1;}
-.product-preview h5{margin:0;font-size:15px;color:#e65100;}
-.product-preview p{margin:3px 0 0;font-size:12px;color:#666;}
+body{background:linear-gradient(135deg, #ff6b35 0%, #ff8e53 100%);min-height:100vh;padding:20px;display:flex;align-items:center;justify-content:center;}
+.container{max-width:400px;width:100%;}
+.logo{text-align:center;margin-bottom:30px;}
+.logo h1{color:white;font-size:32px;font-weight:700;text-shadow:0 2px 10px rgba(0,0,0,0.2);}
+.logo p{color:rgba(255,255,255,0.9);font-size:14px;margin-top:5px;}
+.menu{display:grid;gap:15px;}
+.card{background:white;border-radius:15px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,0.15);cursor:pointer;transition:transform 0.2s;}
+.card:active{transform:scale(0.98);}
+.card h3{color:#ff6b35;font-size:18px;margin-bottom:5px;display:flex;align-items:center;gap:10px;}
+.card p{color:#666;font-size:13px;}
+.logout{background:#dc3545;color:white;text-align:center;padding:15px;border-radius:15px;font-weight:600;cursor:pointer;margin-top:20px;}
+.logout:active{transform:scale(0.98);}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h3>📊 Daily Production</h3>
-  <a href="index.html">← Back</a>
-</div>
+<div class="container">
+  <div class="logo">
+    <h1>🥟 DHAN SIOMAI</h1>
+    <p>POS System v2.0</p>
+  </div>
 
-<div class="card">
-  <h4>🥟 Add Production</h4>
+  <div class="menu">
+    <!-- FIXED LINKS BOSS - DAPAT MATCH SA FILENAME MO SA GITHUB -->
+    <div class="card" onclick="window.location.href='products.html'">
+      <h3>📦 Products</h3>
+      <p>Add/Edit products + Upload pictures</p>
+    </div>
 
-  <input list="products" id="dProduct" placeholder="Type to search product...">
-  <datalist id="products"></datalist>
+    <div class="card" onclick="window.location.href='daily.html'">
+      <h3>📊 Daily Production</h3>
+      <p>Log production + View stock with pics</p>
+    </div>
 
-  <!-- PICTURE PREVIEW DITO BOSS -->
-  <div id="productPreview" class="product-preview">
-    <img id="previewImg" src="" alt="">
-    <div>
-      <h5 id="previewName"></h5>
-      <p id="previewStock"></p>
+    <div class="card" onclick="window.location.href='sales.html'">
+      <h3>💰 Sales</h3>
+      <p>POS checkout system</p>
+    </div>
+
+    <div class="card" onclick="window.location.href='expenses.html'">
+      <h3>💸 Expenses</h3>
+      <p>Track daily expenses</p>
+    </div>
+
+    <div class="card" onclick="window.location.href='dashboard.html'">
+      <h3>📈 Boss Dashboard</h3>
+      <p>View reports + Production records</p>
     </div>
   </div>
 
-  <input type="number" id="dQty" placeholder="Quantity Produced" min="1">
-  <input type="date" id="dDate">
-  <button id="saveBtn">Save Production</button>
-  <div class="success" id="successMsg">✅ Production saved! Stock updated!</div>
+  <div class="logout" onclick="logout()">🚪 Logout</div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-  projectId: "dhan-siomai-pos-fe1e5",
-  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-  messagingSenderId: "305932123173",
-  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-let productsList = {}; // name -> {id, stock, imageUrl}
-
-window.onload = loadProducts;
-document.getElementById('dDate').valueAsDate = new Date();
-
-// Show picture when user types/selects product
-document.getElementById('dProduct').addEventListener('input', (e) => {
-  const productName = e.target.value.trim();
-  const preview = document.getElementById('productPreview');
-
-  if(productsList[productName]) {
-    const p = productsList[productName];
-    document.getElementById('previewImg').src = p.imageUrl || 'https://via.placeholder.com/60/ff6b35/ffffff?text=NO+IMG';
-    document.getElementById('previewName').textContent = productName;
-    document.getElementById('previewStock').textContent = `Current Stock: ${p.stock} pcs`;
-    preview.style.display = 'flex';
-  } else {
-    preview.style.display = 'none';
-  }
-});
-
-async function loadProducts(){
-  const snap = await getDocs(collection(db, 'products')); // FIXED: products hindi dhan-pos-web
-  let datalistHTML = '';
-
-  snap.forEach(docSnap => {
-    let p = docSnap.data();
-    productsList[p.name] = {id: docSnap.id, stock: p.stock || 0, imageUrl: p.imageUrl};
-    datalistHTML += `<option value="${p.name}">`;
-  });
-
-  document.getElementById('products').innerHTML = datalistHTML;
+<script>
+// Simple logout - balik login
+function logout(){
+  localStorage.clear();
+  window.location.href = 'login.html';
 }
 
-document.getElementById('saveBtn').addEventListener('click', async () => {
-  const productName = document.getElementById('dProduct').value.trim();
-  const qty = parseInt(document.getElementById('dQty').value);
-  const date = document.getElementById('dDate').value;
-  const btn = document.getElementById('saveBtn');
-  const successMsg = document.getElementById('successMsg');
-
-  if(!productName ||!productsList[productName] || isNaN(qty) || qty < 1){
-    alert('Please select valid product from list and enter quantity');
-    return;
+// Check kung naka-login
+window.onload = function(){
+  if(!localStorage.getItem('userEmail')){
+    window.location.href = 'login.html';
   }
-
-  btn.disabled = true;
-  btn.textContent = 'Saving...';
-  successMsg.style.display = 'none';
-
-  try {
-    const productData = productsList[productName];
-    const productId = productData.id;
-
-    // 1. Save to daily_records - FIXED collection name
-    await addDoc(collection(db, 'daily_records'), {
-      productId: productId,
-      productName: productName,
-      quantity: qty,
-      date: date,
-      timestamp: Timestamp.now()
-    });
-
-    // 2. Update stock in products
-    const newStock = productData.stock + qty;
-    await updateDoc(doc(db, 'products', productId), {stock: newStock});
-
-    // Update local cache
-    productsList[productName].stock = newStock;
-
-    // Update preview stock
-    document.getElementById('previewStock').textContent = `Current Stock: ${newStock} pcs`;
-
-    successMsg.style.display = 'block';
-    document.getElementById('dQty').value = '';
-    document.getElementById('dProduct').value = '';
-    document.getElementById('productPreview').style.display = 'none';
-
-    setTimeout(() => successMsg.style.display = 'none', 3000);
-
-  } catch (error) {
-    alert('Error: ' + error.message);
-    console.error(error);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Save Production';
-  }
-});
+}
 </script>
 
 </body>
