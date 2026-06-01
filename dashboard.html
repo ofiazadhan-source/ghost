@@ -3,135 +3,179 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard - DHAN SIOMAI</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<title>DHAN SIOMAI Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
-body{background:#f5f5f5;padding:15px;}
-.header{background:#ff6b35;color:white;padding:15px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;}
-.header a{color:white;text-decoration:none;font-weight:600;}
-.card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
-.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:15px;}
-.box{background:#fff;border-radius:10px;padding:15px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-.box h4{font-size:13px;color:#666;margin-bottom:5px;}
-.box h2{font-size:20px;color:#ff6b35;}
-input,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
-button{background:#ff6b35;color:white;border:none;font-weight:600;cursor:pointer;}
-table{width:100%;border-collapse:collapse;font-size:14px;}
-th,td{padding:8px;text-align:left;border-bottom:1px solid #eee;}
-th{background:#f8f8f8;}
-.profit{color:green;}
-.loss{color:red;}
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
+body {background:#f5f5f5; padding:15px;}
+.header { background: linear-gradient(135deg, #ff6b35, #ff8c65); color:white; padding:18px; border-radius:12px; text-align:center; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+.header h1 {font-size:20px; font-weight:700;}
+.header p {font-size:12px; opacity:0.9; margin-top:5px;}
+.card { background:white; border-radius:16px; padding:25px 20px; margin-bottom:15px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08); cursor:pointer; transition:0.2s; }
+.card:active {transform:scale(0.98); box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+.card-icon { font-size:48px; margin-bottom:10px; }
+.card h3 { font-size:18px; font-weight:700; margin-bottom:5px; color:#222; }
+.card p { font-size:14px; color:#666; }
+.badge { display:inline-block; background:#ff6b35; color:white; padding:4px 10px; border-radius:12px; font-size:11px; margin-top:8px; }
+
+/* LOGIN SCREEN */
+#loginScreen { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:flex; justify-content:center; align-items:center; z-index:9999; }
+.login-box { background:#fff; padding:35px 30px; border-radius:20px; width:90%; max-width:340px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
+.login-box h2 { color:#ff6b35; margin-bottom:20px; font-weight:700; font-size:24px; }
+.login-box input { width:100%; padding:14px; margin-bottom:12px; border-radius:10px; border:2px solid #ffe0b2; font-size:15px; }
+.login-box input:focus { outline:none; border-color:#ff6b35; }
+.login-box button { width:100%; padding:14px; background:linear-gradient(135deg, #ff6b35, #ff8c65); color:white; border:none; border-radius:10px; font-weight:700; font-size:16px; cursor:pointer; }
+.login-box button:disabled { opacity:0.6; cursor:not-allowed; }
+.error-msg { color:#D32F2F; font-size:13px; margin-top:10px; display:none; }
+#adminPanel { display:none; }
+.logout-btn { background:#666; font-size:12px; padding:6px 12px; position:absolute; right:15px; top:15px; }
 </style>
 </head>
 <body>
-<div class="header">
-<h3>📊 Dashboard</h3>
-<a href="index.html">← Back</a>
-</div>
 
-<div class="card">
-<h4>Select Date</h4>
-<input type="date" id="datePicker" onchange="loadReport()">
-<button onclick="loadReport()">View Report</button>
-</div>
-
-<div class="summary">
-  <div class="box">
-    <h4>Total Sales</h4>
-    <h2 id="totalSales">₱0</h2>
-  </div>
-  <div class="box">
-    <h4>Total Expenses</h4>
-    <h2 id="totalExpenses">₱0</h2>
-  </div>
-  <div class="box">
-    <h4>Net Profit</h4>
-    <h2 id="netProfit">₱0</h2>
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h2>🍢 DHAN SIOMAI</h2>
+    <input type="email" id="email" placeholder="Email" value="ofiazadhan@gmail.com">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
+    <div class="error-msg" id="errorMsg">Invalid email or password</div>
   </div>
 </div>
 
-<div class="card">
-<h4>Sales Details</h4>
-<div id="salesDetails">Select a date</div>
+<!-- ADMIN PANEL -->
+<div id="adminPanel">
+  <div class="header">
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+    <h1>🍢 DHAN SIOMAI Admin</h1>
+    <p id="userEmail">Logged in as: ...</p>
+  </div>
+
+  <div class="card" onclick="window.location.href='dashboard.html'">
+    <div class="card-icon">📊</div>
+    <h3>Dashboard</h3>
+    <p>View sales, expenses, daily records</p>
+    <span class="badge">NEW</span>
+  </div>
+
+  <div class="card" onclick="window.location.href='products.html'">
+    <div class="card-icon">📦</div>
+    <h3>Products</h3>
+    <p>Manage products, price, stock</p>
+    <span class="badge" id="productCount">Loading...</span>
+  </div>
+
+  <div class="card" onclick="window.location.href='daily-production.html'">
+    <div class="card-icon">🥟</div>
+    <h3>Daily Production</h3>
+    <p>Add production, auto-update stock</p>
+  </div>
+
+  <div class="card" onclick="window.location.href='expenses.html'">
+    <div class="card-icon">💸</div>
+    <h3>Expenses</h3>
+    <p>Log expenses and costs</p>
+    <span class="badge" id="expenseCount">Loading...</span>
+  </div>
+
+  <div class="card" onclick="window.location.href='sales.html'">
+    <div class="card-icon">💰</div>
+    <h3>Sales</h3>
+    <p>View sales and profit</p>
+  </div>
+
+  <div class="card" onclick="window.location.href='store.html'">
+    <div class="card-icon">🏪</div>
+    <h3>Store</h3>
+    <p>Manage store info</p>
+  </div>
 </div>
 
-<div class="card">
-<h4>Expenses Details</h4>
-<div id="expenseDetails">Select a date</div>
-</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-<script>
 const firebaseConfig = {
- apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
- authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
- projectId: "dhan-siomai-pos-fe1e5",
- storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
- messagingSenderId: "305932123173",
- appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
 
-// Set today as default
-window.onload = function(){
-  let today = new Date().toISOString().split('T')[0];
-  document.getElementById('datePicker').value = today;
-  loadReport();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth();
+
+const loginScreen = document.getElementById('loginScreen');
+const adminPanel = document.getElementById('adminPanel');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const errorMsg = document.getElementById('errorMsg');
+
+// Auto-check login
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loginScreen.style.display = 'none';
+    adminPanel.style.display = 'block';
+    document.getElementById('userEmail').textContent = 'Logged in as: ' + user.email;
+    loadCounts();
+  } else {
+    loginScreen.style.display = 'flex';
+    adminPanel.style.display = 'none';
+  }
+});
+
+// Login
+loginBtn.addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim();
+  const pass = document.getElementById('password').value.trim();
+  
+  if(!email || !pass) {
+    errorMsg.style.display = 'block';
+    errorMsg.textContent = 'Fill up email and password';
+    return;
+  }
+  
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Logging in...';
+  errorMsg.style.display = 'none';
+  
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (error) {
+    errorMsg.style.display = 'block';
+    errorMsg.textContent = '❌ Wrong email or password';
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Login';
+  }
+});
+
+// Logout
+logoutBtn.addEventListener('click', () => signOut(auth));
+
+// Load counts
+async function loadCounts() {
+  try {
+    const productsSnap = await getDocs(collection(db, 'products'));
+    document.getElementById('productCount').textContent = productsSnap.size + ' items';
+    
+    const expensesSnap = await getDocs(collection(db, 'expenses'));
+    document.getElementById('expenseCount').textContent = expensesSnap.size + ' logs';
+  } catch (error) {
+    console.error(error);
+  }
 }
 
-async function loadReport(){
-  let selectedDate = document.getElementById('datePicker').value;
-  if(!selectedDate){alert('Pick a date');return;}
-
-  // Get start and end of day
-  let start = new Date(selectedDate + 'T00:00:00');
-  let end = new Date(selectedDate + 'T23:59:59');
-
-  let totalSales = 0;
-  let totalExpenses = 0;
-
-  // Load Sales
-  const salesSnap = await db.collection('dhan-sales')
-   .where('timestamp','>=',start)
-   .where('timestamp','<=',end)
-   .get();
-
-  let salesHtml = '<table><tr><th>Time</th><th>Items</th><th>Amount</th></tr>';
-  salesSnap.forEach(doc=>{
-    let s = doc.data();
-    let time = s.timestamp? new Date(s.timestamp.toDate()).toLocaleTimeString() : '-';
-    let items = s.items.map(i=>`${i.name}x${i.qty}`).join(', ');
-    salesHtml += `<tr><td>${time}</td><td>${items}</td><td>₱${s.total}</td></tr>`;
-    totalSales += s.total;
-  });
-  salesHtml += '</table>';
-  document.getElementById('salesDetails').innerHTML = salesSnap.empty? 'No sales' : salesHtml;
-
-  // Load Expenses
-  const expSnap = await db.collection('dhan-expenses')
-   .where('date','>=',selectedDate)
-   .where('date','<=',selectedDate)
-   .get();
-
-  let expHtml = '<table><tr><th>Item</th><th>Amount</th></tr>';
-  expSnap.forEach(doc=>{
-    let e = doc.data();
-    expHtml += `<tr><td>${e.item}</td><td>₱${e.amount}</td></tr>`;
-    totalExpenses += parseFloat(e.amount);
-  });
-  expHtml += '</table>';
-  document.getElementById('expenseDetails').innerHTML = expSnap.empty? 'No expenses' : expHtml;
-
-  // Update summary
-  let netProfit = totalSales - totalExpenses;
-  document.getElementById('totalSales').innerText = '₱' + totalSales;
-  document.getElementById('totalExpenses').innerText = '₱' + totalExpenses;
-  document.getElementById('netProfit').innerText = '₱' + netProfit;
-  document.getElementById('netProfit').className = netProfit >= 0? 'profit' : 'loss';
-}
+// Enter key
+document.getElementById('password').addEventListener('keypress', e => {
+  if(e.key === 'Enter') loginBtn.click();
+});
 </script>
+
 </body>
 </html>
