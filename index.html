@@ -1,23 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>DHAN SIOMAI POS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DHAN SIOMAI POS - Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;font-family:Arial}
-body{background:linear-gradient(135deg,#ff6b35,#ff8e53);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.container{max-width:350px;width:100%}
-h1{color:white;text-align:center;font-size:32px;margin-bottom:30px;text-shadow:0 2px 5px rgba(0,0,0,0.3)}
-.card{background:white;color:#ff6b35;padding:25px;margin:12px 0;border-radius:12px;text-align:center;font-size:18px;font-weight:bold;cursor:pointer}
-.card:active{transform:scale(0.98)}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+body{background:linear-gradient(135deg,#ff6b35 0%,#ff8e53 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{background:white;border-radius:20px;padding:40px 30px;max-width:350px;width:100%;box-shadow:0 15px 35px rgba(0,0,0,0.2)}
+.login-box h1{text-align:center;color:#ff6b35;font-size:28px;margin-bottom:10px}
+.login-box p{text-align:center;color:#666;font-size:13px;margin-bottom:25px}
+input{width:100%;padding:14px;border:2px solid #eee;border-radius:10px;margin-bottom:15px;font-size:15px}
+input:focus{border-color:#ff6b35;outline:none}
+button{width:100%;padding:14px;background:#ff6b35;color:white;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
+button:active{transform:scale(0.98)}
+.error{color:red;font-size:12px;text-align:center;margin-top:10px;display:none}
+.menu{display:none}
+.menu .card{background:white;border-radius:15px;padding:20px;margin:12px 0;box-shadow:0 8px 20px rgba(0,0,0,0.15);cursor:pointer}
+.menu .card h3{color:#ff6b35;font-size:18px}
+.logout{background:#dc3545;color:white;text-align:center;padding:15px;border-radius:15px;margin-top:15px;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
-<div class="container">
-<h1>🥟 DHAN SIOMAI</h1>
-<div class="card" onclick="alert('Products page next')">📦 Products</div>
-<div class="card" onclick="alert('Daily page next')">📊 Daily</div>
-<div class="card" onclick="alert('Sales page next')">💰 Sales</div>
+
+<div class="login-box" id="loginBox">
+  <h1>🥟 DHAN SIOMAI</h1>
+  <p>POS Login</p>
+  <input type="email" id="email" placeholder="Email" value="admin@dhan.com">
+  <input type="password" id="pass" placeholder="Password" value="admin123">
+  <button onclick="login()">LOGIN</button>
+  <div class="error" id="error">Maling email o password boss!</div>
 </div>
+
+<div class="login-box menu" id="menuBox">
+  <h1>🥟 DHAN SIOMAI</h1>
+  <p>Main Menu</p>
+  <div class="card" onclick="alert('Products page - gagawa pa natin')">
+    <h3>📦 Products</h3>
+  </div>
+  <div class="card" onclick="alert('Daily page - gagawa pa natin')">
+    <h3>📊 Daily Production</h3>
+  </div>
+  <div class="card" onclick="alert('Sales page - gagawa pa natin')">
+    <h3>💰 Sales</h3>
+  </div>
+  <div class="card" onclick="alert('Expenses page - gagawa pa natin')">
+    <h3>💸 Expenses</h3>
+  </div>
+  <div class="card" onclick="alert('Dashboard page - gagawa pa natin')">
+    <h3>📈 Boss Dashboard</h3>
+  </div>
+  <div class="logout" onclick="logout()">🚪 Logout</div>
+</div>
+
+<script>
+function login(){
+  let email = document.getElementById('email').value;
+  let pass = document.getElementById('pass').value;
+  if(email === 'admin@dhan.com' && pass === 'admin123'){
+    localStorage.setItem('userEmail', email);
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('menuBox').style.display = 'block';
+  } else {
+    document.getElementById('error').style.display = 'block';
+  }
+}
+function logout(){
+  localStorage.clear();
+  document.getElementById('menuBox').style.display = 'none';
+  document.getElementById('loginBox').style.display = 'block';
+}
+window.onload = function(){
+  if(localStorage.getItem('userEmail')){
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('menuBox').style.display = 'block';
+  }
+}
+</script>
 </body>
 </html>
