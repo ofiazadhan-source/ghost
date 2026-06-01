@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DHAN SIOMAI POS - Main Menu</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:linear-gradient(135deg, #ff6b35 0%, #ff8e53 100%);min-height:100vh;padding:20px;display:flex;align-items:center;justify-content:center;}
+.container{max-width:400px;width:100%;}
+.logo{text-align:center;margin-bottom:30px;}
+.logo h1{color:white;font-size:32px;font-weight:700;text-shadow:0 2px 10px rgba(0,0,0,0.2);}
+.logo p{color:rgba(255,255,255,0.9);font-size:14px;margin-top:5px;}
+.menu{display:grid;gap:15px;}
+.card{background:white;border-radius:15px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,0.15);cursor:pointer;transition:transform 0.2s;}
+.card:active{transform:scale(0.98);}
+.card h3{color:#ff6b35;font-size:18px;margin-bottom:5px;display:flex;align-items:center;gap:10px;}
+.card p{color:#666;font-size:13px;}
+.logout{background:#dc3545;color:white;text-align:center;padding:15px;border-radius:15px;font-weight:600;cursor:pointer;margin-top:20px;}
+.logout:active{transform:scale(0.98);}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <h1>🥟 DHAN SIOMAI</h1>
+    <p>POS System v2.0</p>
+  </div>
+  <div class="menu">
+    <div class="card" onclick="window.location.href='products.html'">
+      <h3>📦 Products</h3>
+      <p>Add/Edit products + Upload pictures</p>
+    </div>
+    <div class="card" onclick="window.location.href='daily.html'">
+      <h3>📊 Daily Production</h3>
+      <p>Log production + View stock with pics</p>
+    </div>
+    <div class="card" onclick="window.location.href='sales.html'">
+      <h3>💰 Sales</h3>
+      <p>POS checkout system</p>
+    </div>
+    <div class="card" onclick="window.location.href='expenses.html'">
+      <h3>💸 Expenses</h3>
+      <p>Track daily expenses</p>
+    </div>
+    <div class="card" onclick="window.location.href='dashboard.html'">
+      <h3>📈 Boss Dashboard</h3>
+      <p>View reports + Production records</p>
+    </div>
+  </div>
+  <div class="logout" onclick="logout()">🚪 Logout</div>
+</div>
+<script>
+function logout(){
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+window.onload = function(){
+  if(!localStorage.getItem('userEmail')){
+    window.location.href = 'login.html';
+  }
+}
+</script>
+</body>
+</html>
