@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Products - DHAN SIOMAI</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
@@ -15,9 +13,10 @@ body{background:#f5f5f5;padding:15px;}
 .card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
 input,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
 button{background:#ff6b35;color:white;border:none;font-weight:600;cursor:pointer;}
+button:disabled{opacity:0.6;cursor:not-allowed;}
 button.edit{background:#3498db;font-size:12px;padding:5px 8px;width:auto;}
 table{width:100%;border-collapse:collapse;font-size:14px;}
-th,td{padding:8px;text-align:left;border-bottom:1px solid #eee;}
+th,td{padding:8px;text-align:left;border-bottom:1px solid #eee;vertical-align:middle;}
 th{background:#f8f8f8;font-size:13px;}
 .category-block{margin-bottom:10px;border:1px solid #eee;border-radius:8px;}
 .category-header{background:#f8f8f8;padding:12px;font-weight:600;cursor:pointer;border-radius:8px;display:flex;justify-content:space-between;align-items:center;}
@@ -25,86 +24,151 @@ th{background:#f8f8f8;font-size:13px;}
 #searchBox{margin-bottom:10px;}
 .stock-low{color:red;font-weight:600;}
 .stock-ok{color:green;}
+.product-img{width:50px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #ddd;}
+.upload-label{font-size:12px;color:#666;margin-top:5px;display:block;}
+.preview-img{width:80px;height:80px;object-fit:cover;border-radius:8px;margin-top:5px;border:2px solid #ff6b35;display:none;}
 </style>
 </head>
 <body>
+
 <div class="header">
-<h3>📦 Products</h3>
-<a href="index.html">← Back</a>
+  <h3>📦 Products</h3>
+  <a href="index.html">← Back</a>
 </div>
 
 <div class="card">
-<h4>Add Product</h4>
-<input type="text" id="productName" placeholder="Product Name">
-<input type="text" id="productCategory" placeholder="Category">
-<input type="number" id="productPrice" placeholder="Price">
-<input type="number" id="productStock" placeholder="Initial Stock">
-<button onclick="addProduct()">Add Product</button>
+  <h4>Add Product</h4>
+  <input type="text" id="productName" placeholder="Product Name">
+  <input type="text" id="productCategory" placeholder="Category">
+  <input type="number" id="productPrice" placeholder="Price">
+  <input type="number" id="productStock" placeholder="Initial Stock">
+
+  <!-- PICTURE UPLOAD DITO BOSS -->
+  <label class="upload-label">📷 Product Picture</label>
+  <input type="file" id="productImage" accept="image/*">
+  <img id="imgPreview" class="preview-img">
+
+  <button id="addBtn">Add Product</button>
 </div>
 
 <div class="card">
-<h4>Product List</h4>
-<input type="text" id="searchBox" placeholder="🔍 Search product or category..." onkeyup="renderProducts()">
-<div id="productList">Loading...</div>
+  <h4>Product List</h4>
+  <input type="text" id="searchBox" placeholder="🔍 Search product or category..." onkeyup="renderProducts()">
+  <div id="productList">Loading...</div>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
 const firebaseConfig = {
- apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
- authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
- projectId: "dhan-siomai-pos-fe1e5",
- storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
- messagingSenderId: "305932123173",
- appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
 let productsCache = [];
+let selectedFile = null;
 
-async function addProduct(){
+// Preview image
+document.getElementById('productImage').addEventListener('change', (e) => {
+  selectedFile = e.target.files[0];
+  if(selectedFile) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('imgPreview').src = e.target.result;
+      document.getElementById('imgPreview').style.display = 'block';
+    }
+    reader.readAsDataURL(selectedFile);
+  }
+});
+
+window.onload = loadProducts;
+
+document.getElementById('addBtn').addEventListener('click', async () => {
   const name = document.getElementById('productName').value.trim();
   const category = document.getElementById('productCategory').value.trim();
   const price = document.getElementById('productPrice').value;
   const stock = document.getElementById('productStock').value;
+  const btn = document.getElementById('addBtn');
 
-  if(!name ||!category ||!price){alert('Fill all fields');return;}
+  if(!name ||!category ||!price){
+    alert('Fill all fields');
+    return;
+  }
 
-  await db.collection('dhan-pos-web').add({
-    name:name,
-    category:category,
-    price:parseFloat(price),
-    stock:parseInt(stock) || 0
-  });
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
 
-  document.getElementById('productName').value='';
-  document.getElementById('productCategory').value='';
-  document.getElementById('productPrice').value='';
-  document.getElementById('productStock').value='';
+  try {
+    let imageUrl = '';
 
-  loadProducts();
-}
+    // Upload image if meron
+    if(selectedFile) {
+      const fileName = `products/${Date.now()}_${selectedFile.name}`;
+      const storageRef = ref(storage, fileName);
+      await uploadBytes(storageRef, selectedFile);
+      imageUrl = await getDownloadURL(storageRef);
+    }
+
+    // Save to products - FIXED collection name
+    await addDoc(collection(db, 'products'), {
+      name: name,
+      category: category,
+      price: parseFloat(price),
+      stock: parseInt(stock) || 0,
+      imageUrl: imageUrl,
+      createdAt: new Date()
+    });
+
+    // Clear form
+    document.getElementById('productName').value = '';
+    document.getElementById('productCategory').value = '';
+    document.getElementById('productPrice').value = '';
+    document.getElementById('productStock').value = '';
+    document.getElementById('productImage').value = '';
+    document.getElementById('imgPreview').style.display = 'none';
+    selectedFile = null;
+
+    alert('✅ Product added!');
+    loadProducts();
+
+  } catch (error) {
+    alert('Error: ' + error.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add Product';
+  }
+});
 
 async function loadProducts(){
-  const snapshot = await db.collection('dhan-pos-web').get();
+  const snapshot = await getDocs(collection(db, 'products')); // FIXED
   productsCache = [];
-  snapshot.forEach(doc=>{
-    productsCache.push({id:doc.id,...doc.data()});
+  snapshot.forEach(docSnap => {
+    productsCache.push({id: docSnap.id,...docSnap.data()});
   });
   renderProducts();
 }
 
-function renderProducts(){
+window.renderProducts = function(){
   let search = document.getElementById('searchBox').value.toLowerCase();
   let filtered = productsCache.filter(p =>
     p.name.toLowerCase().includes(search) ||
     p.category.toLowerCase().includes(search)
   );
 
-  filtered.sort((a,b)=> a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+  filtered.sort((a,b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
 
   let grouped = {};
-  filtered.forEach(p=>{
+  filtered.forEach(p => {
     if(!grouped[p.category]) grouped[p.category] = [];
     grouped[p.category].push(p);
   });
@@ -118,42 +182,45 @@ function renderProducts(){
       </div>
       <div class="category-items" id="cat-${cat}">
         <table>
-        <tr><th>Name</th><th>Price</th><th>Stock</th><th></th></tr>`;
-    grouped[cat].forEach(p=>{
+          <tr><th>Pic</th><th>Name</th><th>Price</th><th>Stock</th><th></th></tr>`;
+
+    grouped[cat].forEach(p => {
       let stockClass = p.stock == 0? 'stock-low' : p.stock < 10? 'stock-low' : 'stock-ok';
+      let img = p.imageUrl? `<img src="${p.imageUrl}" class="product-img">` : '📦';
       html += `<tr>
+        <td>${img}</td>
         <td>${p.name}</td>
         <td>₱${p.price}</td>
         <td class="${stockClass}">${p.stock}</td>
         <td><button class="edit" onclick="editProduct('${p.id}')">Edit</button></td>
       </tr>`;
     });
+
     html += `</table></div></div>`;
   }
 
   document.getElementById('productList').innerHTML = html || '<p style="text-align:center;color:#666;padding:20px;">No products found</p>';
 }
 
-function toggleCat(cat){
+window.toggleCat = function(cat){
   let el = document.getElementById('cat-'+cat);
   el.style.display = el.style.display === 'none'? 'block' : 'none';
 }
 
-async function editProduct(id){
-  let product = productsCache.find(p=>p.id===id);
+window.editProduct = async function(id){
+  let product = productsCache.find(p => p.id === id);
   let newPrice = prompt(`Update price for ${product.name}`, product.price);
   let newStock = prompt(`Update stock for ${product.name}`, product.stock);
 
   if(newPrice!== null && newStock!== null){
-    await db.collection('dhan-pos-web').doc(id).update({
-      price:parseFloat(newPrice),
-      stock:parseInt(newStock)
+    await updateDoc(doc(db, 'products', id), {
+      price: parseFloat(newPrice),
+      stock: parseInt(newStock)
     });
     loadProducts();
   }
 }
-
-loadProducts();
 </script>
+
 </body>
 </html>
