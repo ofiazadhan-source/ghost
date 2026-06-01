@@ -32,7 +32,6 @@ button:disabled{opacity:0.6;cursor:not-allowed;}
 <div class="card">
   <h4>🥟 Add Production</h4>
 
-  <!-- PRODUCT SELECT WITH PICTURE PREVIEW -->
   <input list="products" id="dProduct" placeholder="Type to search product...">
   <datalist id="products"></datalist>
 
@@ -53,7 +52,7 @@ button:disabled{opacity:0.6;cursor:not-allowed;}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, doc, getDoc, updateDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
