@@ -1,27 +1,4 @@
-<!-- WELCOME POPUP -->
-<div id="welcomeModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:9999;">
-  <div style="background:#fff;padding:40px;border-radius:20px;text-align:center;animation:scaleIn 0.5s ease;">
-    <h1 style="color:#ff9800;margin-bottom:20px;">Welcome to DHAN VELASCO POS!</h1>
-    <p style="margin-bottom:30px;">Salamat sa pagbisita 🥟</p>
-    <button onclick="checkPassword()" style="background:#ffeb3b;border:none;padding:15px 40px;border-radius:10px;font-size:18px;font-weight:bold;cursor:pointer;">Enter Password</button>
-  </div>
-</div>
-
-<script>
-function checkPassword(){
-  let pass = prompt("Enter Password:");
-  
-  if(pass === "dhan3426"){  // Palitan mo to ng password mo
-    document.getElementById('welcomeModal').style.display='none';
-  } else if(pass !== null){
-    alert("Wrong password!");
-  }
-}
-
-// Tinanggal ko muna auto close para di makaiwas sa password
-</script>
-<!-- END WELCOME POPUP -->
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -31,80 +8,227 @@ function checkPassword(){
 <style>
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif;}
 body {background:#f5f5f5; padding:15px;}
-.header {
-  background: linear-gradient(135deg, #ff6b35, #ff8c65);
-  color:white;
-  padding:18px;
-  border-radius:12px;
-  text-align:center;
-  margin-bottom:20px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.15);
-}
+.header { background: linear-gradient(135deg, #ff6b35, #ff8c65); color:white; padding:18px; border-radius:12px; text-align:center; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.15); position:relative; }
 .header h1 {font-size:20px; font-weight:700;}
-
-.card {
-  background:white;
-  border-radius:16px;
-  padding:25px 20px;
-  margin-bottom:15px;
-  text-align:center;
-  box-shadow:0 2px 8px rgba(0,0,0,0.08);
-  cursor:pointer;
-  transition:0.2s;
-}
+.header p {font-size:12px; opacity:0.9; margin-top:5px;}
+.store-logo { width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid white; margin-bottom:10px; background:#fff; }
+.upload-btn { background:rgba(255,255,255,0.2); border:1px solid white; color:white; padding:5px 12px; border-radius:8px; font-size:11px; cursor:pointer; margin-top:5px; }
+.card { background:white; border-radius:16px; padding:25px 20px; margin-bottom:15px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08); cursor:pointer; transition:0.2s; }
 .card:active {transform:scale(0.98); box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+.card-icon { font-size:48px; margin-bottom:10px; }
+.card h3 { font-size:18px; font-weight:700; margin-bottom:5px; color:#222; }
+.card p { font-size:14px; color:#666; }
+.badge { display:inline-block; background:#ff6b35; color:white; padding:4px 10px; border-radius:12px; font-size:11px; margin-top:8px; }
 
-.card-icon {
-  font-size:48px;
-  margin-bottom:10px;
-}
-.card h3 {
-  font-size:18px;
-  font-weight:700;
-  margin-bottom:5px;
-  color:#222;
-}
-.card p {
-  font-size:14px;
-  color:#666;
-}
+/* LOGIN SCREEN */
+#loginScreen { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:flex; justify-content:center; align-items:center; z-index:9999; }
+.login-box { background:#fff; padding:35px 30px; border-radius:20px; width:90%; max-width:340px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
+.login-box h2 { color:#ff6b35; margin-bottom:20px; font-weight:700; font-size:24px; }
+.login-box input { width:100%; padding:14px; margin-bottom:12px; border-radius:10px; border:2px solid #ffe0b2; font-size:15px; }
+.login-box input:focus { outline:none; border-color:#ff6b35; }
+.login-box button { width:100%; padding:14px; background:linear-gradient(135deg, #ff6b35, #ff8c65); color:white; border:none; border-radius:10px; font-weight:700; font-size:16px; cursor:pointer; }
+.login-box button:disabled { opacity:0.6; cursor:not-allowed; }
+.error-msg { color:#D32F2F; font-size:13px; margin-top:10px; display:none; }
+#adminPanel { display:none; }
+.logout-btn { background:#666; font-size:12px; padding:6px 12px; position:absolute; right:15px; top:15px; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>🍢 DHAN SIOMAI Admin Panel</h1>
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h2>🍢 DHAN SIOMAI</h2>
+    <input type="email" id="email" placeholder="Email" value="ofiazadhan@gmail.com">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
+    <div class="error-msg" id="errorMsg">Invalid email or password</div>
+  </div>
 </div>
 
-<div class="card" onclick="window.location.href='products.html'">
-  <div class="card-icon">📦</div>
-  <h3>Products</h3>
-  <p>Manage products, price, stock</p>
+<!-- ADMIN PANEL -->
+<div id="adminPanel">
+  <div class="header">
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+
+    <!-- PICTURE UPLOAD DITO BOSS -->
+    <img id="storeLogo" class="store-logo" src="https://via.placeholder.com/80/ff6b35/ffffff?text=SIOMAI" alt="Logo">
+    <input type="file" id="logoUpload" accept="image/*" style="display:none">
+    <br>
+    <button class="upload-btn" onclick="document.getElementById('logoUpload').click()">📷 Change Picture</button>
+
+    <h1>🍢 DHAN SIOMAI Admin</h1>
+    <p id="userEmail">Logged in as:...</p>
+  </div>
+
+  <div class="card" onclick="window.location.href='dashboard.html'">
+    <div class="card-icon">📊</div>
+    <h3>Dashboard</h3>
+    <p>View sales, expenses, daily records</p>
+    <span class="badge">NEW</span>
+  </div>
+
+  <div class="card" onclick="window.location.href='products.html'">
+    <div class="card-icon">📦</div>
+    <h3>Products</h3>
+    <p>Manage products, price, stock</p>
+    <span class="badge" id="productCount">Loading...</span>
+  </div>
+
+  <div class="card" onclick="window.location.href='daily-production.html'">
+    <div class="card-icon">🥟</div>
+    <h3>Daily Production</h3>
+    <p>Add production, auto-update stock</p>
+  </div>
+
+  <div class="card" onclick="window.location.href='expenses.html'">
+    <div class="card-icon">💸</div>
+    <h3>Expenses</h3>
+    <p>Log expenses and costs</p>
+    <span class="badge" id="expenseCount">Loading...</span>
+  </div>
+
+  <div class="card" onclick="window.location.href='sales.html'">
+    <div class="card-icon">💰</div>
+    <h3>Sales</h3>
+    <p>View sales and profit</p>
+  </div>
+
+  <div class="card" onclick="window.location.href='store.html'">
+    <div class="card-icon">🏪</div>
+    <h3>Store</h3>
+    <p>Manage store info</p>
+  </div>
 </div>
 
-<div class="card" onclick="window.location.href='daily.html'">
-  <div class="card-icon">📊</div>
-  <h3>Daily Production</h3>
-  <p>Add production, update stock</p>
-</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-<div class="card" onclick="window.location.href='expenses.html'">
-  <div class="card-icon">💸</div>
-  <h3>Expenses</h3>
-  <p>Log expenses and costs</p>
-</div>
+const firebaseConfig = {
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
 
-<div class="card" onclick="window.location.href='store.html'">
-  <div class="card-icon">🏪</div>
-  <h3>Store</h3>
-  <p>Manage store info</p>
-</div>
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth();
+const storage = getStorage(app);
 
-<div class="card" onclick="window.location.href='sales.html'">
-  <div class="card-icon">💰</div>
-  <h3>Sales</h3>
-  <p>View sales and profit</p>
-</div>
+const loginScreen = document.getElementById('loginScreen');
+const adminPanel = document.getElementById('adminPanel');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const errorMsg = document.getElementById('errorMsg');
+
+// Auto-check login
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loginScreen.style.display = 'none';
+    adminPanel.style.display = 'block';
+    document.getElementById('userEmail').textContent = 'Logged in as: ' + user.email;
+    loadCounts();
+    loadLogo(); // Load saved logo
+  } else {
+    loginScreen.style.display = 'flex';
+    adminPanel.style.display = 'none';
+  }
+});
+
+// Login
+loginBtn.addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim();
+  const pass = document.getElementById('password').value.trim();
+
+  if(!email ||!pass) {
+    errorMsg.style.display = 'block';
+    errorMsg.textContent = 'Fill up email and password';
+    return;
+  }
+
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Logging in...';
+  errorMsg.style.display = 'none';
+
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (error) {
+    errorMsg.style.display = 'block';
+    errorMsg.textContent = '❌ Wrong email or password';
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Login';
+  }
+});
+
+// Logout
+logoutBtn.addEventListener('click', () => signOut(auth));
+
+// UPLOAD LOGO FUNCTION - BAGO TO BOSS
+document.getElementById('logoUpload').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+
+  if(!file.type.startsWith('image/')) {
+    alert('Picture lang boss!');
+    return;
+  }
+
+  if(file.size > 2 * 1024 * 1024) {
+    alert('Max 2MB lang boss!');
+    return;
+  }
+
+  try {
+    const storageRef = ref(storage, 'store/logo.jpg');
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    document.getElementById('storeLogo').src = url;
+
+    // Save URL sa Firestore para di mawala pag refresh
+    await setDoc(doc(db, 'store_settings', 'logo'), {url: url});
+    alert('✅ Logo updated!');
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+});
+
+// Load saved logo
+async function loadLogo() {
+  try {
+    const snap = await getDoc(doc(db, 'store_settings', 'logo'));
+    if(snap.exists()) {
+      document.getElementById('storeLogo').src = snap.data().url;
+    }
+  } catch (error) {
+    console.log('No logo yet');
+  }
+}
+
+// Load counts
+async function loadCounts() {
+  try {
+    const productsSnap = await getDocs(collection(db, 'products'));
+    document.getElementById('productCount').textContent = productsSnap.size + ' items';
+
+    const expensesSnap = await getDocs(collection(db, 'expenses'));
+    document.getElementById('expenseCount').textContent = expensesSnap.size + ' logs';
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Enter key
+document.getElementById('password').addEventListener('keypress', e => {
+  if(e.key === 'Enter') loginBtn.click();
+});
+</script>
 
 </body>
 </html>
