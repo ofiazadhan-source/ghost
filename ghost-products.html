@@ -18,9 +18,10 @@ input:focus,textarea:focus{border-color:#ff6b35;outline:none}
 .product-card{background:white;border-radius:15px;padding:15px;margin:12px 0;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;gap:15px}
 .product-card img{width:80px;height:80px;object-fit:cover;border-radius:10px;background:#eee}
 .product-info h3{color:#ff6b35;font-size:16px;margin-bottom:5px}
-.product-info p{color:#666;font-size:13px}
+.product-info p{color:#666;font-size:13px;margin:2px 0}
 #preview{max-width:100px;max-height:100px;border-radius:10px;margin-top:10px;display:none}
 .loading{text-align:center;color:#999;padding:20px}
+.badge{background:#ff6b35;color:white;padding:4px 8px;border-radius:8px;font-size:11px;display:inline-block;margin-top:5px}
 </style>
 </head>
 <body>
@@ -35,17 +36,33 @@ input:focus,textarea:focus{border-color:#ff6b35;outline:none}
   <h3 style="color:#ff6b35;margin-bottom:15px">Add Product</h3>
   <input type="text" id="pName" placeholder="Product Name - ex: Pork Siomai">
   <input type="number" id="pPrice" placeholder="Price - ex: 6">
+  <input type="number" id="pStock" placeholder="Stock - ex: 100">
+  <input type="text" id="pCategory" placeholder="Category - ex: Big SIOMAI">
   <input type="file" id="pImage" accept="image/*" onchange="previewImg(event)">
   <img id="preview">
-  <textarea id="pDesc" placeholder="Description" rows="3"></textarea>
   <button class="btn" onclick="addProduct()">+ ADD PRODUCT</button>
 </div>
 
 <div id="productList"><div class="loading">Loading products...</div></div>
 
 <script type="module">
-import { db } from './firebase-config.js';
-import { collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+// FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
 window.previewImg = function(e){
   let file = e.target.files[0];
@@ -62,39 +79,53 @@ window.previewImg = function(e){
 window.addProduct = async function(){
   let name = document.getElementById('pName').value;
   let price = document.getElementById('pPrice').value;
-  let desc = document.getElementById('pDesc').value;
-  let img = document.getElementById('preview').src;
+  let stock = document.getElementById('pStock').value;
+  let category = document.getElementById('pCategory').value;
+  let file = document.getElementById('pImage').files[0];
 
   if(!name ||!price){alert('Lagyan mo name at price boss!');return;}
 
   try{
-    await addDoc(collection(db, "products"), {
-      name, price, desc, img,
+    let imgUrl = '';
+    if(file){
+      const storageRef = ref(storage, 'products/' + Date.now() + '_' + file.name);
+      const snap = await uploadBytes(storageRef, file);
+      imgUrl = await getDownloadURL(snap.ref);
+    }
+
+    await addDoc(collection(db, "dhan-pos-web"), {
+      name: name,
+      price: Number(price),
+      stock: Number(stock) || 0,
+      category: category || 'General',
+      image: imgUrl,
       createdAt: new Date()
     });
+
     document.getElementById('pName').value = '';
     document.getElementById('pPrice').value = '';
-    document.getElementById('pDesc').value = '';
+    document.getElementById('pStock').value = '';
+    document.getElementById('pCategory').value = '';
     document.getElementById('preview').style.display = 'none';
     document.getElementById('pImage').value = '';
-    alert('Product saved sa cloud boss! ✅');
+    alert('Product saved sa dhan-pos-web boss! ✅');
   }catch(e){
     alert('Error boss: ' + e.message);
   }
 }
 
 function loadProducts(){
-  const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
+  const q = query(collection(db, "dhan-pos-web"), orderBy("createdAt", "desc"));
   onSnapshot(q, (snapshot) => {
     let html = '';
     snapshot.forEach(doc=>{
       let p = doc.data();
       html += `<div class="product-card">
-        <img src="${p.img || 'https://via.placeholder.com/80'}">
+        <img src="${p.image || p.img || 'https://via.placeholder.com/80'}">
         <div class="product-info">
           <h3>${p.name}</h3>
-          <p>₱${p.price}</p>
-          <p>${p.desc || ''}</p>
+          <p>₱${p.price} | Stock: ${p.stock || 0}</p>
+          ${p.category? `<span class="badge">${p.category}</span>` : ''}
         </div>
       </div>`;
     });
