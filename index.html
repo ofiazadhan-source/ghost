@@ -17,7 +17,8 @@ button{width:100%;padding:14px;background:#ff6b35;color:white;border:none;border
 button:active{transform:scale(0.98)}
 .error{color:red;font-size:12px;text-align:center;margin-top:10px;display:none}
 .menu{display:none}
-.menu .card{background:white;border-radius:15px;padding:20px;margin:12px 0;box-shadow:0 8px 20px rgba(0,0,0,0.15);cursor:pointer}
+.menu .card{background:white;border-radius:15px;padding:20px;margin:12px 0;box-shadow:0 8px 20px rgba(0,0,0,0.15);cursor:pointer;transition:0.2s}
+.menu .card:active{transform:scale(0.98)}
 .menu .card h3{color:#ff6b35;font-size:18px}
 .logout{background:#dc3545;color:white;text-align:center;padding:15px;border-radius:15px;margin-top:15px;font-weight:600;cursor:pointer}
 </style>
@@ -36,21 +37,27 @@ button:active{transform:scale(0.98)}
 <div class="login-box menu" id="menuBox">
   <h1>🥟 DHAN SIOMAI</h1>
   <p>Main Menu</p>
-  <div class="card" onclick="alert('Products page - gagawa pa natin')">
+  
+  <div class="card" onclick="location='ghost-products.html'">
     <h3>📦 Products</h3>
   </div>
+  
   <div class="card" onclick="alert('Daily page - gagawa pa natin')">
     <h3>📊 Daily Production</h3>
   </div>
+  
   <div class="card" onclick="alert('Sales page - gagawa pa natin')">
     <h3>💰 Sales</h3>
   </div>
+  
   <div class="card" onclick="alert('Expenses page - gagawa pa natin')">
     <h3>💸 Expenses</h3>
   </div>
+  
   <div class="card" onclick="alert('Dashboard page - gagawa pa natin')">
     <h3>📈 Boss Dashboard</h3>
   </div>
+  
   <div class="logout" onclick="logout()">🚪 Logout</div>
 </div>
 
