@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Production - DHAN SIOMAI</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
@@ -14,81 +12,150 @@ body{background:#f5f5f5;padding:15px;}
 .header a{color:white;text-decoration:none;font-weight:600;}
 .card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
 input{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;font-size:16px;}
-button{background:#ff6b35;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;width:100%;}
+button{background:#ff6b35;color:white;border:none;padding:12px 20px;border-radius:8px;font-weight:600;cursor:pointer;width:100%;font-size:16px;}
+button:disabled{opacity:0.6;cursor:not-allowed;}
+.success{color:green;font-size:13px;margin-top:10px;text-align:center;display:none;}
+.product-preview{display:flex;align-items:center;gap:12px;margin-bottom:15px;padding:12px;background:#fff3e0;border-radius:10px;border:2px solid #ff9800;display:none;}
+.product-preview img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #ff6b35;}
+.product-preview div{flex:1;}
+.product-preview h5{margin:0;font-size:15px;color:#e65100;}
+.product-preview p{margin:3px 0 0;font-size:12px;color:#666;}
 </style>
 </head>
 <body>
-<div class="header">
-<h3>📊 Daily Production</h3>
-<a href="index.html">← Back</a>
-</div>
-<div class="card">
-<h4>Add Production</h4>
-<input list="products" id="dProduct" placeholder="Type to search product...">
-<datalist id="products"></datalist>
-<input type="number" id="dQty" placeholder="Quantity Produced">
-<input type="date" id="dDate">
-<button onclick="addProduction()">Save Production</button>
-</div>
-<script>
-const firebaseConfig = {
-apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-projectId: "dhan-siomai-pos-fe1e5",
-storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-messagingSenderId: "305932123173",
-appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
 
-let productsList = {}; // store id -> name for lookup
+<div class="header">
+  <h3>📊 Daily Production</h3>
+  <a href="index.html">← Back</a>
+</div>
+
+<div class="card">
+  <h4>🥟 Add Production</h4>
+
+  <!-- PRODUCT SELECT WITH PICTURE PREVIEW -->
+  <input list="products" id="dProduct" placeholder="Type to search product...">
+  <datalist id="products"></datalist>
+
+  <!-- PICTURE PREVIEW DITO BOSS -->
+  <div id="productPreview" class="product-preview">
+    <img id="previewImg" src="" alt="">
+    <div>
+      <h5 id="previewName"></h5>
+      <p id="previewStock"></p>
+    </div>
+  </div>
+
+  <input type="number" id="dQty" placeholder="Quantity Produced" min="1">
+  <input type="date" id="dDate">
+  <button id="saveBtn">Save Production</button>
+  <div class="success" id="successMsg">✅ Production saved! Stock updated!</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, doc, getDoc, updateDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let productsList = {}; // name -> {id, stock, imageUrl}
 
 window.onload = loadProducts;
+document.getElementById('dDate').valueAsDate = new Date();
+
+// Show picture when user types/selects product
+document.getElementById('dProduct').addEventListener('input', (e) => {
+  const productName = e.target.value.trim();
+  const preview = document.getElementById('productPreview');
+
+  if(productsList[productName]) {
+    const p = productsList[productName];
+    document.getElementById('previewImg').src = p.imageUrl || 'https://via.placeholder.com/60/ff6b35/ffffff?text=NO+IMG';
+    document.getElementById('previewName').textContent = productName;
+    document.getElementById('previewStock').textContent = `Current Stock: ${p.stock} pcs`;
+    preview.style.display = 'flex';
+  } else {
+    preview.style.display = 'none';
+  }
+});
 
 async function loadProducts(){
-const snap = await db.collection('dhan-pos-web').get();
-let datalistHTML = '';
-snap.forEach(doc=>{
-let p = doc.data();
-productsList[p.name] = doc.id; // map name to id
-datalistHTML += `<option value="${p.name}">`;
+  const snap = await getDocs(collection(db, 'products')); // FIXED: products hindi dhan-pos-web
+  let datalistHTML = '';
+
+  snap.forEach(docSnap => {
+    let p = docSnap.data();
+    productsList[p.name] = {id: docSnap.id, stock: p.stock || 0, imageUrl: p.imageUrl};
+    datalistHTML += `<option value="${p.name}">`;
+  });
+
+  document.getElementById('products').innerHTML = datalistHTML;
+}
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const productName = document.getElementById('dProduct').value.trim();
+  const qty = parseInt(document.getElementById('dQty').value);
+  const date = document.getElementById('dDate').value;
+  const btn = document.getElementById('saveBtn');
+  const successMsg = document.getElementById('successMsg');
+
+  if(!productName ||!productsList[productName] || isNaN(qty) || qty < 1){
+    alert('Please select valid product from list and enter quantity');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  successMsg.style.display = 'none';
+
+  try {
+    const productData = productsList[productName];
+    const productId = productData.id;
+
+    // 1. Save to daily_records - FIXED collection name
+    await addDoc(collection(db, 'daily_records'), {
+      productId: productId,
+      productName: productName,
+      quantity: qty,
+      date: date,
+      timestamp: Timestamp.now()
+    });
+
+    // 2. Update stock in products
+    const newStock = productData.stock + qty;
+    await updateDoc(doc(db, 'products', productId), {stock: newStock});
+
+    // Update local cache
+    productsList[productName].stock = newStock;
+
+    // Update preview stock
+    document.getElementById('previewStock').textContent = `Current Stock: ${newStock} pcs`;
+
+    successMsg.style.display = 'block';
+    document.getElementById('dQty').value = '';
+    document.getElementById('dProduct').value = '';
+    document.getElementById('productPreview').style.display = 'none';
+
+    setTimeout(() => successMsg.style.display = 'none', 3000);
+
+  } catch (error) {
+    alert('Error: ' + error.message);
+    console.error(error);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Production';
+  }
 });
-document.getElementById('products').innerHTML = datalistHTML;
-document.getElementById('dDate').valueAsDate = new Date();
-}
-
-async function addProduction(){
-const productName = document.getElementById('dProduct').value;
-const qty = parseInt(document.getElementById('dQty').value);
-const date = document.getElementById('dDate').value;
-
-if(!productName ||!productsList[productName] || isNaN(qty)){
-  alert('Please select a valid product from the list and enter quantity');
-  return;
-}
-
-const productId = productsList[productName];
-
-// Save to dhan-daily
-await db.collection('dhan-daily').add({
-  productId,
-  productName,
-  qty,
-  date,
-  timestamp:firebase.firestore.FieldValue.serverTimestamp()
-});
-
-// Update stock in dhan-pos-web
-const prodRef = db.collection('dhan-pos-web').doc(productId);
-const prodSnap = await prodRef.get();
-const newStock = (prodSnap.data().stock || 0) + qty;
-await prodRef.update({stock:newStock});
-
-alert('Production saved! Stock updated.');
-document.getElementById('dQty').value='';
-document.getElementById('dProduct').value='';
-}
 </script>
+
 </body>
 </html>
