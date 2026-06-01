@@ -9,24 +9,21 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
 body{background:#f5f5f5;padding:15px;}
 .header{background:#ff6b35;color:white;padding:15px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;}
-.header a{color:white;text-decoration:none;font-weight:600;font-size:14px;}
+.header a{color:white;text-decoration:none;font-weight:600;}
 .card{background:white;padding:15px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:15px;}
-input,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
-button{background:#ff6b35;color:white;border:none;font-weight:600;cursor:pointer;}
+input{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;font-size:16px;}
+button{background:#ff6b35;color:white;border:none;padding:12px 20px;border-radius:8px;font-weight:600;cursor:pointer;width:100%;font-size:16px;margin-top:5px;}
 button:disabled{opacity:0.6;cursor:not-allowed;}
-button.edit{background:#3498db;font-size:12px;padding:5px 8px;width:auto;}
+.success{color:green;font-size:13px;margin-top:10px;text-align:center;display:none;}
 table{width:100%;border-collapse:collapse;font-size:14px;}
 th,td{padding:8px;text-align:left;border-bottom:1px solid #eee;vertical-align:middle;}
 th{background:#f8f8f8;font-size:13px;}
-.category-block{margin-bottom:10px;border:1px solid #eee;border-radius:8px;}
-.category-header{background:#f8f8f8;padding:12px;font-weight:600;cursor:pointer;border-radius:8px;display:flex;justify-content:space-between;align-items:center;}
-.category-items{padding:10px;}
-#searchBox{margin-bottom:10px;}
-.stock-low{color:red;font-weight:600;}
-.stock-ok{color:green;}
-.product-img{width:50px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #ddd;}
-.upload-label{font-size:12px;color:#666;margin-top:5px;display:block;}
-.preview-img{width:80px;height:80px;object-fit:cover;border-radius:8px;margin-top:5px;border:2px solid #ff6b35;display:none;}
+.product-img{width:50px;height:50px;object-fit:cover;border-radius:8px;border:2px solid #ff6b35;}
+.delete-btn{background:#dc3545;padding:6px 12px;font-size:13px;width:auto;margin:0;}
+.edit-btn{background:#2196F3;padding:6px 12px;font-size:13px;width:auto;margin-right:5px;}
+.upload-box{border:2px dashed #ff6b35;border-radius:10px;padding:20px;text-align:center;margin-bottom:10px;cursor:pointer;background:#fff3e0;}
+.upload-box img{max-width:100px;max-height:100px;border-radius:8px;margin-top:10px;display:none;}
+.upload-box p{color:#ff6b35;font-size:13px;margin-top:5px;}
 </style>
 </head>
 <body>
@@ -36,30 +33,36 @@ th{background:#f8f8f8;font-size:13px;}
   <a href="index.html">← Back</a>
 </div>
 
+<!-- ADD/EDIT PRODUCT FORM -->
 <div class="card">
-  <h4>Add Product</h4>
-  <input type="text" id="productName" placeholder="Product Name">
-  <input type="text" id="productCategory" placeholder="Category">
-  <input type="number" id="productPrice" placeholder="Price">
-  <input type="number" id="productStock" placeholder="Initial Stock">
+  <h4 id="formTitle">➕ Add Product</h4>
+  <input type="hidden" id="editId">
 
-  <!-- PICTURE UPLOAD DITO BOSS -->
-  <label class="upload-label">📷 Product Picture</label>
-  <input type="file" id="productImage" accept="image/*">
-  <img id="imgPreview" class="preview-img">
+  <input type="text" id="pName" placeholder="Product Name" required>
+  <input type="number" id="pPrice" placeholder="Price ₱" min="0" step="0.01" required>
+  <input type="number" id="pStock" placeholder="Initial Stock" min="0" required>
 
-  <button id="addBtn">Add Product</button>
+  <!-- UPLOAD PICTURE DITO BOSS -->
+  <div class="upload-box" onclick="document.getElementById('pImage').click()">
+    <input type="file" id="pImage" accept="image/*" style="display:none" onchange="previewImage(event)">
+    <p>📷 Click to upload product picture</p>
+    <img id="imgPreview" src="">
+  </div>
+
+  <button id="saveBtn">Save Product</button>
+  <button id="cancelBtn" style="background:#666;display:none" onclick="cancelEdit()">Cancel Edit</button>
+  <div class="success" id="successMsg">✅ Product saved!</div>
 </div>
 
+<!-- PRODUCT LIST -->
 <div class="card">
-  <h4>Product List</h4>
-  <input type="text" id="searchBox" placeholder="🔍 Search product or category..." onkeyup="renderProducts()">
+  <h4>📋 Product List</h4>
   <div id="productList">Loading...</div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
@@ -75,150 +78,150 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-let productsCache = [];
 let selectedFile = null;
+let editMode = false;
 
-// Preview image
-document.getElementById('productImage').addEventListener('change', (e) => {
-  selectedFile = e.target.files[0];
-  if(selectedFile) {
+window.onload = loadProducts;
+
+// Preview image before upload
+window.previewImage = function(event){
+  selectedFile = event.target.files[0];
+  if(selectedFile){
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       document.getElementById('imgPreview').src = e.target.result;
       document.getElementById('imgPreview').style.display = 'block';
     }
     reader.readAsDataURL(selectedFile);
   }
-});
+}
 
-window.onload = loadProducts;
+// Load all products with pictures
+async function loadProducts(){
+  const snap = await getDocs(collection(db, 'products')); // UNIFIED: products
+  if(snap.empty){
+    document.getElementById('productList').innerHTML = '<p style="text-align:center;color:#666;padding:20px;">No products yet. Add one above 👆</p>';
+    return;
+  }
 
-document.getElementById('addBtn').addEventListener('click', async () => {
-  const name = document.getElementById('productName').value.trim();
-  const category = document.getElementById('productCategory').value.trim();
-  const price = document.getElementById('productPrice').value;
-  const stock = document.getElementById('productStock').value;
-  const btn = document.getElementById('addBtn');
+  let html = '<table><tr><th>Pic</th><th>Name</th><th>Price</th><th>Stock</th><th>Action</th></tr>';
+  snap.forEach(docSnap => {
+    let p = docSnap.data();
+    let img = p.imageUrl? `<img src="${p.imageUrl}" class="product-img">` : '📦';
 
-  if(!name ||!category ||!price){
-    alert('Fill all fields');
+    html += `<tr>
+      <td>${img}</td>
+      <td>${p.name}</td>
+      <td>₱${p.price}</td>
+      <td>${p.stock} pcs</td>
+      <td>
+        <button class="edit-btn" onclick="editProduct('${docSnap.id}','${p.name}',${p.price},${p.stock},'${p.imageUrl||''}')">Edit</button>
+        <button class="delete-btn" onclick="deleteProduct('${docSnap.id}')">Delete</button>
+      </td>
+    </tr>`;
+  });
+  html += '</table>';
+  document.getElementById('productList').innerHTML = html;
+}
+
+// Save or Update Product
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const name = document.getElementById('pName').value.trim();
+  const price = parseFloat(document.getElementById('pPrice').value);
+  const stock = parseInt(document.getElementById('pStock').value);
+  const btn = document.getElementById('saveBtn');
+  const successMsg = document.getElementById('successMsg');
+  const editId = document.getElementById('editId').value;
+
+  if(!name || isNaN(price) || isNaN(stock)){
+    alert('Fill all fields boss');
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = 'Adding...';
+  btn.textContent = editMode? 'Updating...' : 'Saving...';
+  successMsg.style.display = 'none';
 
   try {
     let imageUrl = '';
 
-    // Upload image if meron
-    if(selectedFile) {
-      const fileName = `products/${Date.now()}_${selectedFile.name}`;
-      const storageRef = ref(storage, fileName);
-      await uploadBytes(storageRef, selectedFile);
-      imageUrl = await getDownloadURL(storageRef);
+    // Upload picture to Firebase Storage kung may bago
+    if(selectedFile){
+      const storageRef = ref(storage, `products/${Date.now()}_${selectedFile.name}`);
+      const snapshot = await uploadBytes(storageRef, selectedFile);
+      imageUrl = await getDownloadURL(snapshot.ref);
     }
 
-    // Save to products - FIXED collection name
-    await addDoc(collection(db, 'products'), {
-      name: name,
-      category: category,
-      price: parseFloat(price),
-      stock: parseInt(stock) || 0,
-      imageUrl: imageUrl,
-      createdAt: new Date()
-    });
+    const productData = {name, price, stock};
+    if(imageUrl) productData.imageUrl = imageUrl;
 
-    // Clear form
-    document.getElementById('productName').value = '';
-    document.getElementById('productCategory').value = '';
-    document.getElementById('productPrice').value = '';
-    document.getElementById('productStock').value = '';
-    document.getElementById('productImage').value = '';
-    document.getElementById('imgPreview').style.display = 'none';
-    selectedFile = null;
+    if(editMode && editId){
+      // Update existing
+      if(!imageUrl) delete productData.imageUrl; // wag overwrite pic kung walang bago
+      await updateDoc(doc(db, 'products', editId), productData);
+    } else {
+      // Add new
+      if(!imageUrl) productData.imageUrl = '';
+      await addDoc(collection(db, 'products'), productData);
+    }
 
-    alert('✅ Product added!');
+    successMsg.style.display = 'block';
+    resetForm();
     loadProducts();
+    setTimeout(() => successMsg.style.display = 'none', 3000);
 
   } catch (error) {
     alert('Error: ' + error.message);
+    console.error(error);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Add Product';
+    btn.textContent = editMode? 'Update Product' : 'Save Product';
   }
 });
 
-async function loadProducts(){
-  const snapshot = await getDocs(collection(db, 'products')); // FIXED
-  productsCache = [];
-  snapshot.forEach(docSnap => {
-    productsCache.push({id: docSnap.id,...docSnap.data()});
-  });
-  renderProducts();
-}
+// Edit product
+window.editProduct = function(id, name, price, stock, imageUrl){
+  editMode = true;
+  document.getElementById('editId').value = id;
+  document.getElementById('pName').value = name;
+  document.getElementById('pPrice').value = price;
+  document.getElementById('pStock').value = stock;
 
-window.renderProducts = function(){
-  let search = document.getElementById('searchBox').value.toLowerCase();
-  let filtered = productsCache.filter(p =>
-    p.name.toLowerCase().includes(search) ||
-    p.category.toLowerCase().includes(search)
-  );
-
-  filtered.sort((a,b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
-
-  let grouped = {};
-  filtered.forEach(p => {
-    if(!grouped[p.category]) grouped[p.category] = [];
-    grouped[p.category].push(p);
-  });
-
-  let html = '';
-  for(let cat in grouped){
-    html += `<div class="category-block">
-      <div class="category-header" onclick="toggleCat('${cat}')">
-        <span>${cat}</span>
-        <span>${grouped[cat].length} items ▼</span>
-      </div>
-      <div class="category-items" id="cat-${cat}">
-        <table>
-          <tr><th>Pic</th><th>Name</th><th>Price</th><th>Stock</th><th></th></tr>`;
-
-    grouped[cat].forEach(p => {
-      let stockClass = p.stock == 0? 'stock-low' : p.stock < 10? 'stock-low' : 'stock-ok';
-      let img = p.imageUrl? `<img src="${p.imageUrl}" class="product-img">` : '📦';
-      html += `<tr>
-        <td>${img}</td>
-        <td>${p.name}</td>
-        <td>₱${p.price}</td>
-        <td class="${stockClass}">${p.stock}</td>
-        <td><button class="edit" onclick="editProduct('${p.id}')">Edit</button></td>
-      </tr>`;
-    });
-
-    html += `</table></div></div>`;
+  if(imageUrl){
+    document.getElementById('imgPreview').src = imageUrl;
+    document.getElementById('imgPreview').style.display = 'block';
   }
 
-  document.getElementById('productList').innerHTML = html || '<p style="text-align:center;color:#666;padding:20px;">No products found</p>';
+  document.getElementById('formTitle').textContent = '✏️ Edit Product';
+  document.getElementById('saveBtn').textContent = 'Update Product';
+  document.getElementById('cancelBtn').style.display = 'block';
+  window.scrollTo(0,0);
 }
 
-window.toggleCat = function(cat){
-  let el = document.getElementById('cat-'+cat);
-  el.style.display = el.style.display === 'none'? 'block' : 'none';
+// Cancel edit
+window.cancelEdit = function(){
+  resetForm();
 }
 
-window.editProduct = async function(id){
-  let product = productsCache.find(p => p.id === id);
-  let newPrice = prompt(`Update price for ${product.name}`, product.price);
-  let newStock = prompt(`Update stock for ${product.name}`, product.stock);
+function resetForm(){
+  editMode = false;
+  document.getElementById('editId').value = '';
+  document.getElementById('pName').value = '';
+  document.getElementById('pPrice').value = '';
+  document.getElementById('pStock').value = '';
+  document.getElementById('pImage').value = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  selectedFile = null;
+  document.getElementById('formTitle').textContent = '➕ Add Product';
+  document.getElementById('saveBtn').textContent = 'Save Product';
+  document.getElementById('cancelBtn').style.display = 'none';
+}
 
-  if(newPrice!== null && newStock!== null){
-    await updateDoc(doc(db, 'products', id), {
-      price: parseFloat(newPrice),
-      stock: parseInt(newStock)
-    });
-    loadProducts();
-  }
+// Delete product
+window.deleteProduct = async function(id){
+  if(!confirm('Delete this product?')) return;
+  await deleteDoc(doc(db, 'products', id));
+  loadProducts();
 }
 </script>
 
