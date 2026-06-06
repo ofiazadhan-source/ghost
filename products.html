@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Production - Siomai Factory POS</title>
+<style>
+ * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
+ body {background:#FFF8E1; padding:15px; min-height:100vh;}
+.container {
+   max-width:480px;
+   margin:auto;
+   background:white;
+   border-radius:20px;
+   padding:20px;
+   box-shadow:0 6px 20px rgba(0,0,0,0.12);
+   border-top:6px solid #FFA726;
+ }
+ h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
+.subtitle { text-align:center; color:#666; font-size:13px; margin-bottom:20px; }
+.back-btn {
+   background:#757575; color:white; border:none; padding:10px 18px;
+   border-radius:8px; cursor:pointer; margin-bottom:15px; font-size:13px; font-weight:600;
+ }
+ /* Menu Grid - same sa Products mo */
+.menu-grid {
+   display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;
+ }
+.menu-btn {
+   padding:35px 10px; border:none; border-radius:15px;
+   background:linear-gradient(135deg, #FFCC80, #FFB74D);
+   color:#B71C1C; font-weight:800; font-size:15px; cursor:pointer;
+   text-align:center; line-height:1.4;
+ }
+.menu-btn:active {transform:scale(0.95); background:#FFA726;}
+ /* Input Form */
+.prod-form {
+   background:#FFF8E1; border:2px dashed #FFCC80; border-radius:12px;
+   padding:15px; margin-bottom:18px;
+ }
+.prod-form h4 { color:#D32F2F; margin-bottom:10px; font-size:14px; }
+.input-group {margin-bottom:12px;}
+.input-group label {
+   font-size:12px; font-weight:700; color:#D32F2F; margin-bottom:4px; display:block;
+ }
+.input-group input {
+   width:100%; padding:12px; border:2px solid #FFE0B2; border-radius:8px;
+   font-size:14px; background:white;
+ }
+.input-group input:focus {outline:none; border-color:#D32F2F;}
+.save-btn {
+   width:100%; padding:14px; background:#2E7D32; color:white; border:none;
+   border-radius:8px; font-weight:800; cursor:pointer; margin-top:8px; font-size:15px;
+ }
+.success {
+   background:#4CAF50; color:white; padding:12px; border-radius:8px;
+   text-align:center; margin-top:12px; display:none; font-weight:700;
+ }
+.page {display:none;}
+.page.active {display:block;}
+.change-cat {
+   background:#FF9800; color:white; border:none; padding:10px;
+   border-radius:8px; width:100%; margin-bottom:15px; font-weight:700; cursor:pointer;
+ }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- PAGE 1: SELECT CATEGORY - same sa Products -->
+  <div id="categoryPage" class="page active">
+    <button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+    <h2>📦 Log Production</h2>
+    <p class="subtitle">Pili ka muna category boss</p>
+    <div class="menu-grid">
+      <button class="menu-btn" onclick="openCat('65s')">65's</button>
+      <button class="menu-btn" onclick="openCat('30s')">30's</button>
+      <button class="menu-btn" onclick="openCat('big')">Big SIOMAI</button>
+      <button class="menu-btn" onclick="openCat('dumplings')">Dumplings</button>
+      <button class="menu-btn" onclick="openCat('siopao')">SIOPAO</button>
+      <button class="menu-btn" onclick="openCat('sauce')">Sauce</button>
+      <button class="menu-btn" onclick="openCat('others')">Others</button>
+    </div>
+  </div>
+
+  <!-- PAGE 2: INPUT FORM -->
+  <div id="inputPage" class="page">
+    <button class="back-btn" onclick="backToCat()">← Back to Categories</button>
+    <h2 id="catTitle">65's Siomai</h2>
+
+    <div class="prod-form">
+      <h4>+ Log Production sa <span id="catName">65's Siomai</span></h4>
+      <div class="input-group">
+        <label>Product Name</label>
+        <input type="text" id="prodName" placeholder="ex: Pork Siomai 65's">
+      </div>
+      <div class="input-group">
+        <label style="color:#2E7D32;">Qty Nagawa Today</label>
+        <input type="number" id="prodQty" placeholder="500" min="1">
+      </div>
+      <button class="save-btn" onclick="saveProduction()">✅ Save + Add Stocks</button>
+      <div id="success" class="success">Saved! +stocks na sa Products 👌</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentCat = '65s';
+let products = JSON.parse(localStorage.getItem('products') || '{}');
+let production = JSON.parse(localStorage.getItem('production') || '[]');
+
+// Init all categories
+['65s','30s','big','dumplings','siopao','sauce','others','all'].forEach(cat => {
+  if(!products[cat]) products[cat] = [];
+});
+
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+}
+
+function openCat(cat) {
+  currentCat = cat;
+  const catNames = {
+    '65s': "65's Siomai",
+    '30s': "30's Siomai",
+    'big': 'Big SIOMAI',
+    'dumplings': 'Dumplings',
+    'siopao': 'SIOPAO',
+    'sauce': 'Sauce',
+    'others': 'Others'
+  };
+  document.getElementById('catTitle').innerText = catNames[cat];
+  document.getElementById('catName').innerText = catNames[cat];
+  document.getElementById('prodName').placeholder = 'ex: Pork Siomai ' + catNames[cat];
+  showPage('inputPage');
+}
+
+function backToCat() {
+  document.getElementById('prodName').value = '';
+  document.getElementById('prodQty').value = '';
+  document.getElementById('success').style.display = 'none';
+  showPage('categoryPage');
+}
+
+function saveProduction() {
+  const name = document.getElementById('prodName').value.trim();
+  const qty = parseInt(document.getElementById('prodQty').value);
+
+  if(!name ||!qty) {
+    alert('Complete mo muna boss!');
+    return;
+  }
+
+  // 1. Save sa production log
+  production.push({
+    datetime: new Date().toISOString(),
+    product: name,
+    category: currentCat,
+    qty: qty
+  });
+  localStorage.setItem('production', JSON.stringify(production));
+
+  // 2. AUTO ADD SA STOCKS - same products variable gamit
+  let prodItem = products[currentCat].find(p => p.name.toLowerCase() === name.toLowerCase());
+
+  if(prodItem) {
+    // May existing - dagdagan stocks
+    prodItem.stocks += qty;
+  } else {
+    // Wala pa - gawa bago product, price = 0 muna
+    prodItem = {
+      id: Date.now(),
+      name: name,
+      stocks: qty,
+      price: 0,
+      image: '',
+      category: currentCat
+    };
+    products[currentCat].push(prodItem);
+  }
+
+  // Update din sa 'all'
+  let prodAll = products['all'].find(p => p.name.toLowerCase() === name.toLowerCase());
+  if(prodAll) {
+    prodAll.stocks += qty;
+  } else {
+    products['all'].push({...prodItem});
+  }
+
+  localStorage.setItem('products', JSON.stringify(products));
+
+  // Show success
+  document.getElementById('success').style.display = 'block';
+  document.getElementById('prodName').value = '';
+  document.getElementById('prodQty').value = '';
+
+  setTimeout(() => {
+    document.getElementById('success').style.display = 'none';
+  }, 2500);
+}
+</script>
+</body>
+</html>
