@@ -53,6 +53,13 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 .checkout-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:10px; font-weight:800; font-size:15px; cursor:pointer; }
 .checkout-btn:disabled { background:#ccc; cursor:not-allowed; }
 .loading { text-align:center; padding:40px; color:#D32F2F; font-weight:700; }
+
+/* Receipt Print */
+@media print {
+  body * { visibility: hidden; }
+  #receipt, #receipt * { visibility: visible; }
+  #receipt { position: absolute; left: 0; top: 0; width: 80mm; font-family: monospace; font-size: 12px; }
+}
 </style>
 </head>
 <body>
@@ -111,6 +118,9 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 <button class="cancel-btn" onclick="closePayment()">Cancel</button>
 </div>
 </div>
+
+<!-- Hidden Receipt for Printing -->
+<div id="receipt" style="display:none;"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -368,11 +378,78 @@ window.computeChange = () => {
   document.getElementById('change').style.color = change >= 0? '#2E7D32' : '#C62828';
 }
 
-window.checkout = async (paymentMethod) => {
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+function generateReceipt(paymentMethod, total, cash) {
+  const now = new Date();
+  let receiptHTML = `
+    <div style="text-align:center; font-weight:bold; border-bottom:1px dashed #000; padding-bottom:5px; margin-bottom:5px;">
+      SIOMAI FACTORY<br>
+      123 Main St, QC<br>
+      Tel: 0917-XXX-XXXX<br>
+      ${now.toLocaleString('en-PH')}<br>
+      Cashier: ADMIN
+    </div>
+  `;
+
+  cart.forEach(item => {
+    receiptHTML += `
+      <div style="margin-top:5px;">
+        <div style="font-weight:bold;">${item.name}</div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>${item.qty} x ₱${item.price}</span>
+          <span>₱${(item.price * item.qty).toFixed(2)}</span>
+        </div>
+      </div>
+    `;
+  });
+
+  receiptHTML += `
+    <div style="border-top:1px dashed #000; margin-top:8px; padding-top:5px;">
+      <div style="display:flex; justify-content:space-between;">
+        <span>SUBTOTAL:</span>
+        <span>₱${total.toFixed(2)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px;">
+        <span>TOTAL:</span>
+        <span>₱${total.toFixed(2)}</span>
+      </div>
+      <div>PAYMENT: ${paymentMethod}</div>
+  `;
 
   if(paymentMethod === 'Cash') {
-    const cash = parseFloat(document.getElementById('cashInput').value) || 0;
+    receiptHTML += `
+      <div>CASH: ₱${cash.toFixed(2)}</div>
+      <div>CHANGE: ₱${(cash - total).toFixed(2)}</div>
+    `;
+  } else {
+    receiptHTML += `<div>GCASH PROOF: UPLOADED ✓</div>`;
+  }
+
+  receiptHTML += `
+    </div>
+    <div style="text-align:center; border-top:1px dashed #000; margin-top:8px; padding-top:8px; font-weight:bold;">
+      Thank you! Come again! 🙏
+    </div>
+  `;
+
+  document.getElementById('receipt').innerHTML = receiptHTML;
+}
+
+function printReceipt() {
+  document.getElementById('receipt').style.display = 'block';
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      document.getElementById('receipt').style.display = 'none';
+    }, 1000);
+  }, 300);
+}
+
+window.checkout = async (paymentMethod) => {
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  let cash = 0;
+
+  if(paymentMethod === 'Cash') {
+    cash = parseFloat(document.getElementById('cashInput').value) || 0;
     if(cash < total) {
       alert('Kulang ang cash boss!');
       return;
@@ -403,6 +480,10 @@ window.checkout = async (paymentMethod) => {
       payment: paymentMethod,
       proof: gcashProof
     });
+
+    // Generate and Print Receipt - BINALIK NA BOSS!
+    generateReceipt(paymentMethod, total, cash);
+    printReceipt();
 
     alert(`✓ SALE COMPLETE\nPayment: ${paymentMethod}\nTotal: ₱${total.toFixed(2)}\n\nThank you! Come again! 🙏`);
     cart = [];
