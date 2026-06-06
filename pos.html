@@ -43,7 +43,8 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 .change { text-align:right; font-size:16px; font-weight:800; color:#2E7D32; margin-top:5px; }
 .gcash-proof { margin:12px 0; display:none; }
 .gcash-proof label { font-size:12px; color:#007BFF; font-weight:700; display:block; margin-bottom:5px; }
-.gcash-proof input { width:100%; padding:8px; border:2px dashed #007BFF; border-radius:8px; }
+.gcash-proof input { width:100%; padding:8px; border:2px dashed #007BFF; border-radius:8px; cursor:pointer; }
+.gcash-proof img { max-width:100px; margin-top:8px; border-radius:8px; border:2px solid #007BFF; display:none; }
 .payment-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
 .pay-btn { padding:14px; border:none; border-radius:8px; font-weight:800; font-size:14px; cursor:pointer; color:white; }
 .cash-btn {background:#4CAF50;}
@@ -83,6 +84,34 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 <button class="checkout-btn" id="checkoutBtn" onclick="showPayment()" disabled>Checkout</button>
 </div>
 
+<div class="modal" id="paymentModal">
+<div class="modal-box">
+<h3>📋 Review Order</h3>
+<div id="reviewList"></div>
+<div class="review-total" id="reviewTotal">Total: ₱0</div>
+
+<div id="cashSection">
+<div class="cash-input">
+<label style="font-size:12px; color:#666;">Cash Tendered</label>
+<input type="number" id="cashInput" placeholder="0" oninput="computeChange()">
+</div>
+<div class="change" id="change">Change: ₱0</div>
+</div>
+
+<div class="gcash-proof" id="gcashProof">
+<label>📱 Gcash Proof - Auto Compress</label>
+<input type="file" id="proofInput" accept="image/*">
+<img id="proofPreview">
+</div>
+
+<div class="payment-btns">
+<button class="pay-btn cash-btn" onclick="checkout('Cash')">💵 Cash</button>
+<button class="pay-btn gcash-btn" onclick="selectGcash()">📱 Gcash</button>
+</div>
+<button class="cancel-btn" onclick="closePayment()">Cancel</button>
+</div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -102,14 +131,76 @@ const db = getFirestore(app);
 let products = [];
 let cart = [];
 let currentCat = 'all';
+let selectedPayment = 'Cash';
+let gcashProof = '';
+
+// AUTO COMPRESS - same sa products.html boss
+async function compressImageAuto(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        let quality = 0.8;
+        let maxWidth = 600;
+        let canvas = document.createElement('canvas');
+        let ctx = canvas.getContext('2d');
+
+        function tryCompress() {
+          let width = img.width;
+          let height = img.height;
+          if(width > maxWidth) {
+            height = (maxWidth / width) * height;
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          let base64 = canvas.toDataURL('image/jpeg', quality);
+          let sizeKB = Math.round(base64.length / 1024);
+          if(sizeKB > 900 && quality > 0.3) {
+            quality -= 0.1;
+            tryCompress();
+          } else if(sizeKB > 900 && maxWidth > 300) {
+            maxWidth -= 50;
+            quality = 0.8;
+            tryCompress();
+          } else {
+            resolve(base64);
+          }
+        }
+        tryCompress();
+      }
+    }
+  });
+}
+
+document.getElementById('proofInput').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if(file) {
+    const btn = document.querySelector('.gcash-btn');
+    btn.innerText = 'Compressing...';
+    btn.disabled = true;
+
+    gcashProof = await compressImageAuto(file);
+
+    document.getElementById('proofPreview').src = gcashProof;
+    document.getElementById('proofPreview').style.display = 'block';
+
+    btn.innerText = '📱 Gcash';
+    btn.disabled = false;
+  }
+});
 
 async function loadProducts() {
   const grid = document.getElementById('prodGrid');
   grid.innerHTML = '<div class="loading">Loading products...</div>';
-  
+
   try {
     let q = collection(db, "products");
-    if(currentCat != 'all') {
+    if(currentCat!= 'all') {
       q = query(collection(db, "products"), where("category", "==", currentCat));
     }
     const snap = await getDocs(q);
@@ -117,15 +208,15 @@ async function loadProducts() {
     snap.forEach(d => {
       const data = d.data();
       if(data.stock > 0) {
-        products.push({id: d.id, ...data});
+        products.push({id: d.id,...data});
       }
     });
-    
+
     if(products.length === 0) {
       grid.innerHTML = '<p style="grid-column:span 2; text-align:center; color:#999; padding:40px;">No products available</p>';
       return;
     }
-    
+
     let html = '';
     products.forEach(prod => {
       html += `
@@ -177,7 +268,7 @@ function renderCart() {
   const checkoutBtn = document.getElementById('checkoutBtn');
   let total = 0;
   let count = 0;
-  
+
   if(cart.length === 0) {
     cartItems.innerHTML = '<p style="text-align:center; color:#999; font-size:12px; padding:20px 0;">No items</p>';
     checkoutBtn.disabled = true;
@@ -232,12 +323,69 @@ window.setQty = (index, value) => {
   renderCart();
 }
 
-window.showPayment = async () => {
+window.showPayment = () => {
   if(cart.length === 0) return;
+  const modal = document.getElementById('paymentModal');
+  const reviewList = document.getElementById('reviewList');
+  const reviewTotal = document.getElementById('reviewTotal');
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  
-  // Deduct stock sa Firestore
+
+  let html = '';
+  cart.forEach(item => {
+    html += `<div class="review-item"><span>${item.name} x${item.qty}</span><span>₱${(item.price * item.qty).toFixed(2)}</span></div>`;
+  });
+  reviewList.innerHTML = html;
+  reviewTotal.innerText = 'Total: ₱' + total.toFixed(2);
+
+  document.getElementById('cashInput').value = '';
+  document.getElementById('change').innerText = 'Change: ₱0';
+  document.getElementById('cashSection').style.display = 'block';
+  document.getElementById('gcashProof').style.display = 'none';
+  selectedPayment = 'Cash';
+  gcashProof = '';
+  document.getElementById('proofInput').value = '';
+  document.getElementById('proofPreview').style.display = 'none';
+  modal.classList.add('active');
+}
+
+window.selectGcash = () => {
+  selectedPayment = 'Gcash';
+  document.getElementById('cashSection').style.display = 'none';
+  document.getElementById('gcashProof').style.display = 'block';
+}
+
+window.closePayment = () => {
+  document.getElementById('paymentModal').classList.remove('active');
+  selectedPayment = 'Cash';
+  gcashProof = '';
+}
+
+window.computeChange = () => {
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const cash = parseFloat(document.getElementById('cashInput').value) || 0;
+  const change = cash - total;
+  document.getElementById('change').innerText = 'Change: ₱' + (change >= 0? change.toFixed(2) : '0.00');
+  document.getElementById('change').style.color = change >= 0? '#2E7D32' : '#C62828';
+}
+
+window.checkout = async (paymentMethod) => {
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  if(paymentMethod === 'Cash') {
+    const cash = parseFloat(document.getElementById('cashInput').value) || 0;
+    if(cash < total) {
+      alert('Kulang ang cash boss!');
+      return;
+    }
+  }
+
+  if(paymentMethod === 'Gcash' &&!gcashProof) {
+    alert('Upload Gcash proof muna boss!');
+    return;
+  }
+
   try {
+    // Deduct stock
     for(let item of cart) {
       const prod = products.find(p => p.id === item.id);
       if(prod) {
@@ -246,21 +394,24 @@ window.showPayment = async () => {
         });
       }
     }
-    
-    // Save sales
+
+    // Save sales with proof
     await addDoc(collection(db, "sales"), {
       datetime: serverTimestamp(),
       items: cart,
       total: total,
-      payment: 'Cash'
+      payment: paymentMethod,
+      proof: gcashProof
     });
-    
-    alert(`✓ SALE COMPLETE\nTotal: ₱${total.toFixed(2)}\n\nThank you! Come again! 🙏`);
+
+    alert(`✓ SALE COMPLETE\nPayment: ${paymentMethod}\nTotal: ₱${total.toFixed(2)}\n\nThank you! Come again! 🙏`);
     cart = [];
     renderCart();
+    closePayment();
     loadProducts();
   } catch(error) {
     alert('Checkout failed: ' + error.message);
+    console.error(error);
   }
 }
 
