@@ -45,9 +45,13 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 .gcash-proof label { font-size:12px; color:#007BFF; font-weight:700; display:block; margin-bottom:5px; }
 .gcash-proof input { width:100%; padding:8px; border:2px dashed #007BFF; border-radius:8px; cursor:pointer; }
 .gcash-proof img { max-width:100px; margin-top:8px; border-radius:8px; border:2px solid #007BFF; display:none; }
-.checkout-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:10px; font-weight:800; font-size:15px; cursor:pointer; margin-top:12px; }
-.checkout-btn:disabled { background:#ccc; cursor:not-allowed; }
+.payment-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.pay-btn { padding:14px; border:none; border-radius:8px; font-weight:800; font-size:14px; cursor:pointer; color:white; }
+.cash-btn {background:#4CAF50;}
+.gcash-btn {background:#007BFF;}
 .cancel-btn { width:100%; padding:10px; margin-top:8px; background:#999; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
+.checkout-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:10px; font-weight:800; font-size:15px; cursor:pointer; }
+.checkout-btn:disabled { background:#ccc; cursor:not-allowed; }
 .loading { text-align:center; padding:40px; color:#D32F2F; font-weight:700; }
 .receipt { display:none; font-family:monospace; font-size:14px; color:black; background:white; padding:10px; width:100%; max-width:300px; margin:auto; line-height:1.6; text-align:left; }
 @media print { @page {size: 80mm auto; margin: 0;} body * {visibility:hidden;}.receipt,.receipt * {visibility:visible;}.receipt { position:absolute; left:0; top:0; width:80mm; display:block!important; font-size:12px; } }
@@ -88,9 +92,11 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 <div id="reviewList"></div>
 <div class="review-total" id="reviewTotal">Total: ₱0</div>
 
-<div id="cashSection" class="cash-input">
+<div id="cashSection">
+<div class="cash-input">
 <label style="font-size:12px; color:#666;">Cash Tendered</label>
 <input type="number" id="cashInput" placeholder="0" oninput="computeChange()">
+</div>
 <div class="change" id="change">Change: ₱0</div>
 </div>
 
@@ -100,7 +106,6 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 <img id="proofPreview">
 </div>
 
-<!-- DROPDOWN + 1 BUTTON LANG -->
 <div style="margin:12px 0;">
 <label style="font-size:12px; color:#666; display:block; margin-bottom:5px;">Payment Method:</label>
 <select id="paymentMethod" onchange="togglePayment()" style="width:100%; padding:12px; font-size:16px; border:2px solid #FFCC80; border-radius:8px; font-weight:700;">
@@ -113,6 +118,8 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 <button class="cancel-btn" onclick="closePayment()">Cancel</button>
 </div>
 </div>
+</div>
+
 
 <!-- Receipt for Print -->
 <div class="receipt" id="receipt"></div>
@@ -122,365 +129,380 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-projectId: "dhan-siomai-pos-fe1e5",
-storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-messagingSenderId: "305932123173",
-appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
 let products = [];
 let cart = [];
 let currentCat = 'all';
+let selectedPayment = 'Cash';
 let gcashProof = '';
 
-// AUTO COMPRESS
+// AUTO COMPRESS - same sa products.html boss
 async function compressImageAuto(file) {
-return new Promise((resolve) => {
-const reader = new FileReader();
-reader.readAsDataURL(file);
-reader.onload = (event) => {
-const img = new Image();
-img.src = event.target.result;
-img.onload = () => {
-let quality = 0.8;
-let maxWidth = 600;
-let canvas = document.createElement('canvas');
-let ctx = canvas.getContext('2d');
-function tryCompress() {
-let width = img.width;
-let height = img.height;
-if(width > maxWidth) {
-height = (maxWidth / width) * height;
-width = maxWidth;
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        let quality = 0.8;
+        let maxWidth = 600;
+        let canvas = document.createElement('canvas');
+        let ctx = canvas.getContext('2d');
+
+        function tryCompress() {
+          let width = img.width;
+          let height = img.height;
+          if(width > maxWidth) {
+            height = (maxWidth / width) * height;
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          let base64 = canvas.toDataURL('image/jpeg', quality);
+          let sizeKB = Math.round(base64.length / 1024);
+          if(sizeKB > 900 && quality > 0.3) {
+            quality -= 0.1;
+            tryCompress();
+          } else if(sizeKB > 900 && maxWidth > 300) {
+            maxWidth -= 50;
+            quality = 0.8;
+            tryCompress();
+          } else {
+            resolve(base64);
+          }
+        }
+        tryCompress();
+      }
+    }
+  });
 }
-canvas.width = width;
-canvas.height = height;
-ctx.drawImage(img, 0, 0, width, height);
-let base64 = canvas.toDataURL('image/jpeg', quality);
-let sizeKB = Math.round(base64.length / 1024);
-if(sizeKB > 900 && quality > 0.3) {
-quality -= 0.1;
-tryCompress();
-} else if(sizeKB > 900 && maxWidth > 300) {
-maxWidth -= 50;
-quality = 0.8;
-tryCompress();
-} else {
-resolve(base64);
-}
-tryCompress();
-}
-}
-});
-});
 
 document.getElementById('proofInput').addEventListener('change', async function(e) {
-const file = e.target.files[0];
-if(file) {
-const btn = document.querySelector('.checkout-btn');
-const oldText = btn.innerText;
-btn.innerText = 'Compressing...';
-btn.disabled = true;
-gcashProof = await compressImageAuto(file);
-document.getElementById('proofPreview').src = gcashProof;
-document.getElementById('proofPreview').style.display = 'block';
-btn.innerText = oldText;
-btn.disabled = false;
-}
+  const file = e.target.files[0];
+  if(file) {
+    const btn = document.querySelector('.gcash-btn');
+    btn.innerText = 'Compressing...';
+    btn.disabled = true;
+
+    gcashProof = await compressImageAuto(file);
+
+    document.getElementById('proofPreview').src = gcashProof;
+    document.getElementById('proofPreview').style.display = 'block';
+
+    btn.innerText = '📱 Gcash';
+    btn.disabled = false;
+  }
 });
 
 async function loadProducts() {
-const grid = document.getElementById('prodGrid');
-grid.innerHTML = '<div class="loading">Loading products...</div>';
-try {
-let q = collection(db, "products");
-if(currentCat!= 'all') {
-q = query(collection(db, "products"), where("category", "==", currentCat));
-}
-const snap = await getDocs(q);
-products = [];
-snap.forEach(d => {
-const data = d.data();
-if(data.stock > 0) {
-products.push({id: d.id,...data});
-}
-});
-if(products.length === 0) {
-grid.innerHTML = '<p style="grid-column:span 2; text-align:center; color:#999; padding:40px;">No products available</p>';
-return;
-}
-let html = '';
-products.forEach(prod => {
-html += `
-<div class="prod-card" onclick="addToCart('${prod.id}')">
-${prod.image? `<img src="${prod.image}" class="prod-img">` : '<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:10px;">No Image</div>'}
-<div class="prod-name">${prod.name}</div>
-<div class="prod-price">₱${prod.price}</div>
-<div class="prod-stock">Stock: ${prod.stock}</div>
-</div>
-`;
-});
-grid.innerHTML = html;
-} catch(error) {
-console.error('Load Error:', error);
-grid.innerHTML = '<p style="grid-column:span 2; text-align:center; color:#C62828; padding:40px;">Error loading products</p>';
-}
+  const grid = document.getElementById('prodGrid');
+  grid.innerHTML = '<div class="loading">Loading products...</div>';
+
+  try {
+    let q = collection(db, "products");
+    if(currentCat!= 'all') {
+      q = query(collection(db, "products"), where("category", "==", currentCat));
+    }
+    const snap = await getDocs(q);
+    products = [];
+    snap.forEach(d => {
+      const data = d.data();
+      if(data.stock > 0) {
+        products.push({id: d.id,...data});
+      }
+    });
+
+    if(products.length === 0) {
+      grid.innerHTML = '<p style="grid-column:span 2; text-align:center; color:#999; padding:40px;">No products available</p>';
+      return;
+    }
+
+    let html = '';
+    products.forEach(prod => {
+      html += `
+        <div class="prod-card" onclick="addToCart('${prod.id}')">
+          ${prod.image? `<img src="${prod.image}" class="prod-img">` : '<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:10px;">No Image</div>'}
+          <div class="prod-name">${prod.name}</div>
+          <div class="prod-price">₱${prod.price}</div>
+          <div class="prod-stock">Stock: ${prod.stock}</div>
+        </div>
+      `;
+    });
+    grid.innerHTML = html;
+  } catch(error) {
+    console.error('Load Error:', error);
+    grid.innerHTML = '<p style="grid-column:span 2; text-align:center; color:#C62828; padding:40px;">Error loading products</p>';
+  }
 }
 
 window.filterCat = (cat, btn) => {
-currentCat = cat;
-document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-btn.classList.add('active');
-loadProducts();
+  currentCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadProducts();
 }
 
 window.addToCart = (prodId) => {
-const prod = products.find(p => p.id === prodId);
-if(!prod || prod.stock <= 0) {
-alert('Out of stock boss!');
-return;
-}
-const existing = cart.find(item => item.id === prodId);
-if(existing) {
-if(existing.qty >= prod.stock) {
-alert('Kulang na stocks boss!');
-return;
-}
-existing.qty++;
-} else {
-cart.push({id: prodId, name: prod.name, price: prod.price, qty: 1});
-}
-renderCart();
+  const prod = products.find(p => p.id === prodId);
+  if(!prod || prod.stock <= 0) {
+    alert('Out of stock boss!');
+    return;
+  }
+  const existing = cart.find(item => item.id === prodId);
+  if(existing) {
+    if(existing.qty >= prod.stock) {
+      alert('Kulang na stocks boss!');
+      return;
+    }
+    existing.qty++;
+  } else {
+    cart.push({id: prodId, name: prod.name, price: prod.price, qty: 1});
+  }
+  renderCart();
 }
 
 function renderCart() {
-const cartItems = document.getElementById('cartItems');
-const cartCount = document.getElementById('cartCount');
-const cartTotal = document.getElementById('cartTotal');
-const checkoutBtn = document.getElementById('checkoutBtn');
-let total = 0;
-let count = 0;
-if(cart.length === 0) {
-cartItems.innerHTML = '<p style="text-align:center; color:#999; font-size:12px; padding:20px 0;">No items</p>';
-checkoutBtn.disabled = true;
-} else {
-let html = '';
-cart.forEach((item, i) => {
-const subtotal = item.price * item.qty;
-total += subtotal;
-count += item.qty;
-html += `
-<div class="cart-item">
-<button class="remove-btn" onclick="removeItem(${i})">×</button>
-<span class="item-name">${item.name}</span>
-<div class="qty-control">
-<button class="qty-btn" onclick="changeQty(${i}, -1)">-</button>
-<input type="number" class="qty-input" value="${item.qty}" min="1" oninput="setQty(${i}, this.value)">
-<button class="qty-btn" onclick="changeQty(${i}, 1)">+</button>
-</div>
-<span class="item-total">₱${subtotal.toFixed(2)}</span>
-</div>
-`;
-});
-cartItems.innerHTML = html;
-checkoutBtn.disabled = false;
-}
-cartCount.innerText = count;
-cartTotal.innerText = 'Total: ₱' + total.toFixed(2);
+  const cartItems = document.getElementById('cartItems');
+  const cartCount = document.getElementById('cartCount');
+  const cartTotal = document.getElementById('cartTotal');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  let total = 0;
+  let count = 0;
+
+  if(cart.length === 0) {
+    cartItems.innerHTML = '<p style="text-align:center; color:#999; font-size:12px; padding:20px 0;">No items</p>';
+    checkoutBtn.disabled = true;
+  } else {
+    let html = '';
+    cart.forEach((item, i) => {
+      const subtotal = item.price * item.qty;
+      total += subtotal;
+      count += item.qty;
+      html += `
+        <div class="cart-item">
+          <button class="remove-btn" onclick="removeItem(${i})">×</button>
+          <span class="item-name">${item.name}</span>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty(${i}, -1)">-</button>
+            <input type="number" class="qty-input" value="${item.qty}" min="1" oninput="setQty(${i}, this.value)">
+            <button class="qty-btn" onclick="changeQty(${i}, 1)">+</button>
+          </div>
+          <span class="item-total">₱${subtotal.toFixed(2)}</span>
+        </div>
+      `;
+    });
+    cartItems.innerHTML = html;
+    checkoutBtn.disabled = false;
+  }
+  cartCount.innerText = count;
+  cartTotal.innerText = 'Total: ₱' + total.toFixed(2);
 }
 
 window.removeItem = (index) => {
-cart.splice(index, 1);
-renderCart();
+  cart.splice(index, 1);
+  renderCart();
 }
 
 window.changeQty = (index, delta) => {
-cart[index].qty += delta;
-const prod = products.find(p => p.id === cart[index].id);
-if(cart[index].qty < 1) cart[index].qty = 1;
-if(prod && cart[index].qty > prod.stock) cart[index].qty = prod.stock;
-renderCart();
+  cart[index].qty += delta;
+  const prod = products.find(p => p.id === cart[index].id);
+  if(cart[index].qty < 1) cart[index].qty = 1;
+  if(prod && cart[index].qty > prod.stock) cart[index].qty = prod.stock;
+  renderCart();
 }
 
 window.setQty = (index, value) => {
-let qty = parseInt(value) || 1;
-const prod = products.find(p => p.id === cart[index].id);
-if(qty < 1) qty = 1;
-if(prod && qty > prod.stock) {
-qty = prod.stock;
-alert('Max stock: ' + prod.stock + ' lang boss!');
-}
-cart[index].qty = qty;
-renderCart();
-}
-
-window.togglePayment = () => {
-const method = document.getElementById('paymentMethod').value;
-if(method === 'Cash') {
-document.getElementById('cashSection').style.display = 'block';
-document.getElementById('gcashProof').style.display = 'none';
-} else {
-document.getElementById('cashSection').style.display = 'none';
-document.getElementById('gcashProof').style.display = 'block';
-}
+  let qty = parseInt(value) || 1;
+  const prod = products.find(p => p.id === cart[index].id);
+  if(qty < 1) qty = 1;
+  if(prod && qty > prod.stock) {
+    qty = prod.stock;
+    alert('Max stock: ' + prod.stock + ' lang boss!');
+  }
+  cart[index].qty = qty;
+  renderCart();
 }
 
 window.showPayment = () => {
-if(cart.length === 0) return;
-const modal = document.getElementById('paymentModal');
-const reviewList = document.getElementById('reviewList');
-const reviewTotal = document.getElementById('reviewTotal');
-const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  if(cart.length === 0) return;
+  const modal = document.getElementById('paymentModal');
+  const reviewList = document.getElementById('reviewList');
+  const reviewTotal = document.getElementById('reviewTotal');
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
-let html = '';
-cart.forEach(item => {
-html += `<div class="review-item"><span>${item.name} x${item.qty}</span><span>₱${(item.price * item.qty).toFixed(2)}</span></div>`;
-});
-reviewList.innerHTML = html;
-reviewTotal.innerText = 'Total: ₱' + total.toFixed(2);
+  let html = '';
+  cart.forEach(item => {
+    html += `<div class="review-item"><span>${item.name} x${item.qty}</span><span>₱${(item.price * item.qty).toFixed(2)}</span></div>`;
+  });
+  reviewList.innerHTML = html;
+  reviewTotal.innerText = 'Total: ₱' + total.toFixed(2);
 
-// Reset fields
-document.getElementById('cashInput').value = '';
-document.getElementById('change').innerText = 'Change: ₱0';
-document.getElementById('paymentMethod').value = 'Cash';
-document.getElementById('proofInput').value = '';
-document.getElementById('proofPreview').style.display = 'none';
-gcashProof = '';
-
-togglePayment();
-modal.classList.add('active');
+  document.getElementById('cashInput').value = '';
+  document.getElementById('change').innerText = 'Change: ₱0';
+  document.getElementById('cashSection').style.display = 'block';
+  document.getElementById('gcashProof').style.display = 'none';
+  selectedPayment = 'Cash';
+  gcashProof = '';
+  document.getElementById('proofInput').value = '';
+  document.getElementById('proofPreview').style.display = 'none';
+  modal.classList.add('active');
 }
 
 window.closePayment = () => {
-document.getElementById('paymentModal').classList.remove('active');
-gcashProof = '';
+  document.getElementById('paymentModal').classList.remove('active');
+  selectedPayment = 'Cash';
+  gcashProof = '';
 }
 
 window.computeChange = () => {
-const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-const cash = parseFloat(document.getElementById('cashInput').value) || 0;
-const change = cash - total;
-document.getElementById('change').innerText = 'Change: ₱' + (change >= 0? change.toFixed(2) : '0.00');
-document.getElementById('change').style.color = change >= 0? '#2E7D32' : '#C62828';
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const cash = parseFloat(document.getElementById('cashInput').value) || 0;
+  const change = cash - total;
+  document.getElementById('change').innerText = 'Change: ₱' + (change >= 0? change.toFixed(2) : '0.00');
+  document.getElementById('change').style.color = change >= 0? '#2E7D32' : '#C62828';
+}
+
+window.togglePayment = () => {
+  const method = document.getElementById('paymentMethod').value;
+  if(method === 'Cash') {
+    document.getElementById('cashSection').style.display = 'block';
+    document.getElementById('gcashProof').style.display = 'none';
+  } else {
+    document.getElementById('cashSection').style.display = 'none';
+    document.getElementById('gcashProof').style.display = 'block';
+  }
 }
 
 window.placeOrder = async () => {
-const method = document.getElementById('paymentMethod').value;
-const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const method = document.getElementById('paymentMethod').value;
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
-if(method === 'Cash') {
-const cash = parseFloat(document.getElementById('cashInput').value) || 0;
-if(cash < total) {
-alert('Kulang ang cash boss!');
-return;
-}
-}
+  if(method === 'Cash') {
+    const cash = parseFloat(document.getElementById('cashInput').value) || 0;
+    if(cash < total) {
+      alert('Kulang ang cash boss!');
+      return;
+    }
+  }
 
-if(method === 'Gcash' &&!gcashProof) {
-alert('Upload Gcash proof muna boss!');
-return;
-}
+  if(method === 'Gcash' && !gcashProof) {
+    alert('Upload Gcash proof muna boss!');
+    return;
+  }
 
-try {
-// Deduct stock
-for(let item of cart) {
-const prod = products.find(p => p.id === item.id);
-if(prod) {
-await updateDoc(doc(db, "products", item.id), {
-stock: prod.stock - item.qty
-});
-}
-}
+  try {
+    // Deduct stock
+    for(let item of cart) {
+      const prod = products.find(p => p.id === item.id);
+      if(prod) {
+        await updateDoc(doc(db, "products", item.id), { 
+          stock: prod.stock - item.qty 
+        });
+      }
+    }
 
-// Save sales with proof
-await addDoc(collection(db, "sales"), {
-datetime: serverTimestamp(),
-items: cart,
-total: total,
-payment: method,
-proof: gcashProof
-});
+    // Save sales with proof
+    await addDoc(collection(db, "sales"), {
+      datetime: serverTimestamp(),
+      items: cart,
+      total: total,
+      payment: method,
+      proof: gcashProof
+    });
 
-// Generate + Print Receipt
-generateReceipt(method, total);
-printReceipt();
+    // Generate + Print Receipt
+    generateReceipt(method, total);
+    printReceipt();
 
-alert(`✓ SALE COMPLETE\nPayment: ${method}\nTotal: ₱${total.toFixed(2)}\n\nThank you! Come again! 🙏`);
-cart = [];
-renderCart();
-closePayment();
-loadProducts();
+    alert(`✓ SALE COMPLETE\nPayment: ${method}\nTotal: ₱${total.toFixed(2)}\n\nThank you! Come again! 🙏`);
+    cart = [];
+    renderCart();
+    closePayment();
+    loadProducts();
 
-} catch(error) {
-alert('Checkout failed: ' + error.message);
-console.error(error);
-}
+  } catch(error) {
+    alert('Checkout failed: ' + error.message);
+    console.error(error);
+  }
 }
 
 function generateReceipt(paymentMethod, total) {
-const now = new Date();
-let receiptHTML = `
-<div style="text-align:center; font-weight:bold; border-bottom:1px dashed #000; padding-bottom:5px; margin-bottom:5px;">
-SIOMAI FACTORY<br>
-123 Main St, QC<br>
-Tel: 0917-XXX-XXXX<br>
-${now.toLocaleString('en-PH')}<br>
-Cashier: ADMIN
-</div>
-`;
-cart.forEach(item => {
-receiptHTML += `
-<div style="margin-top:5px;">
-<div style="font-weight:bold;">${item.name}</div>
-<div style="display:flex; justify-content:space-between;">
-<span>${item.qty} x ₱${item.price}</span>
-<span>₱${(item.price * item.qty).toFixed(2)}</span>
-</div>
-</div>
-`;
-});
-receiptHTML += `
-<div style="border-top:1px dashed #000; margin-top:8px; padding-top:5px;">
-<div style="display:flex; justify-content:space-between;">
-<span>SUBTOTAL:</span>
-<span>₱${total.toFixed(2)}</span>
-</div>
-<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px;">
-<span>TOTAL:</span>
-<span>₱${total.toFixed(2)}</span>
-</div>
-<div>PAYMENT: ${paymentMethod}</div>
-`;
-if(paymentMethod === 'Cash') {
-const cash = parseFloat(document.getElementById('cashInput').value) || 0;
-receiptHTML += `
-<div>CASH: ₱${cash.toFixed(2)}</div>
-<div>CHANGE: ₱${(cash - total).toFixed(2)}</div>
-`;
-} else {
-receiptHTML += `<div>GCASH PROOF: UPLOADED ✓</div>`;
-}
-receiptHTML += `
-</div>
-<div style="text-align:center; border-top:1px dashed #000; margin-top:8px; padding-top:8px; font-weight:bold;">
-Thank you! Come again! 🙏
-</div>
-`;
-document.getElementById('receipt').innerHTML = receiptHTML;
-document.getElementById('receipt').style.display = 'block';
+  const now = new Date();
+  let receiptHTML = `
+    <div style="text-align:center; font-weight:bold; border-bottom:1px dashed #000; padding-bottom:5px; margin-bottom:5px;">
+     ONE SIOMAI FACTORY<br>
+      77 AMOIS SAN MATEO RIZAL<br>
+      Tel: 09052733253<br>
+      ${now.toLocaleString('en-PH')}<br>
+      Cashier: ADMIN
+    </div>
+  `;
+
+  cart.forEach(item => {
+    receiptHTML += `
+      <div style="margin-top:5px;">
+        <div style="font-weight:bold;">${item.name}</div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>${item.qty} x ₱${item.price}</span>
+          <span>₱${(item.price * item.qty).toFixed(2)}</span>
+        </div>
+      </div>
+    `;
+  });
+
+  receiptHTML += `
+    <div style="border-top:1px dashed #000; margin-top:8px; padding-top:5px;">
+      <div style="display:flex; justify-content:space-between;">
+        <span>SUBTOTAL:</span>
+        <span>₱${total.toFixed(2)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px;">
+        <span>TOTAL:</span>
+        <span>₱${total.toFixed(2)}</span>
+      </div>
+      <div>PAYMENT: ${paymentMethod}</div>
+  `;
+
+  if(paymentMethod === 'Cash') {
+    const cash = parseFloat(document.getElementById('cashInput').value) || 0;
+    receiptHTML += `
+      <div>CASH: ₱${cash.toFixed(2)}</div>
+      <div>CHANGE: ₱${(cash - total).toFixed(2)}</div>
+    `;
+  } else {
+    receiptHTML += `<div>GCASH PROOF: UPLOADED ✓</div>`;
+  }
+
+  receiptHTML += `
+    </div>
+    <div style="text-align:center; border-top:1px dashed #000; margin-top:8px; padding-top:8px; font-weight:bold;">
+      Thank you! Come again! 🙏
+    </div>
+  `;
+
+  document.getElementById('receipt').innerHTML = receiptHTML;
+  document.getElementById('receipt').style.display = 'block';
 }
 
 function printReceipt() {
-setTimeout(() => {
-window.print();
-setTimeout(() => {
-document.getElementById('receipt').style.display = 'none';
-}, 1000);
-}, 300);
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      document.getElementById('receipt').style.display = 'none';
+    }, 1000);
+  }, 300);
 }
 
 loadProducts();
