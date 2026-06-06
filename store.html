@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store POS - Firebase</title>
+<style>
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
+body {background:#FFF8E1; padding:10px;}
+.container { max-width:500px; margin:auto; background:white; border-radius:20px; padding:15px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; }
+h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
+.back-btn { background:#757575; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; margin-bottom:12px; font-size:12px; }
+.cat-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:12px; }
+.cat-btn { padding:12px 5px; border:none; border-radius:10px; background:#FFCC80; color:#B71C1C; font-weight:700; font-size:12px; cursor:pointer; }
+.cat-btn.active {background:#D32F2F; color:white;}
+.prod-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-bottom:90px; }
+.prod-card { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:8px; text-align:center; cursor:pointer; }
+.prod-img { width:100%; height:60px; object-fit:cover; border-radius:8px; margin-bottom:4px; background:#f0f0f0; }
+.prod-name { font-weight:700; font-size:11px; color:#D32F2F; margin-bottom:2px; height:28px; overflow:hidden; }
+.prod-price { font-size:14px; font-weight:900; color:#2E7D32; }
+.cart-float { position:fixed; bottom:0; left:0; right:0; background:white; border-top:3px solid #D32F2F; border-radius:20px 20px 0 0; padding:12px 15px; box-shadow:0 -4px 15px rgba(0,0,0,0.2); max-width:500px; margin:auto; z-index:999; }
+.cart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.cart-title { font-weight:800; color:#D32F2F; font-size:14px; }
+.cart-count { background:#D32F2F; color:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
+.cart-items { max-height:180px; overflow-y:auto; margin-bottom:8px; }
+.cart-item { display:grid; grid-template-columns:20px 1fr 80px 60px; gap:5px; align-items:center; font-size:12px; padding:6px 0; border-bottom:1px dashed #eee; }
+.remove-btn { background:#C62828; color:white; border:none; border-radius:50%; width:18px; height:18px; font-size:14px; cursor:pointer; font-weight:800; }
+.qty-btn { width:24px; height:24px; border:none; background:#D32F2F; color:white; border-radius:4px; font-weight:800; cursor:pointer; font-size:14px; }
+.qty-input { width:40px; height:24px; text-align:center; border:1px solid #ddd; border-radius:4px; font-size:12px; }
+.cart-total { font-size:20px; font-weight:900; color:#D32F2F; text-align:right; margin:8px 0; }
+.modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
+.modal.active {display:flex;}
+.modal-box { background:white; border-radius:15px; padding:20px; width:90%; max-width:380px; }
+.gcash-proof { margin:12px 0; display:none; }
+.gcash-proof label { font-size:12px; color:#007BFF; font-weight:700; display:block; margin-bottom:5px; }
+.gcash-proof input { width:100%; padding:8px; border:2px dashed #007BFF; border-radius:8px; }
+.payment-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.pay-btn { padding:14px; border:none; border-radius:8px; font-weight:800; font-size:14px; cursor:pointer; color:white; }
+.cash-btn {background:#4CAF50;}
+.gcash-btn {background:#007BFF;}
+.checkout-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:10px; font-weight:800; font-size:15px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="container">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+<h2>🛒 Store POS Firebase</h2>
+<div class="cat-grid">
+<button class="cat-btn active" onclick="filterCat('all', this)">All</button>
+<button class="cat-btn" onclick="filterCat('65s', this)">65's</button>
+</div>
+<div class="prod-grid" id="prodGrid"></div>
+</div>
+<div class="cart-float">
+<div class="cart-header">
+<span class="cart-title">🛒 Cart</span>
+<span class="cart-count" id="cartCount">0</span>
+</div>
+<div class="cart-items" id="cartItems"></div>
+<div class="cart-total" id="cartTotal">Total: ₱0</div>
+<button class="checkout-btn" id="checkoutBtn" onclick="showPayment()">Checkout</button>
+</div>
+<div class="modal" id="paymentModal">
+<div class="modal-box">
+<h3>📋 Payment</h3>
+<div id="reviewList"></div>
+<div id="cashSection">
+<input type="number" id="cashInput" placeholder="Cash Tendered">
+</div>
+<div class="gcash-proof" id="gcashProof">
+<label>📱 Upload Gcash Proof</label>
+<input type="file" id="proofInput" accept="image/*">
+<img id="proofPreview" style="max-width:100%; margin-top:8px; display:none;">
+</div>
+<div class="payment-btns">
+<button class="pay-btn cash-btn" onclick="checkout('Cash')">💵 Cash</button>
+<button class="pay-btn gcash-btn" onclick="selectGcash()">📱 Gcash</button>
+</div>
+</div>
+</div>
+
+<!-- FIREBASE SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+// PALITAN MO TO NG IYO BOSS - kopya mo sa Firebase > Project Settings
+const firebaseConfig = {
+apiKey: "PASTE_MO_DITO",
+authDomain: "siomai-factory.firebaseapp.com",
+projectId: "siomai-factory",
+storageBucket: "siomai-factory.appspot.com",
+messagingSenderId: "xxx",
+appId: "xxx"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+let products = JSON.parse(localStorage.getItem('products') || '{}');
+let cart = [];
+let currentCat = 'all';
+let selectedPayment = 'Cash';
+let proofFile = null;
+
+// PREVIEW IMAGE
+document.getElementById('proofInput').onchange = function(e) {
+proofFile = e.target.files[0];
+if(proofFile) {
+const reader = new FileReader();
+reader.onload = function(event) {
+document.getElementById('proofPreview').src = event.target.result;
+document.getElementById('proofPreview').style.display = 'block';
+};
+reader.readAsDataURL(proofFile);
+}
+};
+
+function selectGcash() {
+selectedPayment = 'Gcash';
+document.getElementById('cashSection').style.display = 'none';
+document.getElementById('gcashProof').style.display = 'block';
+}
+
+async function checkout(paymentMethod) {
+const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+let proofUrl = '';
+
+if(paymentMethod === 'Gcash') {
+if(!proofFile) {
+alert('Upload proof muna boss!');
+return;
+}
+// UPLOAD SA FIREBASE STORAGE
+const fileRef = ref(storage, `gcash_proofs/${Date.now()}_${proofFile.name}`);
+const snap = await uploadBytes(fileRef, proofFile);
+proofUrl = await getDownloadURL(snap.ref);
+}
+
+// SAVE SA FIRESTORE
+await addDoc(collection(db, "sales"), {
+datetime: serverTimestamp(),
+items: cart,
+total: total,
+payment: paymentMethod,
+proofUrl: proofUrl
+});
+
+alert('✓ Sale saved sa Firebase!');
+cart = [];
+document.getElementById('paymentModal').classList.remove('active');
+}
+
+// Load products, cart functions same lang...
+function loadProducts() {
+const grid = document.getElementById('prodGrid');
+let prods = products[currentCat] || [];
+let html = '';
+prods.forEach(prod => {
+html += `<div class="prod-card" onclick="addToCart(${prod.id})">
+<img src="${prod.image || ''}" class="prod-img">
+<div class="prod-name">${prod.name}</div>
+<div class="prod-price">₱${prod.price}</div>
+</div>`;
+});
+grid.innerHTML = html;
+}
+
+function addToCart(id) {
+let prod;
+Object.keys(products).forEach(cat => {
+const p = products[cat].find(x => x.id === id);
+if(p) prod = p;
+});
+const existing = cart.find(item => item.id === id);
+if(existing) existing.qty++;
+else cart.push({id: prod.id, name: prod.name, price: prod.price, qty: 1});
+renderCart();
+}
+
+function renderCart() {
+document.getElementById('cartCount').innerText = cart.reduce((s,i)=>s+i.qty,0);
+document.getElementById('cartTotal').innerText = 'Total: ₱' + cart.reduce((s,i)=>s+i.price*i.qty,0);
+}
+
+function showPayment() {
+document.getElementById('paymentModal').classList.add('active');
+}
+
+loadProducts();
+</script>
+</body>
+</html>
