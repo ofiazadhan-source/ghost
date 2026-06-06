@@ -3,139 +3,109 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POS System</title>
+<title>Products - Siomai Factory POS</title>
 <style>
-* {margin:0; padding:0; box-sizing:border-box; font-family:Arial;}
-body {background:#f5f5f5;}
-.header {background:#2563eb; color:white; padding:15px; text-align:center; font-size:20px; font-weight:bold;}
-.container {display:grid; grid-template-columns: 2fr 1fr; gap:15px; padding:15px; max-width:1200px; margin:0 auto;}
-.products {background:white; padding:15px; border-radius:8px;}
-.products-grid {display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:10px; margin-top:10px;}
-.product {border:1px solid #ddd; padding:10px; border-radius:6px; text-align:center; cursor:pointer; transition:0.2s;}
-.product:hover {border-color:#2563eb; background:#eff6ff;}
-.product img {width:100%; height:80px; object-fit:cover; border-radius:4px;}
-.product-name {font-size:12px; margin-top:5px; font-weight:bold;}
-.product-price {color:#2563eb; font-weight:bold; font-size:14px;}
-.cart {background:white; padding:15px; border-radius:8px; position:sticky; top:15px;}
-.cart-item {display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee; font-size:14px;}
-.cart-total {margin-top:15px; padding-top:15px; border-top:2px solid #2563eb; font-size:18px; font-weight:bold;}
-button {width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:6px; margin-top:10px; cursor:pointer; font-weight:bold;}
-button:hover {background:#1d4ed8;}
-.modal {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;}
-.modal.active {display:flex;}
-.modal-content {background:white; padding:20px; border-radius:8px; width:90%; max-width:400px;}
-input, select {width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:4px;}
-.receipt {display:none; background:white; padding:20px; font-family:monospace; font-size:12px; max-width:300px; margin:20px auto;}
-@media print {.header, .container, .modal {display:none;} .receipt {display:block !important;}}
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
+body {background:#FFF8E1; padding:15px; min-height:100vh;}
+.container { max-width:480px; margin:auto; background:white; border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; }
+h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
+.back-btn { background:#757575; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; margin-bottom:15px; font-size:13px; font-weight:600; }
+.menu-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; }
+.menu-btn { padding:35px 10px; border:none; border-radius:15px; background:linear-gradient(135deg, #FFCC80, #FFB74D); color:#B71C1C; font-weight:800; font-size:15px; cursor:pointer; text-align:center; line-height:1.4; }
+.menu-btn:active {transform:scale(0.95); background:#FFA726;}
+.product-form { background:#FFF8E1; border:2px dashed #FFCC80; border-radius:12px; padding:15px; margin-bottom:18px; }
+.product-form h4 { color:#D32F2F; margin-bottom:10px; font-size:14px; }
+.input-group {margin-bottom:12px;}
+.input-group label { font-size:12px; font-weight:700; color:#D32F2F; margin-bottom:4px; display:block; }
+.input-group input { width:100%; padding:12px; border:2px solid #FFE0B2; border-radius:8px; font-size:14px; background:white; }
+.input-group input:focus {outline:none; border-color:#D32F2F;}
+.input-group input[type="file"] { padding:8px; border:2px dashed #FFCC80; background:#FFFDF7; cursor:pointer; }
+.add-prod-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; margin-top:8px; font-size:15px; }
+.add-prod-btn:disabled { background:#ccc; cursor:not-allowed; }
+.prod-list { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; }
+.prod-card { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:12px; text-align:center; position:relative; }
+.prod-img { width:100%; height:70px; object-fit:cover; border-radius:8px; margin-bottom:6px; background:#f0f0f0; }
+.prod-name { font-weight:800; font-size:13px; color:#D32F2F; margin-bottom:8px; }
+.prod-card label { font-size:10px; font-weight:700; color:#666; display:block; text-align:left; margin-top:4px; }
+.prod-card input { padding:8px; text-align:center; border:1.5px solid #ddd; border-radius:6px; font-size:13px; width:100%; margin-bottom:4px; }
+.save-btn { width:100%; padding:8px; background:#1976D2; color:white; border:none; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; margin-top:6px; }
+.delete-btn { position:absolute; top:6px; right:6px; background:#C62828; color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:18px; line-height:1; font-weight:bold; }
+.page {display:none;}.page.active {display:block;}
+.empty-msg { grid-column:span 2; text-align:center; color:#999; padding:40px 0; font-size:13px; }
+.img-preview { max-width:100px; max-height:100px; margin:8px auto; display:none; border-radius:8px; border:2px solid #FFCC80; }
+.loading { text-align:center; padding:20px; color:#D32F2F; font-weight:700; }
 </style>
 </head>
 <body>
-<div class="header">🛒 POS SYSTEM</div>
-
 <div class="container">
-<div class="products">
-<h3>Products</h3>
-<div class="products-grid" id="productsGrid">Loading products...</div>
-</div>
-
-<div class="cart">
-<h3>Cart</h3>
-<div id="cartItems">Empty</div>
-<div class="cart-total">Total: ₱<span id="cartTotal">0.00</span></div>
-<button onclick="checkout()">Checkout</button>
-</div>
-</div>
-
-<div class="modal" id="paymentModal">
-<div class="modal-content">
-<h3>Payment</h3>
-<label>Payment Method</label>
-<select id="paymentMethod" onchange="togglePayment()">
-<option value="Cash">Cash</option>
-<option value="GCash">GCash</option>
-</select>
-<div id="cashDiv">
-<label>Cash Amount</label>
-<input type="number" id="cashAmount" placeholder="0">
-</div>
-<div id="gcashDiv" style="display:none">
-<label>Upload GCash Proof</label>
-<input type="file" id="gcashProofInput" accept="image/*">
-<div id="gcashStatus" style="margin-top:5px; color:green; font-size:12px;"></div>
-</div>
-<button onclick="placeOrder()">Place Order</button>
-<button onclick="closeModal()" style="background:#6b7280; margin-top:5px;">Cancel</button>
+<!-- PAGE 1: SELECT CATEGORY -->
+<div id="categoryPage" class="page active">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+<h2>🛒 Select Category</h2>
+<div class="menu-grid">
+<button class="menu-btn" onclick="openCategory('65s')">65's</button>
+<button class="menu-btn" onclick="openCategory('30s')">30's</button>
+<button class="menu-btn" onclick="openCategory('big')">Big SIOMAI</button>
+<button class="menu-btn" onclick="openCategory('dumplings')">Dumplings</button>
+<button class="menu-btn" onclick="openCategory('siopao')">SIOPAO</button>
+<button class="menu-btn" onclick="openCategory('sauce')">Sauce</button>
+<button class="menu-btn" onclick="openCategory('others')">Others</button>
+<button class="menu-btn" onclick="openCategory('all')">All</button>
 </div>
 </div>
 
-<div class="receipt" id="receipt"></div>
-
-<script>
-let cart = [];
-let products = [
-{id:1, name:'Coke 1.5L', price:75, img:'https://via.placeholder.com/100'},
-{id:2, name:'Pancit Canton', price:15, img:'https://via.placeholder.com/100'},
-{id:3, name:'Skyflakes', price:12, img:'https://via.placeholder.com/100'},
-{id:4, name:'Lucky Me', price:13, img:'https://via.placeholder.com/100'},
-{id:5, name:'Bottled Water', price:20, img:'https://via.placeholder.com/100'},
-{id:6, name:'Coffee', price:25, img:'https://via.placeholder.com/100'}
-];
-let gcashProofFile = '';
-
-function loadProducts() {
-let grid = document.getElementById('productsGrid');
-grid.innerHTML = '';
-products.forEach(p => {
-grid.innerHTML += `
-<div class="product" onclick="addToCart(${p.id})">
-<img src="${p.img}">
-<div class="product-name">${p.name}</div>
-<div class="product-price">₱${p.price}</div>
+<!-- PAGE 2: PRODUCT MANAGER -->
+<div id="productPage" class="page">
+<button class="back-btn" onclick="showPage('categoryPage')">← Back to Categories</button>
+<h2 id="catTitle">65's Siomai</h2>
+<div class="product-form">
+<h4>+ Add Product to <span id="catName">65's Siomai</span></h4>
+<div class="input-group">
+<label>Product Name</label>
+<input type="text" id="prodName" placeholder="ex: Pork Siomai">
 </div>
-`;
-});
-}
+<div class="input-group">
+<label>STOCK</label>
+<input type="number" id="prodStocks" placeholder="100" value="100" min="0">
+</div>
+<div class="input-group">
+<label>SELLING PRICE</label>
+<input type="number" id="prodPrice" placeholder="8.00" value="8" step="0.01" min="0.01">
+</div>
+<div class="input-group">
+<label>📷 Product Image - Auto Compress</label>
+<input type="file" id="prodImage" accept="image/*">
+<img id="imgPreview" class="img-preview">
+</div>
+<button class="add-prod-btn" id="addBtn" onclick="addProduct()">Add Product</button>
+</div>
+<div class="prod-list" id="prodList">
+<div class="loading">Loading products...</div>
+</div>
+</div>
+</div>
 
-function addToCart(id) {
-let item = cart.find(x => x.id == id);
-if(item) item.qty++;
-else cart.push({id, qty:1});
-updateCart();
-}
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, serverTimestamp, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-function updateCart() {
-let cartDiv = document.getElementById('cartItems');
-let total = 0;
-if(cart.length == 0) {
-cartDiv.innerHTML = 'Empty';
-} else {
-cartDiv.innerHTML = '';
-cart.forEach(item => {
-let prod = products.find(p => p.id == item.id);
-let subtotal = prod.price * item.qty;
-total += subtotal;
-cartDiv.innerHTML += `<div class="cart-item"><span>${prod.name} x${item.qty}</span><span>₱${subtotal}</span></div>`;
-});
-}
-document.getElementById('cartTotal').innerText = total.toFixed(2);
-}
+const firebaseConfig = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
 
-function checkout() {
-if(cart.length == 0) { alert('Cart is empty!'); return; }
-document.getElementById('paymentModal').classList.add('active');
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-function closeModal() {
-document.getElementById('paymentModal').classList.remove('active');
-}
+let currentCat = '65s';
+let products = [];
+let base64Image = '';
 
-function togglePayment() {
-let method = document.getElementById('paymentMethod').value;
-document.getElementById('cashDiv').style.display = method == 'Cash' ? 'block' : 'none';
-document.getElementById('gcashDiv').style.display = method == 'GCash' ? 'block' : 'none';
-}
-
-// AUTO COMPRESS
+// AUTO COMPRESS - FIXED NA TO BOSS
 async function compressImageAuto(file) {
 return new Promise((resolve) => {
 const reader = new FileReader();
@@ -148,6 +118,7 @@ let quality = 0.8;
 let maxWidth = 600;
 let canvas = document.createElement('canvas');
 let ctx = canvas.getContext('2d');
+
 function tryCompress() {
 let width = img.width;
 let height = img.height;
@@ -172,58 +143,158 @@ resolve(base64);
 }
 tryCompress();
 };
+img.onerror = () => resolve('');
+};
+reader.onerror = () => resolve('');
 });
 }
 
-document.getElementById('gcashProofInput').addEventListener('change', async function(e) {
-let file = e.target.files[0];
-if(!file) return;
-document.getElementById('gcashStatus').innerText = 'Compressing...';
-gcashProofFile = await compressImageAuto(file);
-document.getElementById('gcashStatus').innerText = 'Uploaded ✓ ' + Math.round(gcashProofFile.length/1024) + 'KB';
+document.getElementById('prodImage').addEventListener('change', async function(e) {
+const file = e.target.files[0];
+if(file) {
+document.getElementById('addBtn').innerText = 'Compressing image...';
+document.getElementById('addBtn').disabled = true;
+base64Image = await compressImageAuto(file);
+document.getElementById('imgPreview').src = base64Image;
+document.getElementById('imgPreview').style.display = 'block';
+document.getElementById('addBtn').innerText = 'Add Product';
+document.getElementById('addBtn').disabled = false;
+} else {
+base64Image = '';
+document.getElementById('imgPreview').style.display = 'none';
+}
 });
 
-function placeOrder() {
-let method = document.getElementById('paymentMethod').value;
-if(method == 'GCash' && !gcashProofFile) { alert('Upload GCash proof first!'); return; }
-if(method == 'Cash') {
-let cash = parseFloat(document.getElementById('cashAmount').value);
-let total = parseFloat(document.getElementById('cartTotal').innerText);
-if(!cash || cash < total) { alert('Insufficient cash!'); return; }
-}
-generateReceipt();
-closeModal();
-cart = [];
-updateCart();
+function showPage(pageId) {
+document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+document.getElementById(pageId).classList.add('active');
 }
 
-function generateReceipt() {
-let receiptHTML = `<div style="text-align:center; font-weight:bold; margin-bottom:10px;">RECEIPT</div>`;
-let total = 0;
-cart.forEach(item => {
-let prod = products.find(p => p.id == item.id);
-let subtotal = prod.price * item.qty;
-total += subtotal;
-receiptHTML += `<div>${prod.name} x${item.qty} = ₱${subtotal}</div>`;
+window.openCategory = (cat) => {
+currentCat = cat;
+const catNames = {
+'65s': "65's Siomai",
+'30s': "30's Siomai",
+'big': 'Big SIOMAI',
+'dumplings': 'Dumplings',
+'siopao': 'SIOPAO',
+'sauce': 'Sauce',
+'others': 'Others',
+'all': 'All Products'
+};
+document.getElementById('catTitle').innerText = catNames[cat];
+document.getElementById('catName').innerText = catNames[cat];
+showPage('productPage');
+loadProducts();
+}
+
+async function loadProducts() {
+document.getElementById('prodList').innerHTML = '<div class="loading">Loading products...</div>';
+try {
+let q = collection(db, "products");
+if(currentCat!= 'all') {
+q = query(collection(db, "products"), where("category", "==", currentCat));
+}
+const snap = await getDocs(q);
+products = [];
+snap.forEach(d => products.push({id: d.id,...d.data()}));
+renderProducts();
+} catch(error) {
+console.error('Load Error:', error);
+document.getElementById('prodList').innerHTML = '<p class="empty-msg">Error loading products. Check Firestore Rules boss!</p>';
+}
+}
+
+function renderProducts() {
+const list = document.getElementById('prodList');
+if(products.length === 0) {
+list.innerHTML = '<p class="empty-msg">No products yet. Add muna boss!</p>';
+return;
+}
+let html = '';
+products.forEach(prod => {
+html += `
+<div class="prod-card">
+<button class="delete-btn" onclick="deleteProduct('${prod.id}')">×</button>
+${prod.image? `<img src="${prod.image}" class="prod-img">` : '<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;">No Image</div>'}
+<div class="prod-name">${prod.name}</div>
+<label>STOCK</label>
+<input type="number" id="stocks${prod.id}" value="${prod.stock || 0}" min="0">
+<label>PRICE</label>
+<input type="number" id="price${prod.id}" value="${prod.price || 0}" step="0.01" min="0">
+<button class="save-btn" onclick="saveProduct('${prod.id}')">Save</button>
+</div>
+`;
 });
-receiptHTML += `<div style="border-top:1px dashed #000; margin-top:5px; padding-top:5px;">TOTAL: ₱${total}</div>`;
-receiptHTML += `<div style="margin-top:5px;">Payment: ${document.getElementById('paymentMethod').value}</div>`;
-if(document.getElementById('paymentMethod').value == 'GCash') {
-receiptHTML += `<div>GCASH PROOF: UPLOADED ✓</div>`;
-}
-receiptHTML += `<div style="text-align:center; margin-top:10px;">Thank you!</div>`;
-document.getElementById('receipt').innerHTML = receiptHTML;
-document.getElementById('receipt').style.display = 'block';
-printReceipt();
+list.innerHTML = html;
 }
 
-function printReceipt() {
+window.addProduct = async () => {
+const name = document.getElementById('prodName').value.trim();
+const stock = parseInt(document.getElementById('prodStocks').value) || 0;
+const price = parseFloat(document.getElementById('prodPrice').value) || 0;
+const btn = document.getElementById('addBtn');
+
+if(!name || price <= 0) {
+alert('Lagay ka name at price boss!');
+return;
+}
+
+btn.disabled = true;
+btn.innerText = 'Saving...';
+
+try {
+await addDoc(collection(db, "products"), {
+name,
+stock,
+price,
+image: base64Image,
+category: currentCat === 'all'? '65s' : currentCat,
+createdAt: serverTimestamp()
+});
+alert('✓ Product Added Successfully!');
+document.getElementById('prodName').value = '';
+document.getElementById('prodStocks').value = '100';
+document.getElementById('prodPrice').value = '8';
+document.getElementById('prodImage').value = '';
+document.getElementById('imgPreview').style.display = 'none';
+base64Image = '';
+loadProducts();
+} catch(error) {
+console.error('Add Product Error:', error);
+alert('Error boss: ' + error.message);
+} finally {
+btn.disabled = false;
+btn.innerText = 'Add Product';
+}
+}
+
+window.saveProduct = async (prodId) => {
+const stock = parseInt(document.getElementById('stocks' + prodId).value) || 0;
+const price = parseFloat(document.getElementById('price' + prodId).value) || 0;
+const btn = event.target;
+try {
+await updateDoc(doc(db, "products", prodId), {stock, price});
+btn.innerText = '✓ Saved';
+btn.style.background = '#4CAF50';
 setTimeout(() => {
-window.print();
-setTimeout(() => {
-document.getElementById('receipt').style.display = 'none';
+btn.innerText = 'Save';
+btn.style.background = '#1976D2';
 }, 1000);
-}, 300);
+} catch(error) {
+console.error('Save Error:', error);
+alert('Save failed: ' + error.message);
+}
+}
+
+window.deleteProduct = async (prodId) => {
+if(confirm('Delete this product?')) {
+try {
+await deleteDoc(doc(db, "products", prodId));
+loadProducts();
+} catch(error) {
+alert('Delete failed: ' + error.message);
+}
 }
 
 loadProducts();
