@@ -3,274 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Siomai Factory POS v2</title>
+<title>Siomai Factory POS</title>
 <style>
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
 body {background:#FFF8E1; padding:15px; min-height:100vh;}
 .container { max-width:480px; margin:auto; background:white; border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; }
 h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
 .subtitle { text-align:center; color:#666; font-size:13px; margin-bottom:20px; }
-.back-btn { background:#757575; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; margin-bottom:15px; font-size:13px; font-weight:600; }
 .menu-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; }
 .menu-btn { padding:35px 10px; border:none; border-radius:15px; background:linear-gradient(135deg, #FFCC80, #FFB74D); color:#B71C1C; font-weight:800; font-size:15px; cursor:pointer; text-align:center; line-height:1.4; }
 .menu-btn:active {transform:scale(0.95); background:#FFA726;}
-.product-form { background:#FFF8E1; border:2px dashed #FFCC80; border-radius:12px; padding:15px; margin-bottom:18px; }
-.product-form h4 { color:#D32F2F; margin-bottom:10px; font-size:14px; }
-.input-group {margin-bottom:12px;}
-.input-group label { font-size:12px; font-weight:700; color:#D32F2F; margin-bottom:4px; display:block; }
-.input-group input,.input-group select { width:100%; padding:12px; border:2px solid #FFE0B2; border-radius:8px; font-size:14px; background:white; }
-.input-group input:focus {outline:none; border-color:#D32F2F;}
-.add-prod-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; margin-top:8px; font-size:15px; }
-.prod-list { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; }
-.prod-card { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:12px; text-align:center; position:relative; }
-.prod-name { font-weight:800; font-size:13px; color:#D32F2F; margin-bottom:8px; }
-.save-btn { width:100%; padding:8px; background:#1976D2; color:white; border:none; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; margin-top:6px; }
-.delete-btn { position:absolute; top:6px; right:6px; background:#C62828; color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:18px; line-height:1; font-weight:bold; }
-.page {display:none;}.page.active {display:block;}
-.empty-msg { grid-column:span 2; text-align:center; color:#999; padding:40px 0; font-size:13px; }
-.cart-box { background:#E8F5E9; border:2px solid #4CAF50; border-radius:12px; padding:12px; margin-top:15px; }
-.checkout-btn { width:100%; padding:14px; background:#D32F2F; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; margin-top:10px; font-size:16px; }
-.preview-img { max-height:100px; border-radius:8px; margin-top:8px; border:1px solid #ddd; width:100%; object-fit:cover; }
 </style>
 </head>
 <body>
 <div class="container">
-<div id="mainMenu" class="page active">
-<h2>🥟 Siomai Factory POS</h2>
-<p class="subtitle">Firebase + Gcash Upload + Net Profit</p>
+<h2>📋 Main Menu</h2>
+<p class="subtitle">Welcome to my POS, admin!</p>
+
 <div class="menu-grid">
-<button class="menu-btn" onclick="showPage('categoryPage')">🛒 Products<br>Add/Edit</button>
-<button class="menu-btn" onclick="showPage('posPage')">💰 POS<br>Checkout</button>
-<button class="menu-btn" onclick="alert('Open mo sales.html mo boss')">📈 Sales<br>Report</button>
+<button class="menu-btn" onclick="window.location='siomai-factory-pos.html'">🛒 Products<br>add & edit</button>
+<button class="menu-btn" onclick="window.location='monthly-sales.html'">🛒 Monthly<br>Sales</button>
+<button class="menu-btn" onclick="window.location='daily-production.html'">📦 Daily<br>Production</button>
+<button class="menu-btn" onclick="window.location='expenses.html'">💸 Daily<br>Expenses</button>
+<button class="menu-btn" onclick="window.location='daily-sales.html'">💰 Daily<br>Sales</button>
+<button class="menu-btn" onclick="window.location='monthly-expenses.html'">📊 Monthly<br>Expenses</button>
+<button class="menu-btn" onclick="window.location='net-profit.html'">📈 Net<br>Profit</button>
 </div>
 </div>
-
-<div id="categoryPage" class="page">
-<button class="back-btn" onclick="showPage('mainMenu')">← Back</button>
-<h2>Products Manager</h2>
-<div class="product-form">
-<h4>+ Add Product</h4>
-<div class="input-group">
-<label>Product Name</label>
-<input type="text" id="prodName" placeholder="ex: Pork Siomai 65s">
-</div>
-<div class="input-group">
-<label style="color:#D32F2F;">STOCK</label>
-<input type="number" id="prodStocks" value="100">
-</div>
-<div class="input-group">
-<label style="color:#1976D2;">COST per piece</label>
-<input type="number" id="prodCost" placeholder="2.00" step="0.01">
-</div>
-<div class="input-group">
-<label style="color:#1976D2;">SELLING PRICE</label>
-<input type="number" id="prodPrice" placeholder="5.00" step="0.01">
-</div>
-<button class="add-prod-btn" onclick="addProduct()">Add Product</button>
-</div>
-<div class="prod-list" id="prodList"></div>
-</div>
-
-<div id="posPage" class="page">
-<button class="back-btn" onclick="showPage('mainMenu')">← Back</button>
-<h2>POS Checkout</h2>
-<div class="prod-list" id="posProducts"></div>
-<div class="cart-box">
-<h4>Cart</h4>
-<div id="cartList" style="min-height:50px"></div>
-<div style="margin-top:10px; border-top:1px solid #ccc; padding-top:8px;">
-<div>Total Sales: ₱<b id="total">0</b></div>
-<div style="color:#666">Total Cost: ₱<span id="cost">0</span></div>
-<div style="color:#2E7D32; font-weight:800; font-size:18px">Net Profit: ₱<span id="profit">0</span></div>
-</div>
-<div class="input-group" style="margin-top:10px;">
-<label>Payment Method</label>
-<select id="payment">
-<option value="Cash">Cash</option>
-<option value="Gcash">Gcash</option>
-</select>
-</div>
-<div class="input-group" id="gcashBox" style="display:none;">
-<label>Upload Gcash Proof/Screenshot</label>
-<input type="file" id="gcashFile" accept="image/*" onchange="previewGcash(event)">
-<img id="preview" class="preview-img">
-</div>
-<button class="checkout-btn" onclick="checkout()">CHECKOUT & SAVE</button>
-</div>
-</div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-
-// FIREBASE CONFIG MO BOSS - CONNECTED NA
-const firebaseConfig = {
-  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-  projectId: "dhan-siomai-pos-fe1e5",
-  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-  messagingSenderId: "305932123173",
-  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
-let products = [];
-let cart = [];
-
-function showPage(pageId) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(pageId).classList.add('active');
-  if(pageId == 'posPage') loadPOS();
-  if(pageId == 'categoryPage') loadProducts();
-}
-
-async function loadProducts() {
-  const snap = await getDocs(collection(db, "products"));
-  products = [];
-  snap.forEach(d => products.push({id: d.id,...d.data()}));
-  renderProducts();
-}
-
-function renderProducts() {
-  const list = document.getElementById('prodList');
-  if(products.length == 0) {
-    list.innerHTML = '<p class="empty-msg">No products yet. Add muna boss!</p>';
-    return;
-  }
-  list.innerHTML = products.map(prod => `
-    <div class="prod-card">
-      <button class="delete-btn" onclick="deleteProduct('${prod.id}')">×</button>
-      <div class="prod-name">${prod.name}</div>
-      <div style="font-size:11px; color:#666">Cost: ₱${prod.cost}</div>
-      <div class="input-group">
-        <input type="number" id="stocks${prod.id}" value="${prod.stock}">
-        <label>Stock</label>
-      </div>
-      <div class="input-group">
-        <input type="number" id="price${prod.id}" value="${prod.price}" step="0.01">
-        <label>Price</label>
-      </div>
-      <button class="save-btn" onclick="saveProduct('${prod.id}')">Save</button>
-    </div>
-  `).join('');
-}
-
-window.addProduct = async () => {
-  const name = document.getElementById('prodName').value.trim();
-  const stock = parseInt(document.getElementById('prodStocks').value) || 0;
-  const cost = parseFloat(document.getElementById('prodCost').value) || 0;
-  const price = parseFloat(document.getElementById('prodPrice').value) || 0;
-  if(!name || price <= 0) return alert('Lagay ka name at price boss!');
-  await addDoc(collection(db, "products"), {name, stock, cost, price});
-  document.getElementById('prodName').value = '';
-  document.getElementById('prodStocks').value = '100';
-  document.getElementById('prodCost').value = '';
-  document.getElementById('prodPrice').value = '';
-  loadProducts();
-}
-
-window.saveProduct = async (id) => {
-  const stock = parseInt(document.getElementById('stocks' + id).value) || 0;
-  const price = parseFloat(document.getElementById('price' + id).value) || 0;
-  await updateDoc(doc(db, "products", id), {stock, price});
-  alert('Saved!');
-  loadProducts();
-}
-
-window.deleteProduct = async (id) => {
-  if(confirm('Delete product?')) {
-    await updateDoc(doc(db, "products", id), {stock: 0, name: '[DELETED]'});
-    loadProducts();
-  }
-}
-
-async function loadPOS() {
-  await loadProducts();
-  document.getElementById('posProducts').innerHTML = products.filter(p=>p.stock>0).map(p => `
-    <div class="prod-card">
-      <div class="prod-name">${p.name}</div>
-      <div style="font-size:11px">Stock: ${p.stock}</div>
-      <div style="font-size:13px; font-weight:700">₱${p.price}</div>
-      <button class="save-btn" onclick="addToCart('${p.id}')">ADD</button>
-    </div>
-  `).join('');
-}
-
-window.addToCart = (id) => {
-  const p = products.find(x => x.id == id);
-  if(p.stock <= 0) return alert('Out of stock boss!');
-  const item = cart.find(x => x.id == id);
-  if(item) item.qty++;
-  else cart.push({...p, qty: 1});
-  renderCart();
-}
-
-function renderCart() {
-  let total = 0, cost = 0;
-  document.getElementById('cartList').innerHTML = cart.map(i => {
-    total += i.price * i.qty;
-    cost += i.cost * i.qty;
-    return `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed #ccc;">${i.name} x${i.qty} <b>₱${i.price*i.qty}</b></div>`;
-  }).join('');
-  document.getElementById('total').innerText = total.toFixed(2);
-  document.getElementById('cost').innerText = cost.toFixed(2);
-  document.getElementById('profit').innerText = (total - cost).toFixed(2);
-}
-
-document.getElementById('payment').onchange = (e) => {
-  document.getElementById('gcashBox').style.display = e.target.value == 'Gcash'? 'block' : 'none';
-}
-
-window.previewGcash = (e) => {
-  const file = e.target.files[0];
-  if(file) document.getElementById('preview').src = URL.createObjectURL(file);
-}
-
-window.checkout = async () => {
-  if(cart.length == 0) return alert('Cart empty boss!');
-  const payment = document.getElementById('payment').value;
-  let gcashProof = null;
-
-  if(payment == 'Gcash') {
-    const file = document.getElementById('gcashFile').files[0];
-    if(!file) return alert('Upload Gcash proof muna boss!');
-    const fileRef = ref(storage, `gcash_proofs/${Date.now()}_${file.name}`);
-    const snap = await uploadBytes(fileRef, file);
-    gcashProof = await getDownloadURL(snap.ref);
-  }
-
-  let total = cart.reduce((s,i) => s + i.price*i.qty, 0);
-  let cost = cart.reduce((s,i) => s + i.cost*i.qty, 0);
-
-  await addDoc(collection(db, "sales"), {
-    items: cart, 
-    total: total, 
-    cost: cost, 
-    netProfit: total - cost,
-    payment, 
-    gcashProof,
-    createdAt: serverTimestamp()
-  });
-
-  // AUTO MINUS STOCK
-  for(let i of cart) {
-    await updateDoc(doc(db, "products", i.id), {stock: i.stock - i.qty});
-  }
-
-  alert('Sale saved! Net Profit: ₱' + (total-cost).toFixed(2));
-  cart = [];
-  document.getElementById('gcashFile').value = '';
-  document.getElementById('preview').src = '';
-  renderCart();
-  loadPOS();
-}
-
-loadProducts();
-</script>
 </body>
 </html>
