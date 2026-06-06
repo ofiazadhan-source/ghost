@@ -26,6 +26,7 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
 .prod-card { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:12px; text-align:center; position:relative; }
 .prod-img { width:100%; height:70px; object-fit:cover; border-radius:8px; margin-bottom:6px; background:#f0f0f0; }
 .prod-name { font-weight:800; font-size:13px; color:#D32F2F; margin-bottom:8px; }
+.prod-card label { font-size:10px; font-weight:700; color:#666; display:block; text-align:left; margin-top:4px; }
 .prod-card input { padding:8px; text-align:center; border:1.5px solid #ddd; border-radius:6px; font-size:13px; width:100%; margin-bottom:4px; }
 .save-btn { width:100%; padding:8px; background:#1976D2; color:white; border:none; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; margin-top:6px; }
 .delete-btn { position:absolute; top:6px; right:6px; background:#C62828; color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:18px; line-height:1; font-weight:bold; }
@@ -66,16 +67,12 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
 <input type="text" id="prodName" placeholder="ex: Pork Siomai">
 </div>
 <div class="input-group">
-<label style="color:#D32F2F;">STOCK</label>
+<label>STOCK</label>
 <input type="number" id="prodStocks" placeholder="100" value="100" min="0">
 </div>
 <div class="input-group">
-<label style="color:#1976D2;">COST per piece</label>
-<input type="number" id="prodCost" placeholder="2.00" step="0.01" min="0">
-</div>
-<div class="input-group">
-<label style="color:#1976D2;">SELLING PRICE</label>
-<input type="number" id="prodPrice" placeholder="5.00" value="8" step="0.01" min="0.01">
+<label>SELLING PRICE</label>
+<input type="number" id="prodPrice" placeholder="8.00" value="8" step="0.01" min="0.01">
 </div>
 <div class="input-group">
 <label>📷 Product Image - Auto Compress</label>
@@ -112,7 +109,7 @@ let currentCat = '65s';
 let products = [];
 let base64Image = '';
 
-// AUTO COMPRESS - Mag-aadjust ng quality hanggang < 900KB safe sa Firestore
+// AUTO COMPRESS
 async function compressImageAuto(file) {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -125,7 +122,7 @@ async function compressImageAuto(file) {
         let maxWidth = 600;
         let canvas = document.createElement('canvas');
         let ctx = canvas.getContext('2d');
-        
+
         function tryCompress() {
           let width = img.width;
           let height = img.height;
@@ -142,8 +139,6 @@ async function compressImageAuto(file) {
           let base64 = canvas.toDataURL('image/jpeg', quality);
           let sizeKB = Math.round(base64.length / 1024);
 
-          console.log(`Trying: ${sizeKB}KB - Quality: ${quality}`);
-
           if(sizeKB > 900 && quality > 0.3) {
             quality -= 0.1;
             tryCompress();
@@ -152,7 +147,6 @@ async function compressImageAuto(file) {
             quality = 0.8;
             tryCompress();
           } else {
-            console.log(`Final: ${sizeKB}KB - OK na boss!`);
             resolve(base64);
           }
         }
@@ -167,12 +161,9 @@ document.getElementById('prodImage').addEventListener('change', async function(e
   if(file) {
     document.getElementById('addBtn').innerText = 'Compressing image...';
     document.getElementById('addBtn').disabled = true;
-    
     base64Image = await compressImageAuto(file);
-    
     document.getElementById('imgPreview').src = base64Image;
     document.getElementById('imgPreview').style.display = 'block';
-    
     document.getElementById('addBtn').innerText = 'Add Product';
     document.getElementById('addBtn').disabled = false;
   } else {
@@ -234,9 +225,13 @@ function renderProducts() {
         <button class="delete-btn" onclick="deleteProduct('${prod.id}')">×</button>
         ${prod.image? `<img src="${prod.image}" class="prod-img">` : '<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;">No Image</div>'}
         <div class="prod-name">${prod.name}</div>
-        <div style="font-size:10px; color:#666; margin-bottom:4px;">Cost: ₱${prod.cost || 0}</div>
-        <input type="number" id="stocks${prod.id}" value="${prod.stock || 0}" placeholder="Stocks" min="0">
-        <input type="number" id="price${prod.id}" value="${prod.price || 0}" step="0.01" placeholder="Price" min="0">
+
+        <label>STOCK</label>
+        <input type="number" id="stocks${prod.id}" value="${prod.stock || 0}" min="0">
+
+        <label>PRICE</label>
+        <input type="number" id="price${prod.id}" value="${prod.price || 0}" step="0.01" min="0">
+
         <button class="save-btn" onclick="saveProduct('${prod.id}')">Save</button>
       </div>
     `;
@@ -247,7 +242,6 @@ function renderProducts() {
 window.addProduct = async () => {
   const name = document.getElementById('prodName').value.trim();
   const stock = parseInt(document.getElementById('prodStocks').value) || 0;
-  const cost = parseFloat(document.getElementById('prodCost').value) || 0;
   const price = parseFloat(document.getElementById('prodPrice').value) || 0;
   const btn = document.getElementById('addBtn');
 
@@ -261,7 +255,7 @@ window.addProduct = async () => {
 
   try {
     await addDoc(collection(db, "products"), {
-      name, stock, cost, price, image: base64Image,
+      name, stock, price, image: base64Image,
       category: currentCat === 'all'? '65s' : currentCat,
       createdAt: serverTimestamp()
     });
@@ -270,7 +264,6 @@ window.addProduct = async () => {
 
     document.getElementById('prodName').value = '';
     document.getElementById('prodStocks').value = '100';
-    document.getElementById('prodCost').value = '';
     document.getElementById('prodPrice').value = '8';
     document.getElementById('prodImage').value = '';
     document.getElementById('imgPreview').style.display = 'none';
