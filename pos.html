@@ -53,12 +53,13 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 .checkout-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:10px; font-weight:800; font-size:15px; cursor:pointer; }
 .checkout-btn:disabled { background:#ccc; cursor:not-allowed; }
 .loading { text-align:center; padding:40px; color:#D32F2F; font-weight:700; }
-
-/* Receipt Print */
+/* Receipt - FOR PRINT */
+.receipt { display:none; font-family:monospace; font-size:14px; color:black; background:white; padding:10px; width:100%; max-width:300px; margin:auto; line-height:1.6; text-align:left; }
 @media print {
-  body * { visibility: hidden; }
-  #receipt, #receipt * { visibility: visible; }
-  #receipt { position: absolute; left: 0; top: 0; width: 80mm; font-family: monospace; font-size: 12px; }
+  @page {size: 80mm auto; margin: 0;}
+  body * {visibility:hidden;}
+ .receipt,.receipt * {visibility:visible;}
+ .receipt { position:absolute; left:0; top:0; width:80mm; display:block!important; font-size:12px; }
 }
 </style>
 </head>
@@ -113,14 +114,14 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 
 <div class="payment-btns">
 <button class="pay-btn cash-btn" onclick="checkout('Cash')">💵 Cash</button>
-<button class="pay-btn gcash-btn" onclick="selectGcash()">📱 Gcash</button>
+<button class="pay-btn gcash-btn" onclick="checkout('Gcash')">📱 Gcash</button>
 </div>
 <button class="cancel-btn" onclick="closePayment()">Cancel</button>
 </div>
 </div>
 
-<!-- Hidden Receipt for Printing -->
-<div id="receipt" style="display:none;"></div>
+<!-- Receipt for Print -->
+<div class="receipt" id="receipt"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -141,7 +142,6 @@ const db = getFirestore(app);
 let products = [];
 let cart = [];
 let currentCat = 'all';
-let selectedPayment = 'Cash';
 let gcashProof = '';
 
 // AUTO COMPRESS - same sa products.html boss
@@ -351,22 +351,14 @@ window.showPayment = () => {
   document.getElementById('change').innerText = 'Change: ₱0';
   document.getElementById('cashSection').style.display = 'block';
   document.getElementById('gcashProof').style.display = 'none';
-  selectedPayment = 'Cash';
   gcashProof = '';
   document.getElementById('proofInput').value = '';
   document.getElementById('proofPreview').style.display = 'none';
   modal.classList.add('active');
 }
 
-window.selectGcash = () => {
-  selectedPayment = 'Gcash';
-  document.getElementById('cashSection').style.display = 'none';
-  document.getElementById('gcashProof').style.display = 'block';
-}
-
 window.closePayment = () => {
   document.getElementById('paymentModal').classList.remove('active');
-  selectedPayment = 'Cash';
   gcashProof = '';
 }
 
@@ -378,7 +370,58 @@ window.computeChange = () => {
   document.getElementById('change').style.color = change >= 0? '#2E7D32' : '#C62828';
 }
 
-function generateReceipt(paymentMethod, total, cash) {
+window.checkout = async (paymentMethod) => {
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  if(paymentMethod === 'Cash') {
+    const cash = parseFloat(document.getElementById('cashInput').value) || 0;
+    if(cash < total) {
+      alert('Kulang ang cash boss!');
+      return;
+    }
+  }
+
+  if(paymentMethod === 'Gcash' &&!gcashProof) {
+    alert('Upload Gcash proof muna boss!');
+    return;
+  }
+
+  try {
+    // Deduct stock
+    for(let item of cart) {
+      const prod = products.find(p => p.id === item.id);
+      if(prod) {
+        await updateDoc(doc(db, "products", item.id), {
+          stock: prod.stock - item.qty
+        });
+      }
+    }
+
+    // Save sales with proof
+    await addDoc(collection(db, "sales"), {
+      datetime: serverTimestamp(),
+      items: cart,
+      total: total,
+      payment: paymentMethod,
+      proof: gcashProof
+    });
+
+    // PRINT RECEIPT - DITO NA NAGPRINT BOSS
+    generateReceipt(paymentMethod, total);
+    printReceipt();
+
+    alert(`✓ SALE COMPLETE\nPayment: ${paymentMethod}\nTotal: ₱${total.toFixed(2)}\n\nThank you! Come again! 🙏`);
+    cart = [];
+    renderCart();
+    closePayment();
+    loadProducts();
+  } catch(error) {
+    alert('Checkout failed: ' + error.message);
+    console.error(error);
+  }
+}
+
+function generateReceipt(paymentMethod, total) {
   const now = new Date();
   let receiptHTML = `
     <div style="text-align:center; font-weight:bold; border-bottom:1px dashed #000; padding-bottom:5px; margin-bottom:5px;">
@@ -416,6 +459,7 @@ function generateReceipt(paymentMethod, total, cash) {
   `;
 
   if(paymentMethod === 'Cash') {
+    const cash = parseFloat(document.getElementById('cashInput').value) || 0;
     receiptHTML += `
       <div>CASH: ₱${cash.toFixed(2)}</div>
       <div>CHANGE: ₱${(cash - total).toFixed(2)}</div>
@@ -432,68 +476,16 @@ function generateReceipt(paymentMethod, total, cash) {
   `;
 
   document.getElementById('receipt').innerHTML = receiptHTML;
+  document.getElementById('receipt').style.display = 'block';
 }
 
 function printReceipt() {
-  document.getElementById('receipt').style.display = 'block';
   setTimeout(() => {
     window.print();
     setTimeout(() => {
       document.getElementById('receipt').style.display = 'none';
     }, 1000);
   }, 300);
-}
-
-window.checkout = async (paymentMethod) => {
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  let cash = 0;
-
-  if(paymentMethod === 'Cash') {
-    cash = parseFloat(document.getElementById('cashInput').value) || 0;
-    if(cash < total) {
-      alert('Kulang ang cash boss!');
-      return;
-    }
-  }
-
-  if(paymentMethod === 'Gcash' &&!gcashProof) {
-    alert('Upload Gcash proof muna boss!');
-    return;
-  }
-
-  try {
-    // Deduct stock
-    for(let item of cart) {
-      const prod = products.find(p => p.id === item.id);
-      if(prod) {
-        await updateDoc(doc(db, "products", item.id), {
-          stock: prod.stock - item.qty
-        });
-      }
-    }
-
-    // Save sales with proof
-    await addDoc(collection(db, "sales"), {
-      datetime: serverTimestamp(),
-      items: cart,
-      total: total,
-      payment: paymentMethod,
-      proof: gcashProof
-    });
-
-    // Generate and Print Receipt - BINALIK NA BOSS!
-    generateReceipt(paymentMethod, total, cash);
-    printReceipt();
-
-    alert(`✓ SALE COMPLETE\nPayment: ${paymentMethod}\nTotal: ₱${total.toFixed(2)}\n\nThank you! Come again! 🙏`);
-    cart = [];
-    renderCart();
-    closePayment();
-    loadProducts();
-  } catch(error) {
-    alert('Checkout failed: ' + error.message);
-    console.error(error);
-  }
 }
 
 loadProducts();
