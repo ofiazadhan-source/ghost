@@ -3,193 +3,409 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Store POS - Firebase</title>
+<title>Siomai Factory POS</title>
 <style>
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
-body {background:#FFF8E1; padding:10px;}
-.container { max-width:500px; margin:auto; background:white; border-radius:20px; padding:15px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; }
-h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
-.back-btn { background:#757575; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; margin-bottom:12px; font-size:12px; }
-.cat-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:12px; }
-.cat-btn { padding:12px 5px; border:none; border-radius:10px; background:#FFCC80; color:#B71C1C; font-weight:700; font-size:12px; cursor:pointer; }
-.cat-btn.active {background:#D32F2F; color:white;}
-.prod-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-bottom:90px; }
-.prod-card { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:8px; text-align:center; cursor:pointer; }
-.prod-img { width:100%; height:60px; object-fit:cover; border-radius:8px; margin-bottom:4px; background:#f0f0f0; }
-.prod-name { font-weight:700; font-size:11px; color:#D32F2F; margin-bottom:2px; height:28px; overflow:hidden; }
-.prod-price { font-size:14px; font-weight:900; color:#2E7D32; }
-.cart-float { position:fixed; bottom:0; left:0; right:0; background:white; border-top:3px solid #D32F2F; border-radius:20px 20px 0 0; padding:12px 15px; box-shadow:0 -4px 15px rgba(0,0,0,0.2); max-width:500px; margin:auto; z-index:999; }
-.cart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-.cart-title { font-weight:800; color:#D32F2F; font-size:14px; }
-.cart-count { background:#D32F2F; color:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
-.cart-items { max-height:180px; overflow-y:auto; margin-bottom:8px; }
-.cart-item { display:grid; grid-template-columns:20px 1fr 80px 60px; gap:5px; align-items:center; font-size:12px; padding:6px 0; border-bottom:1px dashed #eee; }
-.remove-btn { background:#C62828; color:white; border:none; border-radius:50%; width:18px; height:18px; font-size:14px; cursor:pointer; font-weight:800; }
-.qty-btn { width:24px; height:24px; border:none; background:#D32F2F; color:white; border-radius:4px; font-weight:800; cursor:pointer; font-size:14px; }
-.qty-input { width:40px; height:24px; text-align:center; border:1px solid #ddd; border-radius:4px; font-size:12px; }
-.cart-total { font-size:20px; font-weight:900; color:#D32F2F; text-align:right; margin:8px 0; }
-.modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
-.modal.active {display:flex;}
-.modal-box { background:white; border-radius:15px; padding:20px; width:90%; max-width:380px; }
-.gcash-proof { margin:12px 0; display:none; }
-.gcash-proof label { font-size:12px; color:#007BFF; font-weight:700; display:block; margin-bottom:5px; }
-.gcash-proof input { width:100%; padding:8px; border:2px dashed #007BFF; border-radius:8px; }
-.payment-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
-.pay-btn { padding:14px; border:none; border-radius:8px; font-weight:800; font-size:14px; cursor:pointer; color:white; }
-.cash-btn {background:#4CAF50;}
-.gcash-btn {background:#007BFF;}
-.checkout-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:10px; font-weight:800; font-size:15px; cursor:pointer; }
+body {background:#FFF8E1; padding:15px; min-height:100vh;}
+.container {
+  max-width:480px;
+  margin:auto;
+  background:white;
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.12);
+  border-top:6px solid #D32F2F;
+}
+h2 {
+  color:#D32F2F;
+  text-align:center;
+  margin-bottom:8px;
+  font-size:24px;
+}
+.subtitle {
+  text-align:center;
+  color:#666;
+  font-size:13px;
+  margin-bottom:20px;
+}
+.back-btn {
+  background:#757575;
+  color:white;
+  border:none;
+  padding:10px 18px;
+  border-radius:8px;
+  cursor:pointer;
+  margin-bottom:15px;
+  font-size:13px;
+  font-weight:600;
+}
+
+/* Menu Grid */
+.menu-grid {
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:12px;
+}
+.menu-btn {
+  padding:35px 10px;
+  border:none;
+  border-radius:15px;
+  background:linear-gradient(135deg, #FFCC80, #FFB74D);
+  color:#B71C1C;
+  font-weight:800;
+  font-size:15px;
+  cursor:pointer;
+  text-align:center;
+  line-height:1.4;
+}
+.menu-btn:active {transform:scale(0.95); background:#FFA726;}
+
+/* Product Form */
+.product-form {
+  background:#FFF8E1;
+  border:2px dashed #FFCC80;
+  border-radius:12px;
+  padding:15px;
+  margin-bottom:18px;
+}
+.product-form h4 {
+  color:#D32F2F;
+  margin-bottom:10px;
+  font-size:14px;
+}
+.input-group {margin-bottom:12px;}
+.input-group label {
+  font-size:12px;
+  font-weight:700;
+  color:#D32F2F;
+  margin-bottom:4px;
+  display:block;
+}
+.input-group input {
+  width:100%;
+  padding:12px;
+  border:2px solid #FFE0B2;
+  border-radius:8px;
+  font-size:14px;
+  background:white;
+}
+.input-group input:focus {outline:none; border-color:#D32F2F;}
+.add-prod-btn {
+  width:100%;
+  padding:14px;
+  background:#2E7D32;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-weight:800;
+  cursor:pointer;
+  margin-top:8px;
+  font-size:15px;
+}
+
+/* Product Cards */
+.prod-list {
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:10px;
+}
+.prod-card {
+  background:#FFFDF7;
+  border:2px solid #FFCC80;
+  border-radius:12px;
+  padding:12px;
+  text-align:center;
+  position:relative;
+}
+.prod-img {
+  width:100%;
+  height:70px;
+  object-fit:cover;
+  border-radius:8px;
+  margin-bottom:6px;
+  background:#f0f0f0;
+}
+.prod-name {
+  font-weight:800;
+  font-size:13px;
+  color:#D32F2F;
+  margin-bottom:8px;
+}
+.prod-card.input-group {
+  margin-bottom:8px;
+}
+.prod-card.input-group label {
+  font-size:10px;
+  color:#666;
+  font-weight:600;
+  margin-bottom:2px;
+}
+.prod-card input {
+  padding:8px;
+  text-align:center;
+  border:1.5px solid #ddd;
+  border-radius:6px;
+  font-size:13px;
+}
+.save-btn {
+  width:100%;
+  padding:8px;
+  background:#1976D2;
+  color:white;
+  border:none;
+  border-radius:6px;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  margin-top:6px;
+}
+.delete-btn {
+  position:absolute;
+  top:6px;
+  right:6px;
+  background:#C62828;
+  color:white;
+  border:none;
+  border-radius:50%;
+  width:24px;
+  height:24px;
+  cursor:pointer;
+  font-size:18px;
+  line-height:1;
+  font-weight:bold;
+}
+.page {display:none;}
+.page.active {display:block;}
+.empty-msg {
+  grid-column:span 2;
+  text-align:center;
+  color:#999;
+  padding:40px 0;
+  font-size:13px;
+}
 </style>
 </head>
 <body>
+
 <div class="container">
-<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
-<h2>🛒 Store POS Firebase</h2>
-<div class="cat-grid">
-<button class="cat-btn active" onclick="filterCat('all', this)">All</button>
-<button class="cat-btn" onclick="filterCat('65s', this)">65's</button>
-</div>
-<div class="prod-grid" id="prodGrid"></div>
-</div>
-<div class="cart-float">
-<div class="cart-header">
-<span class="cart-title">🛒 Cart</span>
-<span class="cart-count" id="cartCount">0</span>
-</div>
-<div class="cart-items" id="cartItems"></div>
-<div class="cart-total" id="cartTotal">Total: ₱0</div>
-<button class="checkout-btn" id="checkoutBtn" onclick="showPayment()">Checkout</button>
-</div>
-<div class="modal" id="paymentModal">
-<div class="modal-box">
-<h3>📋 Payment</h3>
-<div id="reviewList"></div>
-<div id="cashSection">
-<input type="number" id="cashInput" placeholder="Cash Tendered">
-</div>
-<div class="gcash-proof" id="gcashProof">
-<label>📱 Upload Gcash Proof</label>
-<input type="file" id="proofInput" accept="image/*">
-<img id="proofPreview" style="max-width:100%; margin-top:8px; display:none;">
-</div>
-<div class="payment-btns">
-<button class="pay-btn cash-btn" onclick="checkout('Cash')">💵 Cash</button>
-<button class="pay-btn gcash-btn" onclick="selectGcash()">📱 Gcash</button>
-</div>
-</div>
+
+  <!-- PAGE 1: MAIN MENU -->
+  <div id="mainMenu" class="page active">
+    <h2>📋 Main Menu</h2>
+    <p class="subtitle">Welcome to my POS, admin!</p>
+
+    <div class="menu-grid">
+      <button class="menu-btn" onclick="showPage('categoryPage')">🛒 Products<br>add & edit</button>
+      <button class="menu-btn" onclick="window.location='pos.html'">🛒 Monthly<br> Sales</button>
+<button class="menu-btn" onclick="window.location='production.html'">📦 Daily<br>Production</button>
+<button class="menu-btn" onclick="window.location='expenses.html'">💸 Daily<br>Expenses</button>
+<button class="menu-btn" onclick="window.location='daily-sales.html'">💰 Daily<br>Sales</button>
+<button class="menu-btn" onclick="window.location='monthly-expenses.html'">📊 Monthly<br>Expenses</button>
+<button class="menu-btn" onclick="window.location='net-profit.html'">📈 Net<br>Profit</button>
+    </div>
+  </div>
+
+  <!-- PAGE 2: SELECT CATEGORY -->
+  <div id="categoryPage" class="page">
+    <button class="back-btn" onclick="showPage('mainMenu')">← Back to Menu</button>
+    <h2>🛒 Select Category</h2>
+
+    <div class="menu-grid">
+      <button class="menu-btn" onclick="openCategory('65s')">65's</button>
+      <button class="menu-btn" onclick="openCategory('30s')">30's</button>
+      <button class="menu-btn" onclick="openCategory('big')">Big SIOMAI</button>
+      <button class="menu-btn" onclick="openCategory('dumplings')">Dumplings</button>
+      <button class="menu-btn" onclick="openCategory('siopao')">SIOPAO</button>
+      <button class="menu-btn" onclick="openCategory('sauce')">Sauce</button>
+      <button class="menu-btn" onclick="openCategory('others')">Others</button>
+      <button class="menu-btn" onclick="openCategory('all')">All</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3: PRODUCT MANAGER -->
+  <div id="productPage" class="page">
+    <button class="back-btn" onclick="showPage('categoryPage')">← Back to Categories</button>
+    <h2 id="catTitle">65's Siomai</h2>
+
+    <!-- Add Product Form - may labels na -->
+    <div class="product-form">
+      <h4>+ Add Product to <span id="catName">65's Siomai</span></h4>
+
+      <div class="input-group">
+        <label>Product Name</label>
+        <input type="text" id="prodName" placeholder="ex: Pork Siomai">
+      </div>
+
+      <div class="input-group">
+        <label style="color:#D32F2F;">STOCK</label>
+        <input type="number" id="prodStocks" placeholder="100" value="100">
+      </div>
+
+      <div class="input-group">
+        <label style="color:#1976D2;">PRICE</label>
+        <input type="number" id="prodPrice" placeholder="8" value="8" step="0.01">
+      </div>
+
+      <div class="input-group">
+        <label>Image</label>
+        <input type="file" id="prodImage" accept="image/*">
+      </div>
+
+      <button class="add-prod-btn" onclick="addProduct()">Add Product</button>
+    </div>
+
+    <!-- Product List -->
+    <div class="prod-list" id="prodList"></div>
+  </div>
+
 </div>
 
-<!-- FIREBASE SDK -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
-// PALITAN MO TO NG IYO BOSS - kopya mo sa Firebase > Project Settings
-const firebaseConfig = {
-apiKey: "PASTE_MO_DITO",
-authDomain: "siomai-factory.firebaseapp.com",
-projectId: "siomai-factory",
-storageBucket: "siomai-factory.appspot.com",
-messagingSenderId: "xxx",
-appId: "xxx"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
+<script>
+let currentCat = '65s';
 let products = JSON.parse(localStorage.getItem('products') || '{}');
-let cart = [];
-let currentCat = 'all';
-let selectedPayment = 'Cash';
-let proofFile = null;
 
-// PREVIEW IMAGE
-document.getElementById('proofInput').onchange = function(e) {
-proofFile = e.target.files[0];
-if(proofFile) {
-const reader = new FileReader();
-reader.onload = function(event) {
-document.getElementById('proofPreview').src = event.target.result;
-document.getElementById('proofPreview').style.display = 'block';
-};
-reader.readAsDataURL(proofFile);
-}
-};
-
-function selectGcash() {
-selectedPayment = 'Gcash';
-document.getElementById('cashSection').style.display = 'none';
-document.getElementById('gcashProof').style.display = 'block';
-}
-
-async function checkout(paymentMethod) {
-const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-let proofUrl = '';
-
-if(paymentMethod === 'Gcash') {
-if(!proofFile) {
-alert('Upload proof muna boss!');
-return;
-}
-// UPLOAD SA FIREBASE STORAGE
-const fileRef = ref(storage, `gcash_proofs/${Date.now()}_${proofFile.name}`);
-const snap = await uploadBytes(fileRef, proofFile);
-proofUrl = await getDownloadURL(snap.ref);
-}
-
-// SAVE SA FIRESTORE
-await addDoc(collection(db, "sales"), {
-datetime: serverTimestamp(),
-items: cart,
-total: total,
-payment: paymentMethod,
-proofUrl: proofUrl
+// Init all categories + All
+['65s','30s','big','dumplings','siopao','sauce','others','all'].forEach(cat => {
+  if(!products[cat]) products[cat] = [];
 });
 
-alert('✓ Sale saved sa Firebase!');
-cart = [];
-document.getElementById('paymentModal').classList.remove('active');
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
 }
 
-// Load products, cart functions same lang...
-function loadProducts() {
-const grid = document.getElementById('prodGrid');
-let prods = products[currentCat] || [];
-let html = '';
-prods.forEach(prod => {
-html += `<div class="prod-card" onclick="addToCart(${prod.id})">
-<img src="${prod.image || ''}" class="prod-img">
-<div class="prod-name">${prod.name}</div>
-<div class="prod-price">₱${prod.price}</div>
-</div>`;
-});
-grid.innerHTML = html;
+function openCategory(cat) {
+  currentCat = cat;
+  const catNames = {
+    '65s': "65's Siomai",
+    '30s': "30's Siomai",
+    'big': 'Big SIOMAI',
+    'dumplings': 'Dumplings',
+    'siopao': 'SIOPAO',
+    'sauce': 'Sauce',
+    'others': 'Others',
+    'all': 'All Products'
+  };
+  document.getElementById('catTitle').innerText = catNames[cat];
+  document.getElementById('catName').innerText = catNames[cat];
+  showPage('productPage');
+  renderProducts();
 }
 
-function addToCart(id) {
-let prod;
-Object.keys(products).forEach(cat => {
-const p = products[cat].find(x => x.id === id);
-if(p) prod = p;
-});
-const existing = cart.find(item => item.id === id);
-if(existing) existing.qty++;
-else cart.push({id: prod.id, name: prod.name, price: prod.price, qty: 1});
-renderCart();
+function addProduct() {
+  const name = document.getElementById('prodName').value.trim();
+  const stocks = parseInt(document.getElementById('prodStocks').value) || 0;
+  const price = parseFloat(document.getElementById('prodPrice').value) || 0;
+  const fileInput = document.getElementById('prodImage');
+
+  if(!name || price <= 0) {
+    alert('Lagay ka name at price boss!');
+    return;
+  }
+
+  if(fileInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      saveProductData(name, stocks, price, e.target.result);
+    };
+    reader.readAsDataURL(fileInput.files[0]);
+  } else {
+    saveProductData(name, stocks, price, '');
+  }
 }
 
-function renderCart() {
-document.getElementById('cartCount').innerText = cart.reduce((s,i)=>s+i.qty,0);
-document.getElementById('cartTotal').innerText = 'Total: ₱' + cart.reduce((s,i)=>s+i.price*i.qty,0);
+function saveProductData(name, stocks, price, img) {
+  const newProd = {
+    id: Date.now(),
+    name,
+    stocks,
+    price,
+    image: img,
+    category: currentCat === 'all'? '65s' : currentCat
+  };
+
+  products[currentCat].push(newProd);
+  if(currentCat!== 'all') {
+    products['all'].push({...newProd});
+  }
+
+  localStorage.setItem('products', JSON.stringify(products));
+
+  // Clear form
+  document.getElementById('prodName').value = '';
+  document.getElementById('prodStocks').value = '100';
+  document.getElementById('prodPrice').value = '8';
+  document.getElementById('prodImage').value = '';
+
+  renderProducts();
 }
 
-function showPayment() {
-document.getElementById('paymentModal').classList.add('active');
+function renderProducts() {
+  const list = document.getElementById('prodList');
+  let prods = products[currentCat];
+
+  if(prods.length === 0) {
+    list.innerHTML = '<p class="empty-msg">No products yet. Add muna boss!</p>';
+    return;
+  }
+
+  let html = '';
+  prods.forEach(prod => {
+    html += `
+      <div class="prod-card">
+        <button class="delete-btn" onclick="deleteProduct(${prod.id})">×</button>
+        ${prod.image? `<img src="${prod.image}" class="prod-img">` : '<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;">No Image</div>'}
+        <div class="prod-name">${prod.name}</div>
+
+        <div class="input-group">
+          <input type="number" id="stocks${prod.id}" value="${prod.stocks}">
+          <label>Stocks</label>
+        </div>
+
+        <div class="input-group">
+          <input type="number" id="price${prod.id}" value="${prod.price}" step="0.01">
+          <label>Price</label>
+        </div>
+
+        <button class="save-btn" onclick="saveProduct(${prod.id})">Save Changes</button>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
 }
 
-loadProducts();
+function saveProduct(prodId) {
+  let prod = products[currentCat].find(p => p.id === prodId);
+  if(prod) {
+    prod.stocks = parseInt(document.getElementById('stocks' + prodId).value) || 0;
+    prod.price = parseFloat(document.getElementById('price' + prodId).value) || 0;
+  }
+
+  let prodAll = products['all'].find(p => p.id === prodId);
+  if(prodAll) {
+    prodAll.stocks = prod.stocks;
+    prodAll.price = prod.price;
+  }
+
+  localStorage.setItem('products', JSON.stringify(products));
+
+  const btn = event.target;
+  btn.innerText = '✓ Saved';
+  btn.style.background = '#4CAF50';
+  setTimeout(() => {
+    btn.innerText = 'Save Changes';
+    btn.style.background = '#1976D2';
+  }, 800);
+}
+
+function deleteProduct(prodId) {
+  if(confirm('Delete this product?')) {
+    products[currentCat] = products[currentCat].filter(p => p.id!== prodId);
+    products['all'] = products['all'].filter(p => p.id!== prodId);
+    localStorage.setItem('products', JSON.stringify(products));
+    renderProducts();
+  }
+}
 </script>
 </body>
 </html>
