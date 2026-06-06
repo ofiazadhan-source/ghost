@@ -78,7 +78,7 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
 <input type="number" id="prodPrice" placeholder="5.00" value="8" step="0.01" min="0.01">
 </div>
 <div class="input-group">
-<label>📷 Product Image - Base64</label>
+<label>📷 Product Image - Auto Compress</label>
 <input type="file" id="prodImage" accept="image/*">
 <img id="imgPreview" class="img-preview">
 </div>
@@ -112,16 +112,69 @@ let currentCat = '65s';
 let products = [];
 let base64Image = '';
 
-document.getElementById('prodImage').addEventListener('change', function(e) {
+// AUTO COMPRESS - Mag-aadjust ng quality hanggang < 900KB safe sa Firestore
+async function compressImageAuto(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        let quality = 0.8;
+        let maxWidth = 600;
+        let canvas = document.createElement('canvas');
+        let ctx = canvas.getContext('2d');
+        
+        function tryCompress() {
+          let width = img.width;
+          let height = img.height;
+
+          if(width > maxWidth) {
+            height = (maxWidth / width) * height;
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          let base64 = canvas.toDataURL('image/jpeg', quality);
+          let sizeKB = Math.round(base64.length / 1024);
+
+          console.log(`Trying: ${sizeKB}KB - Quality: ${quality}`);
+
+          if(sizeKB > 900 && quality > 0.3) {
+            quality -= 0.1;
+            tryCompress();
+          } else if(sizeKB > 900 && maxWidth > 300) {
+            maxWidth -= 50;
+            quality = 0.8;
+            tryCompress();
+          } else {
+            console.log(`Final: ${sizeKB}KB - OK na boss!`);
+            resolve(base64);
+          }
+        }
+        tryCompress();
+      }
+    }
+  });
+}
+
+document.getElementById('prodImage').addEventListener('change', async function(e) {
   const file = e.target.files[0];
   if(file) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      base64Image = event.target.result;
-      document.getElementById('imgPreview').src = base64Image;
-      document.getElementById('imgPreview').style.display = 'block';
-    }
-    reader.readAsDataURL(file);
+    document.getElementById('addBtn').innerText = 'Compressing image...';
+    document.getElementById('addBtn').disabled = true;
+    
+    base64Image = await compressImageAuto(file);
+    
+    document.getElementById('imgPreview').src = base64Image;
+    document.getElementById('imgPreview').style.display = 'block';
+    
+    document.getElementById('addBtn').innerText = 'Add Product';
+    document.getElementById('addBtn').disabled = false;
   } else {
     base64Image = '';
     document.getElementById('imgPreview').style.display = 'none';
