@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store POS - Siomai Factory</title>
+<style>
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
+body {background:#FFF8E1; padding:10px;}
+.container { max-width:500px; margin:auto; background:white; border-radius:20px; padding:15px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; }
+h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
+.back-btn { background:#757575; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; margin-bottom:12px; font-size:12px; }
+.cat-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:12px; }
+.cat-btn { padding:12px 5px; border:none; border-radius:10px; background:#FFCC80; color:#B71C1C; font-weight:700; font-size:12px; cursor:pointer; }
+.cat-btn.active {background:#D32F2F; color:white;}
+.prod-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-bottom:90px; }
+.prod-card { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:8px; text-align:center; cursor:pointer; }
+.prod-img { width:100%; height:60px; object-fit:cover; border-radius:8px; margin-bottom:4px; background:#f0f0f0; }
+.prod-name { font-weight:700; font-size:11px; color:#D32F2F; margin-bottom:2px; height:28px; overflow:hidden; }
+.prod-price { font-size:14px; font-weight:900; color:#2E7D32; }
+.prod-stock { font-size:10px; color:#666; }
+.cart-float { position:fixed; bottom:0; left:0; right:0; background:white; border-top:3px solid #D32F2F; border-radius:20px 20px 0 0; padding:12px 15px; box-shadow:0 -4px 15px rgba(0,0,0,0.2); max-width:500px; margin:auto; z-index:999; }
+.cart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.cart-title { font-weight:800; color:#D32F2F; font-size:14px; }
+.cart-count { background:#D32F2F; color:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
+.cart-items { max-height:180px; overflow-y:auto; margin-bottom:8px; }
+.cart-item { display:grid; grid-template-columns:20px 1fr 80px 60px; gap:5px; align-items:center; font-size:12px; padding:6px 0; border-bottom:1px dashed #eee; }
+.remove-btn { background:#C62828; color:white; border:none; border-radius:50%; width:18px; height:18px; font-size:14px; line-height:1; cursor:pointer; font-weight:800; }
+.qty-control { display:flex; gap:3px; align-items:center; }
+.qty-btn { width:24px; height:24px; border:none; background:#D32F2F; color:white; border-radius:4px; font-weight:800; cursor:pointer; font-size:14px; }
+.qty-input { width:40px; height:24px; text-align:center; border:1px solid #ddd; border-radius:4px; font-size:12px; }
+.item-name {font-size:11px; overflow:hidden;}
+.item-total {text-align:right; font-weight:700; color:#2E7D32;}
+.cart-total { font-size:20px; font-weight:900; color:#D32F2F; text-align:right; margin:8px 0; }
+.modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
+.modal.active {display:flex;}
+.modal-box { background:white; border-radius:15px; padding:20px; width:90%; max-width:380px; max-height:90vh; overflow-y:auto; }
+.modal-box h3 { color:#D32F2F; text-align:center; margin-bottom:12px; }
+.review-item { display:flex; justify-content:space-between; font-size:13px; padding:5px 0; border-bottom:1px solid #eee; }
+.review-total { font-size:22px; font-weight:900; color:#D32F2F; text-align:right; margin:10px 0; border-top:2px solid #D32F2F; padding-top:8px; }
+.cash-input { margin:12px 0; }
+.cash-input input { width:100%; padding:12px; font-size:18px; font-weight:700; text-align:right; border:2px solid #FFCC80; border-radius:8px; }
+.change { text-align:right; font-size:16px; font-weight:800; color:#2E7D32; margin-top:5px; }
+.gcash-proof { margin:12px 0; display:none; }
+.gcash-proof label { font-size:12px; color:#007BFF; font-weight:700; display:block; margin-bottom:5px; }
+.gcash-proof input { width:100%; padding:8px; border:2px dashed #007BFF; border-radius:8px; }
+.payment-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+.pay-btn { padding:14px; border:none; border-radius:8px; font-weight:800; font-size:14px; cursor:pointer; color:white; }
+.cash-btn {background:#4CAF50;}
+.gcash-btn {background:#007BFF;}
+.cancel-btn { width:100%; padding:10px; margin-top:8px; background:#999; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
+.checkout-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:10px; font-weight:800; font-size:15px; cursor:pointer; }
+.checkout-btn:disabled { background:#ccc; cursor:not-allowed; }
+.loading { text-align:center; padding:40px; color:#D32F2F; font-weight:700; }
+</style>
+</head>
+<body>
+<div class="container">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+<h2>🛒 Store POS</h2>
+<div class="cat-grid">
+<button class="cat-btn active" onclick="filterCat('all', this)">All</button>
+<button class="cat-btn" onclick="filterCat('65s', this)">65's</button>
+<button class="cat-btn" onclick="filterCat('30s', this)">30's</button>
+<button class="cat-btn" onclick="filterCat('big', this)">Big SIOMAI</button>
+<button class="cat-btn" onclick="filterCat('dumplings', this)">Dumplings</button>
+<button class="cat-btn" onclick="filterCat('siopao', this)">SIOPAO</button>
+<button class="cat-btn" onclick="filterCat('sauce', this)">Sauce</button>
+<button class="cat-btn" onclick="filterCat('others', this)">Others</button>
+</div>
+<div class="prod-grid" id="prodGrid"><div class="loading">Loading products...</div></div>
+</div>
+
+<div class="cart-float">
+<div class="cart-header">
+<span class="cart-title">🛒 Cart</span>
+<span class="cart-count" id="cartCount">0</span>
+</div>
+<div class="cart-items" id="cartItems">
+<p style="text-align:center; color:#999; font-size:12px; padding:20px 0;">No items</p>
+</div>
+<div class="cart-total" id="cartTotal">Total: ₱0</div>
+<button class="checkout-btn" id="checkoutBtn" onclick="showPayment()" disabled>Checkout</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let products = [];
+let cart = [];
+let currentCat = 'all';
+
+async function loadProducts() {
+  const grid = document.getElementById('prodGrid');
+  grid.innerHTML = '<div class="loading">Loading products...</div>';
+  
+  try {
+    let q = collection(db, "products");
+    if(currentCat != 'all') {
+      q = query(collection(db, "products"), where("category", "==", currentCat));
+    }
+    const snap = await getDocs(q);
+    products = [];
+    snap.forEach(d => {
+      const data = d.data();
+      if(data.stock > 0) {
+        products.push({id: d.id, ...data});
+      }
+    });
+    
+    if(products.length === 0) {
+      grid.innerHTML = '<p style="grid-column:span 2; text-align:center; color:#999; padding:40px;">No products available</p>';
+      return;
+    }
+    
+    let html = '';
+    products.forEach(prod => {
+      html += `
+        <div class="prod-card" onclick="addToCart('${prod.id}')">
+          ${prod.image? `<img src="${prod.image}" class="prod-img">` : '<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:10px;">No Image</div>'}
+          <div class="prod-name">${prod.name}</div>
+          <div class="prod-price">₱${prod.price}</div>
+          <div class="prod-stock">Stock: ${prod.stock}</div>
+        </div>
+      `;
+    });
+    grid.innerHTML = html;
+  } catch(error) {
+    console.error('Load Error:', error);
+    grid.innerHTML = '<p style="grid-column:span 2; text-align:center; color:#C62828; padding:40px;">Error loading products</p>';
+  }
+}
+
+window.filterCat = (cat, btn) => {
+  currentCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadProducts();
+}
+
+window.addToCart = (prodId) => {
+  const prod = products.find(p => p.id === prodId);
+  if(!prod || prod.stock <= 0) {
+    alert('Out of stock boss!');
+    return;
+  }
+  const existing = cart.find(item => item.id === prodId);
+  if(existing) {
+    if(existing.qty >= prod.stock) {
+      alert('Kulang na stocks boss!');
+      return;
+    }
+    existing.qty++;
+  } else {
+    cart.push({id: prodId, name: prod.name, price: prod.price, qty: 1});
+  }
+  renderCart();
+}
+
+function renderCart() {
+  const cartItems = document.getElementById('cartItems');
+  const cartCount = document.getElementById('cartCount');
+  const cartTotal = document.getElementById('cartTotal');
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  let total = 0;
+  let count = 0;
+  
+  if(cart.length === 0) {
+    cartItems.innerHTML = '<p style="text-align:center; color:#999; font-size:12px; padding:20px 0;">No items</p>';
+    checkoutBtn.disabled = true;
+  } else {
+    let html = '';
+    cart.forEach((item, i) => {
+      const subtotal = item.price * item.qty;
+      total += subtotal;
+      count += item.qty;
+      html += `
+        <div class="cart-item">
+          <button class="remove-btn" onclick="removeItem(${i})">×</button>
+          <span class="item-name">${item.name}</span>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty(${i}, -1)">-</button>
+            <input type="number" class="qty-input" value="${item.qty}" min="1" oninput="setQty(${i}, this.value)">
+            <button class="qty-btn" onclick="changeQty(${i}, 1)">+</button>
+          </div>
+          <span class="item-total">₱${subtotal.toFixed(2)}</span>
+        </div>
+      `;
+    });
+    cartItems.innerHTML = html;
+    checkoutBtn.disabled = false;
+  }
+  cartCount.innerText = count;
+  cartTotal.innerText = 'Total: ₱' + total.toFixed(2);
+}
+
+window.removeItem = (index) => {
+  cart.splice(index, 1);
+  renderCart();
+}
+
+window.changeQty = (index, delta) => {
+  cart[index].qty += delta;
+  const prod = products.find(p => p.id === cart[index].id);
+  if(cart[index].qty < 1) cart[index].qty = 1;
+  if(prod && cart[index].qty > prod.stock) cart[index].qty = prod.stock;
+  renderCart();
+}
+
+window.setQty = (index, value) => {
+  let qty = parseInt(value) || 1;
+  const prod = products.find(p => p.id === cart[index].id);
+  if(qty < 1) qty = 1;
+  if(prod && qty > prod.stock) {
+    qty = prod.stock;
+    alert('Max stock: ' + prod.stock + ' lang boss!');
+  }
+  cart[index].qty = qty;
+  renderCart();
+}
+
+window.showPayment = async () => {
+  if(cart.length === 0) return;
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  
+  // Deduct stock sa Firestore
+  try {
+    for(let item of cart) {
+      const prod = products.find(p => p.id === item.id);
+      if(prod) {
+        await updateDoc(doc(db, "products", item.id), {
+          stock: prod.stock - item.qty
+        });
+      }
+    }
+    
+    // Save sales
+    await addDoc(collection(db, "sales"), {
+      datetime: serverTimestamp(),
+      items: cart,
+      total: total,
+      payment: 'Cash'
+    });
+    
+    alert(`✓ SALE COMPLETE\nTotal: ₱${total.toFixed(2)}\n\nThank you! Come again! 🙏`);
+    cart = [];
+    renderCart();
+    loadProducts();
+  } catch(error) {
+    alert('Checkout failed: ' + error.message);
+  }
+}
+
+loadProducts();
+</script>
+</body>
+</html>
