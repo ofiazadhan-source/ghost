@@ -53,14 +53,8 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 .checkout-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:10px; font-weight:800; font-size:15px; cursor:pointer; }
 .checkout-btn:disabled { background:#ccc; cursor:not-allowed; }
 .loading { text-align:center; padding:40px; color:#D32F2F; font-weight:700; }
-/* Receipt - FOR PRINT */
 .receipt { display:none; font-family:monospace; font-size:14px; color:black; background:white; padding:10px; width:100%; max-width:300px; margin:auto; line-height:1.6; text-align:left; }
-@media print {
-  @page {size: 80mm auto; margin: 0;}
-  body * {visibility:hidden;}
- .receipt,.receipt * {visibility:visible;}
- .receipt { position:absolute; left:0; top:0; width:80mm; display:block!important; font-size:12px; }
-}
+@media print { @page {size: 80mm auto; margin: 0;} body * {visibility:hidden;}.receipt,.receipt * {visibility:visible;}.receipt { position:absolute; left:0; top:0; width:80mm; display:block!important; font-size:12px; } }
 </style>
 </head>
 <body>
@@ -142,6 +136,7 @@ const db = getFirestore(app);
 let products = [];
 let cart = [];
 let currentCat = 'all';
+let selectedPayment = 'Cash';
 let gcashProof = '';
 
 // AUTO COMPRESS - same sa products.html boss
@@ -351,6 +346,7 @@ window.showPayment = () => {
   document.getElementById('change').innerText = 'Change: ₱0';
   document.getElementById('cashSection').style.display = 'block';
   document.getElementById('gcashProof').style.display = 'none';
+  selectedPayment = 'Cash';
   gcashProof = '';
   document.getElementById('proofInput').value = '';
   document.getElementById('proofPreview').style.display = 'none';
@@ -359,6 +355,7 @@ window.showPayment = () => {
 
 window.closePayment = () => {
   document.getElementById('paymentModal').classList.remove('active');
+  selectedPayment = 'Cash';
   gcashProof = '';
 }
 
@@ -406,7 +403,7 @@ window.checkout = async (paymentMethod) => {
       proof: gcashProof
     });
 
-    // PRINT RECEIPT - DITO NA NAGPRINT BOSS
+    // Generate + Print Receipt
     generateReceipt(paymentMethod, total);
     printReceipt();
 
