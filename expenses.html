@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Expenses - Siomai Factory</title>
+<style>
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
+body {background:#FFF8E1; padding:15px; min-height:100vh;}
+.container { max-width:480px; margin:auto; background:white; border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; }
+h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
+.subtitle { text-align:center; color:#666; font-size:13px; margin-bottom:20px; }
+.back-btn { background:#757575; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; margin-bottom:15px; font-size:13px; font-weight:600; }
+
+.date-box { background:#FFF3E0; border:2px solid #FFCC80; border-radius:12px; padding:15px; margin-bottom:20px; }
+.date-box label { display:block; font-weight:800; color:#D32F2F; margin-bottom:8px; text-align:center; font-size:14px; }
+.date-box input { font-size:18px; padding:12px; border:2px solid #D32F2F; border-radius:10px; font-weight:800; color:#D32F2F; text-align:center; width:100%; }
+
+.expense-row { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:12px; margin-bottom:10px; display:grid; grid-template-columns:1fr 100px 35px; gap:8px; align-items:center; }
+.expense-row input { border:2px solid #FFB74D; border-radius:8px; padding:10px; font-size:15px; font-weight:700; outline:none; }
+.desc-input { color:#D32F2F; }
+.amount-input { color:#2E7D32; text-align:right; }
+.del-btn { background:#C62828; color:white; border:none; border-radius:50%; width:35px; height:35px; font-size:20px; font-weight:800; cursor:pointer; }
+
+.btn-add { width:100%; padding:14px; background:#FF9800; color:white; border:none; border-radius:12px; font-weight:800; font-size:15px; cursor:pointer; margin-bottom:15px; }
+
+.total-box { background:linear-gradient(135deg, #C62828, #D32F2F); color:white; border-radius:12px; padding:18px; text-align:center; margin:20px 0; }
+.total-box label { font-size:13px; opacity:0.9; font-weight:700; }
+.total-box div { font-size:36px; font-weight:900; margin-top:5px; }
+
+.btn-save { width:100%; padding:16px; background:#2E7D32; color:white; border:none; border-radius:12px; font-weight:800; font-size:16px; cursor:pointer; margin-bottom:10px; }
+.btn-print { width:100%; padding:16px; background:#1976D2; color:white; border:none; border-radius:12px; font-weight:800; font-size:16px; cursor:pointer; }
+
+#expReport {
+display:none; 
+font-family:monospace; 
+font-size:12px; 
+color:black; 
+background:white; 
+padding:10px; 
+width:80mm; 
+margin:0 auto; 
+line-height:1.4; 
+text-align:left; 
+border:none;
+}
+
+@media print {
+.no-print { display: none !important; }
+body * {visibility:hidden;}
+#expReport,#expReport * {visibility:visible;}
+#expReport { position:absolute; left:0; top:0; width:80mm; display:block!important; font-size:10px; margin:0 !important; padding:2mm !important; }
+@page {size: 80mm auto; margin: 0;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+<h2>💸 Daily Expenses</h2>
+<p class="subtitle">Track mo gastos araw-araw boss</p>
+
+<div class="date-box">
+<label>Date</label>
+<input type="date" id="expDate">
+</div>
+
+<div id="expList"></div>
+
+<button class="btn-add" onclick="addExpenseRow()">+ Add Expense</button>
+
+<div class="total-box">
+<label>TOTAL EXPENSES TODAY</label>
+<div id="totalExp">₱0.00</div>
+</div>
+
+<button class="btn-save" onclick="saveExpenses()">💾 Save Expenses</button>
+<button class="btn-print" onclick="printReport()">🖨️ Print Report</button>
+
+<div id="expReport"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let rowCount = 0;
+
+document.getElementById('expDate').valueAsDate = new Date();
+
+// Add 1 default row
+addExpenseRow();
+
+window.addExpenseRow = () => {
+rowCount++;
+const list = document.getElementById('expList');
+const div = document.createElement('div');
+div.className = 'expense-row';
+div.id = 'row_'+rowCount;
+div.innerHTML = `
+<input type="text" class="desc-input" placeholder="Description" oninput="computeTotal()">
+<input type="number" class="amount-input" placeholder="0" min="0" step="0.01" oninput="computeTotal()">
+<button class="del-btn" onclick="removeRow(${rowCount})">×</button>
+`;
+list.appendChild(div);
+}
+
+window.removeRow = (id) => {
+document.getElementById('row_'+id).remove();
+computeTotal();
+}
+
+window.computeTotal = () => {
+let total = 0;
+document.querySelectorAll('.amount-input').forEach(inp => {
+total += parseFloat(inp.value) || 0;
+});
+document.getElementById('totalExp').innerText = '₱' + total.toFixed(2);
+}
+
+window.saveExpenses = async () => {
+let date = document.getElementById('expDate').value;
+if(!date) {
+alert('Pili ka muna date boss!');
+return;
+}
+
+let expData = [];
+document.querySelectorAll('.expense-row').forEach(row => {
+let desc = row.querySelector('.desc-input').value.trim();
+let amount = parseFloat(row.querySelector('.amount-input').value) || 0;
+if(desc && amount > 0) {
+expData.push({description: desc, amount: amount});
+}
+});
+
+if(expData.length === 0) {
+alert('Walang expenses na ininput boss!');
+return;
+}
+
+try {
+await addDoc(collection(db, "expenses"), {
+date: date,
+timestamp: new Date(),
+items: expData,
+total: parseFloat(document.getElementById('totalExp').innerText.replace('₱',''))
+});
+alert('Saved! Na-record na expenses mo boss ✅');
+} catch(error) {
+alert('Error: ' + error.message);
+}
+}
+
+window.printReport = () => {
+let date = document.getElementById('expDate').value;
+let html = `<div style="text-align:center; font-weight:900; font-size:13px;">SIOMAI FACTORY</div>
+<div style="text-align:center; font-size:9px; margin-bottom:4px;">Daily Expenses Report</div>
+<div style="border-bottom:1px dashed #000; margin:4px 0;"></div>
+<div>Date: ${date}</div>
+<div style="border-bottom:1px dashed #000; margin:4px 0;"></div>`;
+
+let total = 0;
+document.querySelectorAll('.expense-row').forEach(row => {
+let desc = row.querySelector('.desc-input').value.trim();
+let amount = parseFloat(row.querySelector('.amount-input').value) || 0;
+if(desc && amount > 0) {
+html += `<div style="display:flex; justify-content:space-between;"><span>${desc}</span><span>₱${amount.toFixed(2)}</span></div>`;
+total += amount;
+}
+});
+
+html += `<div style="border-bottom:1px dashed #000; margin:4px 0;"></div>
+<div style="display:flex; justify-content:space-between; font-weight:900; font-size:12px;"><span>TOTAL:</span><span>₱${total.toFixed(2)}</span></div>
+<div style="text-align:center; margin-top:5px; font-size:8px;">${new Date().toLocaleString('en-PH')}</div>`;
+
+document.getElementById('expReport').innerHTML = html;
+document.getElementById('expReport').style.display = 'block';
+
+setTimeout(() => window.print(), 300);
+}
+</script>
+</body>
+</html>
