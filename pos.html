@@ -110,7 +110,6 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:12px; font-size:22px; }
 <button class="cancel-btn" onclick="closePayment()">Cancel</button>
 </div>
 </div>
-</div>
 
 <div class="receipt" id="receipt"></div>
 
@@ -136,7 +135,7 @@ let currentCat = 'all';
 let selectedPayment = 'Cash';
 let gcashProofFile = '';
 
-// AUTO COMPRESS - FIXED NA BRACKETS 100%
+// AUTO COMPRESS GCASH - COMPLETE BRACKETS
 async function compressImageAuto(file) {
 return new Promise((resolve) => {
 const reader = new FileReader();
@@ -176,7 +175,7 @@ tryCompress();
 });
 }
 
-// LOAD PRODUCTS
+// LOAD PRODUCTS FROM FIREBASE
 async function loadProducts() {
 const grid = document.getElementById('prodGrid');
 grid.innerHTML = '<div class="loading">Loading products...</div>';
@@ -352,7 +351,7 @@ gcashDiv.style.display = 'block';
 }
 }
 
-// GCASH AUTO COMPRESS
+// GCASH AUTO COMPRESS EVENT
 document.getElementById('gcashProofInput').addEventListener('change', async function(e) {
 let file = e.target.files[0];
 if(file) {
