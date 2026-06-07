@@ -84,7 +84,7 @@ body * {visibility:hidden;}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, query, orderBy, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
@@ -172,34 +172,47 @@ return;
 }
 
 let prodData = [];
+let updatePromises = [];
+
 products.forEach(prod => {
 let p = parseInt(document.getElementById('prod_'+prod.id)?.value) || 0;
 let d = parseInt(document.getElementById('dam_'+prod.id)?.value) || 0;
-if(p > 0 || d > 0) {
+let good = p - d;
+if(good > 0) {
 prodData.push({
 productId: prod.id,
 productName: prod.name,
 category: prod.category,
 produced: p,
 damaged: d,
-good: p - d
+good: good
 });
+// AUTO ADD SA STOCK BOSS!
+updatePromises.push(updateDoc(doc(db, "products", prod.id), {
+stock: increment(good)
+}));
 }
 });
 
 if(prodData.length === 0) {
-alert('Walang input boss!');
+alert('Walang production boss!');
 return;
 }
 
 try {
+// 1. Save production record
 await addDoc(collection(db, "production"), {
 date: date,
 timestamp: new Date(),
 items: prodData,
 totalGood: parseInt(document.getElementById('totalGood').innerText)
 });
-alert('Saved! Na-record na per product boss ✅');
+
+// 2. Update stocks
+await Promise.all(updatePromises);
+
+alert('Saved! Na-update na stocks boss ✅');
+loadProducts(); // Refresh para makita new stocks
 } catch(error) {
 alert('Error: ' + error.message);
 }
@@ -223,13 +236,14 @@ let hasData = false;
 catProds.forEach(prod => {
 let p = parseInt(document.getElementById('prod_'+prod.id)?.value) || 0;
 let d = parseInt(document.getElementById('dam_'+prod.id)?.value) || 0;
+let good = p - d;
 if(p > 0 || d > 0) {
 if(!hasData) {
 html += `<div style="font-weight:800; margin-top:5px;">${catNames[cat]}</div>`;
 hasData = true;
 }
-html += `<div>${prod.name}: P${p} D${d} G${p-d}</div>`;
-total += (p - d);
+html += `<div>${prod.name}: P${p} D${d} G${good}</div>`;
+total += good;
 }
 });
 });
