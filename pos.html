@@ -60,7 +60,19 @@ box-shadow:0 4px 12px rgba(0,0,0,0.1);
 .no-print { display: none !important; }
 body * {visibility:hidden;}
 #receipt,#receipt * {visibility:visible;}
-#receipt { position:absolute; left:0; top:0; width:80mm; display:block!important; font-size:12px; margin:0 !important; border:none !important; box-shadow:none !important; }
+#receipt { 
+position:absolute; 
+left:0; 
+top:0; 
+width:80mm; 
+display:block!important; 
+font-size:11px; 
+margin:0 !important; 
+border:none !important; 
+box-shadow:none !important;
+padding:3mm !important;
+line-height:1.4;
+}
 @page {size: 80mm auto; margin: 0;}
 }
 </style>
@@ -355,10 +367,10 @@ generateReceipt(method);
 closePayModal();
 alert('Payment Success via ' + method + '! Salamat boss!');
 
-// AUTO PRINT after 500ms para lumabas muna receipt
+// AUTO PRINT after 300ms
 setTimeout(() => {
 window.print();
-}, 500);
+}, 300);
 }
 
 function generateReceipt(method) {
@@ -368,13 +380,13 @@ let time = now.toLocaleTimeString('en-PH');
 let receiptNo = 'SIOMAI-' + now.getTime().toString().slice(-6);
 
 let html = `
-<div style="text-align:center; font-weight:900; font-size:16px;">SIOMAI FACTORY</div>
-<div style="text-align:center; font-size:11px; margin-bottom:5px;">Store POS Receipt</div>
-<div style="border-bottom:1px dashed #000; margin:5px 0;"></div>
+<div style="text-align:center; font-weight:900; font-size:13px;">SIOMAI FACTORY</div>
+<div style="text-align:center; font-size:9px; margin-bottom:3px;">Store POS Receipt</div>
+<div style="border-bottom:1px dashed #000; margin:3px 0;"></div>
 <div>Receipt: ${receiptNo}</div>
 <div>Date: ${date} ${time}</div>
 <div>Payment: ${method}</div>
-<div style="border-bottom:1px dashed #000; margin:5px 0;"></div>
+<div style="border-bottom:1px dashed #000; margin:3px 0;"></div>
 `;
 
 cart.forEach(item => {
@@ -385,13 +397,13 @@ html += `<div style="text-align:right;">₱${(item.price * item.qty).toFixed(2)}
 let cashTendered = method === 'Cash' ? parseFloat(document.getElementById('cashIn').value) : 0;
 let change = method === 'Cash' ? cashTendered - currentTotal : 0;
 
-html += `<div style="border-bottom:1px dashed #000; margin:5px 0;"></div>`;
-html += `<div style="display:flex; justify-content:space-between;"><span>TOTAL:</span><span>₱${currentTotal.toFixed(2)}</span></div>`;
+html += `<div style="border-bottom:1px dashed #000; margin:3px 0;"></div>`;
+html += `<div style="display:flex; justify-content:space-between; font-weight:900;"><span>TOTAL:</span><span>₱${currentTotal.toFixed(2)}</span></div>`;
 if(method === 'Cash') {
 html += `<div style="display:flex; justify-content:space-between;"><span>CASH:</span><span>₱${cashTendered.toFixed(2)}</span></div>`;
 html += `<div style="display:flex; justify-content:space-between; font-weight:900;"><span>CHANGE:</span><span>₱${change.toFixed(2)}</span></div>`;
 }
-html += `<div style="text-align:center; margin-top:8px; font-size:11px;">Thank you boss! Balik ka ulit!</div>`;
+html += `<div style="text-align:center; margin-top:6px; font-size:9px;">Thank you boss! Balik ka ulit!</div>`;
 
 document.getElementById('receipt').innerHTML = html;
 document.getElementById('receipt').style.display = 'block';
