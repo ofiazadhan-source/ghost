@@ -1,1 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store POS - Siomai Factory</title>
+<style>
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
+body {background:#FFF8E1; padding:15px; min-height:100vh;}
+.container { max-width:480px; margin:auto; background:white; border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; }
+h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
+.subtitle { text-align:center; color:#666; font-size:13px; margin-bottom:20px; }
+.back-btn { background:#757575; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; margin-bottom:15px; font-size:13px; font-weight:600; }
+.cat-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:15px; }
+.cat-btn { padding:12px 5px; border:none; border-radius:12px; background:linear-gradient(135deg, #FFCC80, #FFB74D); color:#B71C1C; font-weight:800; font-size:12px; cursor:pointer; text-align:center; }
+.cat-btn:active {transform:scale(0.95);}
+.cat-btn.active {background:#D32F2F; color:white;}
+.prod-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:110px; }
+.prod-card { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:12px; text-align:center; cursor:pointer; transition:0.2s; }
+.prod-card:active {transform:scale(0.95); background:#FFE0B2;}
+.prod-img { width:100%; height:70px; object-fit:cover; border-radius:8px; margin-bottom:6px; background:#f0f0f0; }
+.prod-name { font-weight:800; font-size:13px; color:#D32F2F; margin-bottom:4px; height:32px; overflow:hidden; }
+.prod-price { font-size:16px; font-weight:900; color:#2E7D32; margin-bottom:2px; }
+.prod-stock { font-size:10px; color:#666; }
+.cart-bar { position:fixed; bottom:0; left:0; right:0; background:white; border-top:3px solid #D32F2F; border-radius:20px 20px 0 0; padding:15px; box-shadow:0 -4px 15px rgba(0,0,0,0.2); max-width:480px; margin:auto; z-index:999; }
+.cart-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.cart-title { font-weight:800; color:#D32F2F; font-size:15px; }
+.cart-badge { background:#D32F2F; color:white; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
+.cart-list { max-height:200px; overflow-y:auto; margin-bottom:10px; }
+.cart-row { display:grid; grid-template-columns:20px 1fr 85px 65px; gap:6px; align-items:center; font-size:12px; padding:6px 0; border-bottom:1px dashed #eee; }
+.del-btn { background:#C62828; color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:16px; line-height:1; cursor:pointer; font-weight:800; }
+.qty-box { display:flex; gap:4px; align-items:center; }
+.qty-btn { width:26px; height:26px; border:none; background:#D32F2F; color:white; border-radius:5px; font-weight:800; cursor:pointer; font-size:15px; }
+.qty-input { width:45px; height:26px; text-align:center; border:1px solid #ddd; border-radius:5px; font-size:12px; }
+.item-name {font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.item-total {text-align:right; font-weight:700; color:#2E7D32;}
+.cart-sum { font-size:22px; font-weight:900; color:#D32F2F; text-align:right; margin:10px 0; }
+.checkout-btn { width:100%; padding:15px; background:#2E7D32; color:white; border:none; border-radius:12px; font-weight:800; font-size:16px; cursor:pointer; }
+.checkout-btn:disabled { background:#ccc; cursor:not-allowed; }
+.modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
+.modal.show {display:flex;}
+.modal-box { background:white; border-radius:15px; padding:20px; width:90%; max-width:400px; max-height:90vh; overflow-y:auto; }
+.modal-box h3 { color:#D32F2F; text-align:center; margin-bottom:15px; }
+.review-row { display:flex; justify-content:space-between; font-size:13px; padding:5px 0; border-bottom:1px solid #eee; }
+.review-total { font-size:24px; font-weight:900; color:#D32F2F; text-align:right; margin:12px 0; border-top:2px solid #D32F2F; padding-top:10px; }
+.cash-box { margin:12px 0; }
+.cash-box input { width:100%; padding:12px; font-size:18px; font-weight:700; text-align:right; border:2px solid #FFCC80; border-radius:8px; }
+.change { text-align:right; font-size:17px; font-weight:800; color:#2E7D32; margin-top:5px; }
+.gcash-box { margin:12px 0; display:none; }
+.gcash-box label { font-size:12px; color:#007BFF; font-weight:700; display:block; margin-bottom:5px; }
+.gcash-box input { width:100%; padding:8px; border:2px dashed #007BFF; border-radius:8px; cursor:pointer; }
+.gcash-box img { max-width:100px; margin-top:8px; border-radius:8px; border:2px solid #007BFF; display:none; }
+.pay-btn { width:100%; padding:15px; background:#2E7D32; color:white; border:none; border-radius:10px; font-weight:800; font-size:16px; cursor:pointer; }
+.cancel-btn { width:100%; padding:10px; margin-top:8px; background:#999; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
+.loading { text-align:center; padding:40px; color:#D32F2F; font-weight:700; }
+.receipt { display:none; font-family:monospace; font-size:14px; color:black; background:white; padding:10px; width:100%; max-width:300px; margin:auto; line-height:1.6; text-align:left; }
+@media print { @page {size: 80mm auto; margin: 0;} body * {visibility:hidden;}.receipt,.receipt * {visibility:visible;}.receipt { position:absolute; left:0; top:0; width:80mm; display:block!important; font-size:12px; } }
+</style>
+</head>
+<body>
+<div class="container">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+<h2>🛒 Store POS</h2>
+<p class="subtitle">Tap product to add to cart</p>
+<div class="cat-grid">
+<button class="cat-btn active" onclick="filterCat('all', this)">All</button>
+<button class="cat-btn" onclick="filterCat('65s', this)">65's</button>
+<button class="cat-btn" onclick="filterCat('30s', this)">30's</button>
+<button class="cat-btn" onclick="filterCat('big', this)">Big SIOMAI</button>
+<button class="cat-btn" onclick="filterCat('dumplings', this)">Dumplings</button>
+<button class="cat-btn" onclick="filterCat('siopao', this)">SIOPAO</button>
+<button class="cat-btn" onclick="filterCat('sauce', this)">Sauce</button>
+<button class="cat-btn" onclick="filterCat('others', this)">Others</button>
+</div>
+<div class="prod-grid" id="prodGrid"><div class="loading">Loading products...</div></div>
+</div>
 
+<div class="cart-bar">
+<div class="cart-head">
+<span class="cart-title">🛒 Cart</span>
+<span class="cart-badge" id="cartBadge">0</span>
+</div>
+<div class="cart-list" id="cartList">
+<p style="text-align:center; color:#999; font-size:12px; padding:20px 0;">No items yet</p>
+</div>
+<div class="cart-sum" id="cartSum">Total: ₱0</div>
+<button class="checkout-btn" id="checkoutBtn" onclick="showPayment()" disabled>Checkout</button>
+</div>
+
+<div class="modal" id="payModal">
+<div class="modal-box">
+<h3>📋 Review Order</h3>
+<div id="reviewList"></div>
+<div class="review-total" id="reviewTotal">Total: ₱0</div>
+<div id="cashSection">
+<div class="cash-box">
+<label style="font-size:12px; color:#666;">Cash Tendered</label>
+<input type="number" id="cashIn" placeholder="0" oninput="computeChange()">
+</div>
+<div class="change" id="change">Change: ₱0</div>
+</div>
+<div class="gcash-box" id="gcashBox">
+<label>📱 Gcash Proof - Auto Compress</label>
+<input type="file" id="gcashProof" accept="image/*">
+<img id="proofPreview">
+</div>
+<div style="margin:12px 0;">
+<label style="font-size:12px; color:#666; display:block; margin-bottom:5px;">Payment Method:</label>
+<select id="payMethod" onchange="togglePay()" style="width:100%; padding:12px; font-size:16px; border:2px solid #FFCC80; border-radius:8px; font-weight:700;">
+<option value="Cash">Cash</option>
+<option value="Gcash">Gcash</option>
+</select>
+</div>
+<button class="pay-btn" onclick="checkout()">Checkout</button>
+<button class="cancel-btn" onclick="closePayment()">Cancel</button>
+</div>
+</div>
+
+<div class="receipt" id="receipt"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let products = [];
+let cart = [];
+let curCat = 'all';
+let payType = 'Cash';
+let gcashFile = '';
+
+// AUTO COMPRESS GCASH PROOF - SAME SA PRODUCTS.HTML MO
+async function compressImageAuto(file) {
+return new Promise((resolve) => {
+const reader = new FileReader();
+reader.readAsDataURL(file);
+reader.onload = (event) => {
+const img = new Image();
+img.src = event.target.result;
+img.onload = () => {
+let quality = 0.8;
+let maxWidth = 600;
+let canvas = document.createElement('canvas');
+let ctx = canvas.getContext('2d');
+function tryCompress() {
+let width = img.width;
+let height = img.height;
+if(width > maxWidth) {
+height = (maxWidth / width) * height;
+width = maxWidth;
+}
+canvas.width = width;
+canvas.height = height;
+ctx.drawImage(img, 0, 0, width, height);
+let base64 = canvas.toDataURL('image/jpeg', quality);
+let sizeKB = Math.round(base64.length / 1024);
+if(sizeKB > 900 && quality > 0.3) {
+quality -= 0.1;
+tryCompress();
+} else if(sizeKB > 900 && maxWidth > 300) {
+maxWidth -= 50;
+quality = 0.8;
+tryCompress();
+} else {
+resolve(base64);
+}
+tryCompress();
+};
+});
+}
+
+// LOAD PRODUCTS - SAME FIELDS SA PRODUCTS.HTML MO
+async function loadProducts() {
+const grid = document.getElementById('prodGrid');
+grid.innerHTML = '<div class="loading">Loading products...</div>';
+try {
+let q = collection(db, "products");
+if(curCat!= 'all') {
+q = query(collection(db, "products"), where("category", "==", curCat));
+}
+const snap = await getDocs(q);
+products = [];
+snap.forEach(d => products.push({id: d.id,...d.data()}));
+renderProducts(products);
+} catch(error) {
+console.error('Load Error:', error);
+grid.innerHTML = '<p style="grid-column:span 2; text-align:center; color:#C62828; padding:40px;">Error: '+error.message+'</p>';
+}
+}
+
+function renderProducts(list) {
+const grid = document.getElementById('prodGrid');
+if(list.length === 0) {
+grid.innerHTML = '<p style="grid-column:span 2; text-align:center; color:#999; padding:40px;">No products yet. Add muna sa Products page boss!</p>';
+return;
+}
+let html = '';
+list.forEach(prod => {
+html += `
+<div class="prod-card" onclick="addToCart('${prod.id}')">
+${prod.image? `<img src="${prod.image}" class="prod-img">` : '<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;">No Image</div>'}
+<div class="prod-name">${prod.name}</div>
+<div class="prod-price">₱${prod.price}</div>
+<div class="prod-stock">Stock: ${prod.stock}</div>
+</div>
+`;
+});
+grid.innerHTML = html;
+}
+
+window.filterCat = (cat, btn) => {
+curCat = cat;
+document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+btn.classList.add('active');
+loadProducts();
+}
+
+window.addToCart = (prodId) => {
+const prod = products.find(p => p.id === prodId);
+if(!prod || prod.stock <= 0) {
+alert('Out of stock boss!');
+return;
+}
+const existing = cart.find(item => item.id === prodId);
+if(existing) {
+if(existing.qty >= prod.stock) {
+alert('Max stock reached boss!');
+return;
+}
+existing.qty++;
+} else {
+cart.push({id: prodId, name: prod.name, price: prod.price, qty: 1});
+}
+renderCart();
+}
+
+function renderCart() {
+const cartList = document.getElementById('cartList');
+const cartBadge = document.getElementById('cartBadge');
+const cartSum = document.getElementById('cartSum');
+const checkoutBtn = document.getElementById('checkoutBtn');
+let total = 0;
+let count = 0;
+if(cart.length === 0) {
+cartList.innerHTML = '<p style="text-align:center; color:#999; font-size:12px; padding:20px 0;">No items yet</p>';
+checkoutBtn.disabled = true;
+} else {
+let html = '';
+cart.forEach((item, i) => {
+const subtotal = item.price * item.qty;
+total += subtotal;
+count += item.qty;
+html += `
+<div class="cart-row">
+<button class="del-btn" onclick="removeItem(${i})">×</button>
+<span class="item-name">${item.name}</span>
+<div class="qty-box">
+<button class="qty-btn" onclick="changeQty(${i}, -1)">-</button>
+<input type="number" class="qty-input" value="${item.qty}" min="1" oninput="setQty(${i}, this.value)">
+<button class="qty-btn" onclick="changeQty(${i}, 1)">+</button>
+</div>
+<span class="item-total">₱${subtotal.toFixed(2)}</span>
+</div>
+`;
+});
+cartList.innerHTML = html;
+checkoutBtn.disabled = false;
+}
+cartBadge.innerText = count;
+cartSum.innerText = 'Total: ₱' + total.toFixed(2);
+}
+
+window.removeItem = (index) => {
+cart.splice(index, 1);
+renderCart();
+}
+
+window.changeQty = (index, delta) => {
+cart[index].qty += delta;
+const prod = products.find(p => p.id === cart[index].id);
+if(cart[index].qty < 1) cart[index].qty = 1;
+if(prod && cart[index].qty > prod.stock) cart[index].qty = prod.stock;
+renderCart();
+}
+
+window.setQty = (index, value) => {
+let qty = parseInt(value) || 1;
+const prod = products.find(p => p.id === cart[index].id);
+if(qty < 1) qty = 1;
+if(prod && qty > prod.stock) {
+qty = prod.stock;
+alert('Max stock: ' + prod.stock + ' only boss!');
+}
+cart[index].qty = qty;
+renderCart();
+}
+
+window.showPayment = () => {
+if(cart.length === 0) return alert('Cart is empty boss!');
+const modal = document.getElementById('payModal');
+modal.classList.add('show');
+const reviewList = document.getElementById('reviewList');
+const reviewTotal = document.getElementById('reviewTotal');
+const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+let html = '';
+cart.forEach(item => {
+html += `<div class="review-row"><span>${item.name} x${item.qty}</span><span>₱${(item.price * item.qty).toFixed(2)}</span></div>`;
+});
+reviewList.innerHTML = html;
+reviewTotal.innerText = 'Total: ₱' + total.toFixed(2);
+document.getElementById('cashIn').value = '';
+document.getElementById('gcashProof').value = '';
+document.getElementById('proofPreview').style.display = 'none';
+gcashFile = '';
+togglePay();
+}
+
+window.closePayment = () => {
+document.getElementById('payModal').classList.remove('show');
+payType = 'Cash';
+gcashFile = '';
+}
+
+window.computeChange = () => {
+const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+const cash = parseFloat(document.getElementById('cashIn').value) || 0;
+const change = cash - total;
+document.getElementById('change').innerText = 'Change: ₱' + (change >= 0? change.toFixed(2) : '0.00');
+document.getElementById('change').style.color = change >= 0? '#2E7D32' : '#C62828';
+}
+
+window.togglePay = () => {
+const methodEl = document.getElementById('payMethod');
+const cashSec = document.getElementById('cashSection');
+const gcashDiv = document.getElementById('gcashBox');
+if(!methodEl ||!cashSec ||!gcashDiv) return;
+const method = methodEl.value;
+payType = method;
+if(method === 'Cash') {
+cashSec.style.display = 'block';
+gcashDiv.style.display = 'none';
+} else {
+cashSec.style.display = 'none';
+gcashDiv.style.display = 'block';
+}
+}
+
+// GCASH AUTO COMPRESS EVENT
+document.getElementById('gcashProof').addEventListener('change', async function(e) {
+let file = e.target.files[0];
+if(file) {
+gcashFile = await compressImageAuto(file);
+document.getElementById('proofPreview').src = gcashFile;
+document.getElementById('proofPreview').style.display = 'block';
+alert('Proof uploaded ✓ ' + Math.round(gcashFile.length/1024) + 'KB');
+}
+});
+
+window.checkout = async () => {
+const method = document.getElementById('payMethod').value;
+const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+if(method === 'Cash') {
+const cash = parseFloat(document.getElementById('cashIn').value) || 0;
+if(cash < total) {
+alert('Insufficient cash boss!');
+return;
+}
+if(method === 'Gcash' &&!gcashFile) {
+alert('Upload Gcash proof first boss!');
+return;
+}
+try {
+for(let item of cart) {
+const prod = products.find(p => p.id === item.id);
+if(prod) {
+await updateDoc(doc(db, "products", item.id), {
+stock: prod.stock - item.qty
+});
+}
+await addDoc(collection(db, "sales"), {
+datetime: serverTimestamp(),
+items: cart,
+total: total,
+payment: method,
+proof: gcashFile
+});
+makeReceipt(method, total);
+printReceipt();
+alert(`✓ SALE COMPLETE\nPayment: ${method}\nTotal: ₱${total.toFixed(2)}\n\nThank you! Come again! 🙏`);
+cart = [];
+renderCart();
+closePayment();
+loadProducts();
+} catch(error) {
+alert('Checkout failed: ' + error.message);
+console.error(error);
+}
+}
+
+function makeReceipt(paymentMethod, total) {
+const now = new Date();
+let receiptHTML = `
+<div style="text-align:center; font-weight:bold; border-bottom:1px dashed #000; padding-bottom:5px; margin-bottom:5px;">
+SIOMAI FACTORY<br>
+77 AMOIS SAN MATEO RIZAL<br>
+Tel: 09052733253<br>
+${now.toLocaleString('en-PH')}<br>
+Cashier: ADMIN
+</div>
+`;
+cart.forEach(item => {
+receiptHTML += `
+<div style="margin-top:5px;">
+<div style="font-weight:bold;">${item.name}</div>
+<div style="display:flex; justify-content:space-between;">
+<span>${item.qty} x ₱${item.price}</span>
+<span>₱${(item.price * item.qty).toFixed(2)}</span>
+</div>
+</div>
+`;
+});
+receiptHTML += `
+<div style="border-top:1px dashed #000; margin-top:8px; padding-top:5px;">
+<div style="display:flex; justify-content:space-between;">
+<span>SUBTOTAL:</span>
+<span>₱${total.toFixed(2)}</span>
+</div>
+<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px;">
+<span>TOTAL:</span>
+<span>₱${total.toFixed(2)}</span>
+</div>
+<div>PAYMENT: ${paymentMethod}</div>
+`;
+if(paymentMethod === 'Cash') {
+const cash = parseFloat(document.getElementById('cashIn').value) || 0;
+receiptHTML += `
+<div>CASH: ₱${cash.toFixed(2)}</div>
+<div>CHANGE: ₱${(cash - total).toFixed(2)}</div>
+`;
+} else {
+receiptHTML += `<div>GCASH PROOF: UPLOADED ✓</div>`;
+}
+receiptHTML += `
+</div>
+<div style="text-align:center; border-top:1px dashed #000; margin-top:8px; padding-top:8px; font-weight:bold;">
+Thank you! Come again! 🙏
+</div>
+`;
+document.getElementById('receipt').innerHTML = receiptHTML;
+document.getElementById('receipt').style.display = 'block';
+}
+
+function printReceipt() {
+setTimeout(() => {
+window.print();
+setTimeout(() => {
+document.getElementById('receipt').style.display = 'none';
+}, 1000);
+}, 300);
+}
+
+loadProducts();
+</script>
+</body>
+</html>
