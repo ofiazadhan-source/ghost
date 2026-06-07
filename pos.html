@@ -3,40 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POS - Siomai Factory Tindahan</title>
+<title>Siomai Factory POS</title>
 <style>
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
 body {background:#FFF8E1; padding:15px; min-height:100vh;}
-.container { max-width:480px; margin:auto; background:white; border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; }
-h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
-.back-btn { background:#757575; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; margin-bottom:15px; font-size:13px; font-weight:600; }
-.menu-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; }
-.menu-btn { padding:35px 10px; border:none; border-radius:15px; background:linear-gradient(135deg, #FFCC80, #FFB74D); color:#B71C1C; font-weight:800; font-size:15px; cursor:pointer; text-align:center; line-height:1.4; }
+.container { max-width:480px; margin:auto; background:white; border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.12); }
+h2 { color:#D32F2F; text-align:center; margin-bottom:20px; font-size:24px; font-weight:800; }
+h2 span {font-size:28px; margin-right:5px;}
+.menu-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:15px; margin-bottom:25px; }
+.menu-btn { padding:45px 10px; border:none; border-radius:18px; background:linear-gradient(135deg, #FFCC80, #FFB74D); color:#D32F2F; font-weight:800; font-size:16px; cursor:pointer; text-align:center; box-shadow:0 3px 8px rgba(0,0,0,0.1); }
 .menu-btn:active {transform:scale(0.95); background:#FFA726;}
-.prod-list { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; }
+.cart-box { background:#FFF8E1; border:2px dashed #FFCC80; border-radius:15px; padding:18px; }
+.cart-box h3 { color:#D32F2F; margin-bottom:12px; font-size:18px; font-weight:800; }
+.cart-box h3 span {font-size:20px; margin-right:5px;}
+.cart-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:14px; border-bottom:1px solid #FFE0B2; }
+.cart-item button { width:24px; height:24px; padding:0; background:#C62828; color:white; border:none; border-radius:50%; font-size:16px; font-weight:bold; cursor:pointer; }
+.empty-text { text-align:center; color:#999; padding:20px 0; font-size:14px; }
+.cart-total { margin-top:12px; padding-top:12px; border-top:2px solid #D32F2F; font-weight:800; font-size:18px; color:#D32F2F; display:flex; justify-content:space-between; }
+.checkout-btn { width:100%; padding:15px; background:#2E7D32; color:white; border:none; border-radius:10px; font-weight:800; cursor:pointer; margin-top:15px; font-size:16px; }
+.checkout-btn:disabled { background:#ccc; cursor:not-allowed; }
+.modal {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:999;}
+.modal.active {display:flex;}
+.modal-content {background:white; padding:25px; border-radius:18px; width:90%; max-width:400px;}
+.modal-content h3 {color:#D32F2F; margin-bottom:18px; text-align:center; font-size:20px;}
+.input-group {margin-bottom:14px;}
+.input-group label { font-size:13px; font-weight:700; color:#D32F2F; margin-bottom:5px; display:block; }
+.input-group input,.input-group select { width:100%; padding:12px; border:2px solid #FFE0B2; border-radius:8px; font-size:14px; }
+.modal-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; margin-top:8px; font-size:15px; }
+.cancel-btn { background:#757575; }
+.receipt {display:none; background:white; padding:20px; font-family:monospace; font-size:12px; max-width:300px; margin:20px auto; border:1px dashed #000;}
+@media print {.container,.modal {display:none;}.receipt {display:block!important;}}
+.page {display:none;}.page.active {display:block;}
+.back-btn { background:#757575; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; margin-bottom:15px; font-size:13px; font-weight:600; }
+.prod-list { display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; }
 .prod-card { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:12px; text-align:center; cursor:pointer; position:relative; }
 .prod-card:active {background:#FFE0B2;}
 .prod-img { width:100%; height:70px; object-fit:cover; border-radius:8px; margin-bottom:6px; background:#f0f0f0; }
 .prod-name { font-weight:800; font-size:13px; color:#D32F2F; margin-bottom:4px; }
 .prod-price { font-size:12px; color:#666; font-weight:700; }
 .qty-badge { position:absolute; top:5px; left:5px; background:#2E7D32; color:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; }
-.cart-box { background:#FFF8E1; border:2px dashed #FFCC80; border-radius:12px; padding:15px; margin-top:20px; }
-.cart-box h3 { color:#D32F2F; margin-bottom:10px; font-size:16px; }
-.cart-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:13px; border-bottom:1px solid #FFE0B2; }
-.cart-item button { width:24px; height:24px; padding:0; background:#C62828; border-radius:50%; font-size:14px; margin:0; }
-.cart-total { margin-top:10px; padding-top:10px; border-top:2px solid #D32F2F; font-weight:800; font-size:18px; color:#D32F2F; display:flex; justify-content:space-between; }
-button { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; margin-top:10px; font-size:15px; }
-button:disabled { background:#ccc; cursor:not-allowed; }
-.modal {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:999;}
-.modal.active {display:flex;}
-.modal-content {background:white; padding:20px; border-radius:15px; width:90%; max-width:400px;}
-.modal-content h3 {color:#D32F2F; margin-bottom:15px; text-align:center;}
-.input-group {margin-bottom:12px;}
-.input-group label { font-size:12px; font-weight:700; color:#D32F2F; margin-bottom:4px; display:block; }
-.input-group input,.input-group select { width:100%; padding:12px; border:2px solid #FFE0B2; border-radius:8px; font-size:14px; }
-.receipt {display:none; background:white; padding:20px; font-family:monospace; font-size:12px; max-width:300px; margin:20px auto; border:1px dashed #000;}
-@media print {.container,.modal {display:none;}.receipt {display:block!important;}}
-.page {display:none;}.page.active {display:block;}
 .loading { text-align:center; padding:20px; color:#D32F2F; font-weight:700; }
 .empty-msg { grid-column:span 2; text-align:center; color:#999; padding:40px 0; font-size:13px; }
 #gcashStatus { margin-top:5px; color:green; font-size:12px; font-weight:700; }
@@ -44,10 +49,9 @@ button:disabled { background:#ccc; cursor:not-allowed; }
 </head>
 <body>
 <div class="container">
-<!-- PAGE 1: CATEGORIES -->
+<!-- PAGE 1: CATEGORIES - YAN YUNG SA SCREENSHOT MO BOSS -->
 <div id="categoryPage" class="page active">
-<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
-<h2>🛒 Siomai Factory POS</h2>
+<h2><span>🛒</span>Siomai Factory POS</h2>
 <div class="menu-grid">
 <button class="menu-btn" onclick="openCategory('65s')">65's</button>
 <button class="menu-btn" onclick="openCategory('30s')">30's</button>
@@ -60,10 +64,10 @@ button:disabled { background:#ccc; cursor:not-allowed; }
 </div>
 
 <div class="cart-box">
-<h3>🛒 Cart</h3>
-<div id="cartItems"><p style="text-align:center; color:#999;">Empty</p></div>
+<h3><span>🛒</span>Cart</h3>
+<div id="cartItems"><p class="empty-text">Empty</p></div>
 <div class="cart-total"><span>TOTAL:</span><span>₱<span id="cartTotal">0.00</span></span></div>
-<button onclick="checkout()">Checkout</button>
+<button class="checkout-btn" onclick="checkout()">Checkout</button>
 </div>
 </div>
 
@@ -101,8 +105,8 @@ button:disabled { background:#ccc; cursor:not-allowed; }
 <div id="gcashStatus"></div>
 </div>
 </div>
-<button onclick="placeOrder()">Place Order</button>
-<button onclick="closeModal()" style="background:#757575; margin-top:5px;">Cancel</button>
+<button class="modal-btn" onclick="placeOrder()">Place Order</button>
+<button class="modal-btn cancel-btn" onclick="closeModal()">Cancel</button>
 </div>
 </div>
 
@@ -203,7 +207,7 @@ function updateCart() {
 let cartDiv = document.getElementById('cartItems');
 let total = 0;
 if(cart.length == 0) {
-cartDiv.innerHTML = '<p style="text-align:center; color:#999;">Empty</p>';
+cartDiv.innerHTML = '<p class="empty-text">Empty</p>';
 } else {
 cartDiv.innerHTML = '';
 cart.forEach(item => {
@@ -244,7 +248,7 @@ document.getElementById('cashDiv').style.display = method == 'Cash'? 'block' : '
 document.getElementById('gcashDiv').style.display = method == 'GCash'? 'block' : 'none';
 }
 
-// AUTO COMPRESS - SAME SA PRODUCTS.HTML MO BOSS
+// AUTO COMPRESS GCASH - SAME SA PRODUCTS.HTML MO
 async function compressImageAuto(file) {
 return new Promise((resolve) => {
 const reader = new FileReader();
