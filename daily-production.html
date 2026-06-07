@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Production - Siomai Factory</title>
+<style>
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
+body {background:#FFF8E1; padding:15px; min-height:100vh;}
+.container { max-width:480px; margin:auto; background:white; border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; }
+h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
+.subtitle { text-align:center; color:#666; font-size:13px; margin-bottom:20px; }
+.back-btn { background:#757575; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; margin-bottom:15px; font-size:13px; font-weight:600; }
+
+.date-box { background:#FFF3E0; border:2px solid #FFCC80; border-radius:12px; padding:15px; margin-bottom:20px; }
+.date-box label { display:block; font-weight:800; color:#D32F2F; margin-bottom:8px; text-align:center; font-size:14px; }
+.date-box input { font-size:18px; padding:12px; border:2px solid #D32F2F; border-radius:10px; font-weight:800; color:#D32F2F; text-align:center; width:100%; }
+
+.cat-section { margin-bottom:25px; }
+.cat-title { background:#D32F2F; color:white; padding:14px; border-radius:12px; font-weight:900; font-size:15px; margin-bottom:12px; text-align:center; letter-spacing:0.5px; }
+
+.prod-item { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:12px; margin-bottom:10px; }
+.prod-name { font-weight:800; color:#D32F2F; font-size:14px; margin-bottom:8px; text-align:center; }
+.input-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.input-box { background:white; border:2px solid #FFB74D; border-radius:8px; padding:8px; }
+.input-box label { display:block; font-size:11px; color:#666; font-weight:700; margin-bottom:4px; text-align:left; }
+.input-box input { width:100%; border:none; background:transparent; font-size:20px; font-weight:900; color:#D32F2F; outline:none; text-align:center; }
+
+.total-box { background:linear-gradient(135deg, #2E7D32, #388E3C); color:white; border-radius:12px; padding:18px; text-align:center; margin:20px 0; }
+.total-box label { font-size:13px; opacity:0.9; font-weight:700; }
+.total-box div { font-size:36px; font-weight:900; margin-top:5px; }
+
+.btn-save { width:100%; padding:16px; background:#2E7D32; color:white; border:none; border-radius:12px; font-weight:800; font-size:16px; cursor:pointer; margin-bottom:10px; }
+.btn-print { width:100%; padding:16px; background:#1976D2; color:white; border:none; border-radius:12px; font-weight:800; font-size:16px; cursor:pointer; }
+
+.loading { text-align:center; padding:40px; color:#D32F2F; font-weight:700; }
+
+#prodReport {
+display:none; 
+font-family:monospace; 
+font-size:12px; 
+color:black; 
+background:white; 
+padding:10px; 
+width:80mm; 
+margin:0 auto; 
+line-height:1.4; 
+text-align:left; 
+border:none;
+}
+
+@media print {
+.no-print { display: none !important; }
+body * {visibility:hidden;}
+#prodReport,#prodReport * {visibility:visible;}
+#prodReport { position:absolute; left:0; top:0; width:80mm; display:block!important; font-size:10px; margin:0 !important; padding:2mm !important; }
+@page {size: 80mm auto; margin: 0;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+<h2>📦 Daily Production</h2>
+<p class="subtitle">Input per product boss</p>
+
+<div class="date-box">
+<label>Date</label>
+<input type="date" id="prodDate">
+</div>
+
+<div id="prodList"><div class="loading">Loading products...</div></div>
+
+<div class="total-box">
+<label>TOTAL GOOD PCS TODAY</label>
+<div id="totalGood">0</div>
+</div>
+
+<button class="btn-save" onclick="saveProduction()">💾 Save Production</button>
+<button class="btn-print" onclick="printReport()">🖨️ Print Report</button>
+
+<div id="prodReport"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let products = [];
+
+document.getElementById('prodDate').valueAsDate = new Date();
+
+async function loadProducts() {
+const list = document.getElementById('prodList');
+list.innerHTML = '<div class="loading">Loading products...</div>';
+try {
+const q = query(collection(db, "products"), orderBy("category"));
+const snap = await getDocs(q);
+products = [];
+snap.forEach(d => products.push({id: d.id,...d.data()}));
+renderProducts();
+} catch(error) {
+list.innerHTML = '<p style="text-align:center; color:#C62828; padding:40px;">Error: '+error.message+'</p>';
+}
+}
+
+function renderProducts() {
+const list = document.getElementById('prodList');
+if(products.length === 0) {
+list.innerHTML = '<p style="text-align:center; color:#999; padding:40px;">No products yet. Add muna sa Products page boss!</p>';
+return;
+}
+
+let html = '';
+let cats = ['65s','30s','big','dumplings','siopao','sauce','others'];
+let catNames = {'65s':'65\'s SIOMAI','30s':'30\'s SIOMAI','big':'BIG SIOMAI','dumplings':'DUMPLINGS','siopao':'SIOPAO','sauce':'SAUCE','others':'OTHERS'};
+
+cats.forEach(cat => {
+let catProds = products.filter(p => p.category === cat);
+if(catProds.length > 0) {
+html += `<div class="cat-section"><div class="cat-title">${catNames[cat]}</div>`;
+catProds.forEach(prod => {
+html += `
+<div class="prod-item">
+<div class="prod-name">${prod.name}</div>
+<div class="input-row">
+<div class="input-box">
+<label>Produced</label>
+<input type="number" id="prod_${prod.id}" value="0" min="0" oninput="computeTotal()">
+</div>
+<div class="input-box">
+<label>Damaged</label>
+<input type="number" id="dam_${prod.id}" value="0" min="0" oninput="computeTotal()">
+</div>
+</div>
+</div>
+`;
+});
+html += `</div>`;
+}
+});
+list.innerHTML = html;
+computeTotal();
+}
+
+window.computeTotal = () => {
+let total = 0;
+products.forEach(prod => {
+let p = parseInt(document.getElementById('prod_'+prod.id)?.value) || 0;
+let d = parseInt(document.getElementById('dam_'+prod.id)?.value) || 0;
+total += (p - d);
+});
+document.getElementById('totalGood').innerText = total;
+}
+
+window.saveProduction = async () => {
+let date = document.getElementById('prodDate').value;
+if(!date) {
+alert('Pili ka muna date boss!');
+return;
+}
+
+let prodData = [];
+products.forEach(prod => {
+let p = parseInt(document.getElementById('prod_'+prod.id)?.value) || 0;
+let d = parseInt(document.getElementById('dam_'+prod.id)?.value) || 0;
+if(p > 0 || d > 0) {
+prodData.push({
+productId: prod.id,
+productName: prod.name,
+category: prod.category,
+produced: p,
+damaged: d,
+good: p - d
+});
+}
+});
+
+if(prodData.length === 0) {
+alert('Walang input boss!');
+return;
+}
+
+try {
+await addDoc(collection(db, "production"), {
+date: date,
+timestamp: new Date(),
+items: prodData,
+totalGood: parseInt(document.getElementById('totalGood').innerText)
+});
+alert('Saved! Na-record na per product boss ✅');
+} catch(error) {
+alert('Error: ' + error.message);
+}
+}
+
+window.printReport = () => {
+let date = document.getElementById('prodDate').value;
+let html = `<div style="text-align:center; font-weight:900; font-size:13px;">SIOMAI FACTORY</div>
+<div style="text-align:center; font-size:9px; margin-bottom:4px;">Daily Production Report</div>
+<div style="border-bottom:1px dashed #000; margin:4px 0;"></div>
+<div>Date: ${date}</div>
+<div style="border-bottom:1px dashed #000; margin:4px 0;"></div>`;
+
+let total = 0;
+let cats = ['65s','30s','big','dumplings','siopao','sauce','others'];
+let catNames = {'65s':'65\'s','30s':'30\'s','big':'BIG','dumplings':'DUMPLINGS','siopao':'SIOPAO','sauce':'SAUCE','others':'OTHERS'};
+
+cats.forEach(cat => {
+let catProds = products.filter(p => p.category === cat);
+let hasData = false;
+catProds.forEach(prod => {
+let p = parseInt(document.getElementById('prod_'+prod.id)?.value) || 0;
+let d = parseInt(document.getElementById('dam_'+prod.id)?.value) || 0;
+if(p > 0 || d > 0) {
+if(!hasData) {
+html += `<div style="font-weight:800; margin-top:5px;">${catNames[cat]}</div>`;
+hasData = true;
+}
+html += `<div>${prod.name}: P${p} D${d} G${p-d}</div>`;
+total += (p - d);
+}
+});
+});
+
+html += `<div style="border-bottom:1px dashed #000; margin:4px 0;"></div>
+<div style="font-weight:900; font-size:12px;">TOTAL GOOD: ${total} pcs</div>
+<div style="text-align:center; margin-top:5px; font-size:8px;">${new Date().toLocaleString('en-PH')}</div>`;
+
+document.getElementById('prodReport').innerHTML = html;
+document.getElementById('prodReport').style.display = 'block';
+
+setTimeout(() => window.print(), 300);
+}
+
+loadProducts();
+</script>
+</body>
+</html>
