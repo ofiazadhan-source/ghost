@@ -3,76 +3,86 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Expenses - Siomai Factory</title>
+<title>Daily Expenses PRO - Siomai Factory</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
-body{background:#FFF8E1;padding:15px}
-.box{max-width:500px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 5px 20px rgba(0,0,0,.1);border-top:6px solid #D32F2F}
-h2{color:#D32F2F;text-align:center;margin-bottom:5px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:15px;min-height:100vh}
+.box{max-width:500px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:24px}
 .sub{text-align:center;color:#666;font-size:13px;margin-bottom:20px}
-.back{background:#757575;color:white;border:none;padding:10px 15px;border-radius:8px;cursor:pointer;margin-bottom:15px}
-.datebox{background:#FFF3E0;padding:15px;border-radius:12px;border:2px solid #FFCC80;margin-bottom:15px}
-.datebox label{display:block;text-align:center;color:#D32F2F;font-weight:800;margin-bottom:8px}
-.datebox input{width:100%;padding:12px;font-size:18px;font-weight:800;color:#D32F2F;border:2px solid #D32F2F;border-radius:10px;text-align:center}
-.card{background:#FFFDF7;border:2px solid #FFB74D;border-radius:12px;padding:10px;margin-bottom:8px}
-.r1{display:flex;gap:8px}
-.r1 input{padding:12px;border:2px solid #FFB74D;border-radius:8px;font-size:15px;font-weight:700}
-.desc{flex:1;color:#D32F2F}
-.price{width:90px;color:#2E7D32;text-align:right}
-.del{width:40px;background:#C62828;color:white;border:none;border-radius:8px;font-size:20px;font-weight:800;cursor:pointer}
-.r2{display:flex;gap:8px;margin-top:8px;align-items:center}
-.picbtn{flex:1;background:#1976D2;color:white;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
-.picbtn.ok{background:#2E7D32}
-.picfile{display:none}
-.picimg{width:38px;height:38px;border-radius:6px;border:2px solid #FFB74D;object-fit:cover;display:none}
-.kb{font-size:10px;color:#2E7D32;font-weight:700}
-.add{width:100%;padding:16px;background:#FF9800;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin:15px 0}
-.total{background:linear-gradient(135deg,#C62828,#D32F2F);color:white;padding:25px;border-radius:12px;text-align:center;margin-bottom:15px}
-.total label{font-size:13px;opacity:.9;font-weight:700}
-.total div{font-size:40px;font-weight:900;margin-top:5px}
-.btn{width:100%;padding:16px;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin-bottom:10px}
+.back{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-weight:600}
+.datecard{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:15px;margin-bottom:20px}
+.datecard label{display:block;font-weight:800;color:#D32F2F;margin-bottom:8px;text-align:center}
+.datecard input{font-size:18px;padding:14px;border:2px solid #D32F2F;border-radius:10px;font-weight:800;color:#D32F2F;text-align:center;width:100%}
+.item{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.num{font-weight:800;color:#D32F2F;font-size:13px}
+.del{background:#C62828;color:white;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:18px;font-weight:bold;line-height:1}
+.row{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px}
+.row input{padding:12px;border:2px solid #FFB74D;border-radius:8px;font-size:15px;font-weight:700;outline:none}
+.row input:focus{border-color:#D32F2F}
+.desc{color:#D32F2F}
+.amt{color:#2E7D32;text-align:right}
+.cam{display:flex;gap:8px;align-items:center;padding-top:8px;border-top:1px dashed #FFCC80}
+.cam button{flex:1;background:#1976D2;color:white;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+.cam button.ok{background:#2E7D32}
+.cam input{display:none}
+.prev{width:45px;height:45px;border-radius:8px;border:2px solid #FFB74D;object-fit:cover;display:none}
+.kb{font-size:11px;color:#2E7D32;font-weight:700;min-width:50px}
+.addbtn{width:100%;padding:16px;background:linear-gradient(135deg,#FF9800,#F57C00);color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin:15px 0;box-shadow:0 4px 12px rgba(255,152,0,0.3)}
+.total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:30px 20px;text-align:center;margin:20px 0;box-shadow:0 6px 20px rgba(198,40,40,0.4)}
+.total label{font-size:13px;opacity:0.9;font-weight:700;letter-spacing:1px}
+.total div{font-size:48px;font-weight:900;margin-top:8px;text-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:16px;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer}
 .save{background:#2E7D32;color:white}
 .print{background:#1976D2;color:white}
-#rec{display:none;font-family:monospace;font-size:12px;width:80mm;margin:0 auto;background:white;padding:10px;color:black;line-height:1.4}
-@media print{body *{visibility:hidden}#rec,#rec *{visibility:visible}#rec{position:absolute;left:0;top:0;width:80mm;display:block}@page{size:80mm auto;margin:0}}
+#ticket{display:none;font-family:'Courier New',monospace;font-size:11px;color:black;background:white;padding:8mm;width:80mm;margin:0 auto;line-height:1.5}
+#ticket h3{text-align:center;margin:0 0 5px 0;font-size:14px}
+#ticket.line{border-bottom:1px dashed #000;margin:5px 0}
+#ticket.row{display:flex;justify-content:space-between;margin:2px 0}
+#ticket.bold{font-weight:900;font-size:13px}
+@media print{body *{visibility:hidden}#ticket,#ticket *{visibility:visible}#ticket{position:absolute;left:0;top:0;width:80mm;display:block;margin:0;padding:5mm}}
 </style>
 </head>
 <body>
 <div class="box">
 <button class="back" onclick="location='index.html'">← Back to Menu</button>
-<h2>💸 Daily Expenses</h2>
-<p class="sub">Track mo gastos araw-araw boss</p>
+<h2>💸 Daily Expenses PRO</h2>
+<p class="sub">Looks like you really bought from supplier boss</p>
 
-<div class="datebox">
-<label>Date</label>
-<input type="date" id="d">
+<div class="datecard">
+<label>📅 Date of Purchase</label>
+<input type="date" id="date">
 </div>
 
 <div id="list"></div>
 
-<button class="add" id="add">+ Add Expense</button>
+<button class="addbtn" id="add">+ Add Expense Item</button>
 
 <div class="total">
 <label>TOTAL EXPENSES TODAY</label>
-<div id="tot">₱0.00</div>
+<div id="total">₱0.00</div>
 </div>
 
-<button class="btn save" id="save">💾 Save Expenses</button>
-<button class="btn print" id="print">🖨️ Print Report</button>
+<div class="actions">
+<button class="btn save" id="save">💾 Save to Database</button>
+<button class="btn print" id="print">🖨️ Print Official Receipt</button>
+</div>
 
-<div id="rec"></div>
+<div id="ticket"></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const cfg = {
 apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
 authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
 projectId: "dhan-siomai-pos-fe1e5",
-storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+storageBucket: "dhan-siomai-pos-fe1e5.appspot.com",
 messagingSenderId: "305932123173",
 appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
@@ -81,127 +91,152 @@ const app = initializeApp(cfg);
 const db = getFirestore(app);
 const st = getStorage(app);
 
-let c = 0;
-const imgs = {};
+let no = 0;
+const files = {};
 
-document.getElementById('d').valueAsDate = new Date();
+document.getElementById('date').valueAsDate = new Date();
 
-function addRow(){
-c++;
+function add() {
+no++;
 const div = document.createElement('div');
-div.className = 'card';
-div.id = 'x'+c;
-div.innerHTML = '<div class="r1"><input class="desc" placeholder="Description"><input type="number" class="price" placeholder="0" step="0.01"><button class="del" onclick="del('+c+')">×</button></div><div class="r2"><button class="picbtn" onclick="document.getElementById(\'f'+c+'\').click()">📷 Resibo</button><input type="file" id="f'+c+'" class="picfile" accept="image/*" capture="environment"><img id="i'+c+'" class="picimg"><span id="k'+c+'" class="kb"></span></div>';
+div.className = 'item';
+div.id = 'i' + no;
+div.innerHTML = '<div class="head"><span class="num">Item #' + no + '</span><button class="del" onclick="del(' + no + ')">×</button></div><div class="row"><input class="desc" placeholder="Description ex: Oil 1L"><input type="number" class="amt" placeholder="0.00" step="0.01"></div><div class="cam"><button onclick="document.getElementById(\'f' + no + '\').click()">📷 Attach Receipt</button><input type="file" id="f' + no + '" accept="image/*" capture="environment"><img id="p' + no + '" class="prev"><span id="s' + no + '" class="kb"></span></div>';
 document.getElementById('list').appendChild(div);
-document.getElementById('f'+c).onchange = function(e){compress(c,e.target.files[0])};
-div.querySelector('.price').oninput = calc;
-}
 
-function compress(id,file){
-if(!file)return;
-const r=new FileReader();
-r.onload=function(e){
-const img=new Image();
-img.onload=function(){
-const cv=document.createElement('canvas');
-const cx=cv.getContext('2d');
-let w=img.width,h=img.height;
-if(w>800){h=h*800/w;w=800}
-cv.width=w;cv.height=h;
-cx.drawImage(img,0,0,w,h);
-cv.toBlob(function(b){
-imgs[id]=b;
-document.getElementById('i'+id).src=URL.createObjectURL(b);
-document.getElementById('i'+id).style.display='block';
-document.getElementById('k'+id).textContent=(b.size/1024).toFixed(1)+'KB';
-document.querySelector('#x'+id+'.picbtn').className='picbtn ok';
-document.querySelector('#x'+id+'.picbtn').textContent='✅ Attached';
-},'image/jpeg',0.7);
+document.getElementById('f' + no).onchange = async function(e) {
+const file = e.target.files[0];
+if(!file) return;
+const btn = div.querySelector('button');
+btn.innerText = 'Compressing...';
+btn.disabled = true;
+
+const reader = new FileReader();
+reader.onload = function(ev) {
+const img = new Image();
+img.onload = function() {
+let w = img.width;
+let h = img.height;
+const max = 800;
+if(w > max) {
+h = h * max / w;
+w = max;
+}
+const cv = document.createElement('canvas');
+cv.width = w;
+cv.height = h;
+cv.getContext('2d').drawImage(img, 0, 0, w, h);
+cv.toBlob(function(blob) {
+files[no] = blob;
+document.getElementById('p' + no).src = URL.createObjectURL(blob);
+document.getElementById('p' + no).style.display = 'block';
+document.getElementById('s' + no).innerText = Math.round(blob.size/1024) + 'KB';
+btn.innerHTML = '✅ Receipt Attached';
+btn.className = 'ok';
+btn.disabled = false;
+}, 'image/jpeg', 0.7);
 };
-img.src=e.target.result;
+img.src = ev.target.result;
 };
-r.readAsDataURL(file);
+reader.readAsDataURL(file);
+};
+
+div.querySelector('.amt').oninput = total;
 }
 
-window.del=function(id){
-delete imgs[id];
-document.getElementById('x'+id).remove();
-calc();
+window.del = function(id) {
+delete files[id];
+document.getElementById('i' + id).remove();
+total();
 }
 
-function calc(){
-let s=0;
-const prices=document.querySelectorAll('.price');
-for(let i=0;i<prices.length;i++){
-s+=parseFloat(prices[i].value)||0;
-}
-document.getElementById('tot').textContent='₱'+s.toFixed(2);
-}
-
-async function saveExp(){
-const date=document.getElementById('d').value;
-if(!date){alert('Pili ka date boss!');return;}
-
-const items=[];
-const uploads=[];
-
-const cards=document.querySelectorAll('.card');
-for(let i=0;i<cards.length;i++){
-const card=cards[i];
-const id=card.id.slice(1);
-const desc=card.querySelector('.desc').value.trim();
-const price=parseFloat(card.querySelector('.price').value)||0;
-if(desc&&price>0){
-const obj={desc:desc,price:price,img:''};
-items.push(obj);
-if(imgs[id]){
-const path='expenses/'+date+'/'+Date.now()+'_'+id+'.jpg';
-const p=uploadBytes(ref(st,path),imgs[id]).then(function(snap){
-return getDownloadURL(snap.ref).then(function(url){obj.img=url;});
-uploads.push(p);
-}
-}
-
-if(items.length===0){alert('Walang nilagay boss!');return;}
-
-if(uploads.length>0){
-alert('Uploading pics... wait lang');
-await Promise.all(uploads);
-}
-
-await addDoc(collection(db,'expenses'),{
-date:date,
-items:items,
-total:parseFloat(document.getElementById('tot').textContent.slice(1)),
-created:new Date()
+function total() {
+let sum = 0;
+document.querySelectorAll('.amt').forEach(function(inp) {
+sum += parseFloat(inp.value) || 0;
 });
-alert('Saved na ✅');
+document.getElementById('total').innerText = '₱' + sum.toFixed(2);
 }
 
-function printExp(){
-const date=document.getElementById('d').value;
-let h='<div style="text-align:center;font-weight:900">SIOMAI FACTORY</div><div style="text-align:center;font-size:9px">Daily Expenses</div><div style="border-bottom:1px dashed #000;margin:4px 0"></div><div>Date: '+date+'</div><div style="border-bottom:1px dashed #000;margin:4px 0"></div>';
-let t=0;
-const cards=document.querySelectorAll('.card');
-for(let i=0;i<cards.length;i++){
-const card=cards[i];
-const d=card.querySelector('.desc').value.trim();
-const p=parseFloat(card.querySelector('.price').value)||0;
-if(d&&p>0){
-h+='<div style="display:flex;justify-content:space-between"><span>'+d+'</span><span>₱'+p.toFixed(2)+'</span></div>';
-t+=p;
-}
-h+='<div style="border-bottom:1px dashed #000;margin:4px 0"></div><div style="display:flex;justify-content:space-between;font-weight:900"><span>TOTAL:</span><span>₱'+t.toFixed(2)+'</span></div>';
-document.getElementById('rec').innerHTML=h;
-document.getElementById('rec').style.display='block';
-setTimeout(function(){window.print();},300);
+async function save() {
+const date = document.getElementById('date').value;
+if(!date) {
+alert('Select date first boss!');
+return;
 }
 
-document.getElementById('add').onclick=addRow;
-document.getElementById('save').onclick=saveExp;
-document.getElementById('print').onclick=printExp;
+const items = [];
+const cards = document.querySelectorAll('.item');
+for(let i = 0; i < cards.length; i++) {
+const card = cards[i];
+const id = card.id.slice(1);
+const desc = card.querySelector('.desc').value.trim();
+const amt = parseFloat(card.querySelector('.amt').value) || 0;
+if(desc && amt > 0) {
+let url = '';
+if(files[id]) {
+const path = 'receipts/' + date + '/' + Date.now() + '_' + id + '.jpg';
+const snap = await uploadBytes(ref(st, path), files[id]);
+url = await getDownloadURL(snap.ref);
+}
+items.push({description: desc, amount: amt, receipt: url});
+}
+}
 
-addRow();
+if(items.length === 0) {
+alert('Add at least 1 expense boss!');
+return;
+}
+
+const btn = document.getElementById('save');
+btn.disabled = true;
+btn.innerText = 'Saving...';
+
+await addDoc(collection(db, 'daily_expenses'), {
+date: date,
+items: items,
+total: parseFloat(document.getElementById('total').innerText.slice(1)),
+createdAt: serverTimestamp()
+});
+
+alert('✅ Saved successfully boss! Check Firebase > daily_expenses');
+btn.disabled = false;
+btn.innerText = '💾 Save to Database';
+
+document.getElementById('list').innerHTML = '';
+no = 0;
+Object.keys(files).forEach(k => delete files[k]);
+total();
+add();
+}
+
+function print() {
+const date = document.getElementById('date').value;
+let html = '<h3>SIOMAI FACTORY</h3><div style="text-align:center;font-size:9px">Daily Expenses Receipt</div><div class="line"></div><div>Date: ' + date + '</div><div>Time: ' + new Date().toLocaleTimeString() + '</div><div class="line"></div>';
+
+document.querySelectorAll('.item').forEach(function(card) {
+const d = card.querySelector('.desc').value.trim();
+const a = parseFloat(card.querySelector('.amt').value) || 0;
+if(d && a > 0) {
+html += '<div class="row"><span>' + d + '</span><span>₱' + a.toFixed(2) + '</span></div>';
+}
+});
+
+html += '<div class="line"></div><div class="row bold"><span>TOTAL:</span><span>₱' + document.getElementById('total').innerText.slice(1) + '</span></div><div style="text-align:center;margin-top:10px;font-size:9px">Thank you boss!</div>';
+
+document.getElementById('ticket').innerHTML = html;
+document.getElementById('ticket').style.display = 'block';
+setTimeout(function() {
+window.print();
+document.getElementById('ticket').style.display = 'none';
+}, 300);
+}
+
+document.getElementById('add').onclick = add;
+document.getElementById('save').onclick = save;
+document.getElementById('print').onclick = print;
+
+add();
 </script>
 </body>
 </html>
