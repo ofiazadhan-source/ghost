@@ -13,16 +13,47 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 .back{background:#757575;color:white;border:none;padding:8px 15px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-weight:600;font-size:13px}
 .datecard{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:18px}
 .datecard label{display:block;font-weight:800;color:#D32F2F;margin-bottom:6px;text-align:center;font-size:13px}
-.datecard input{font-size:16px;padding:10px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:42px}
+.datecard input{font-size:16px;padding:12px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%}
 .item{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:10px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
 .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .num{font-weight:800;color:#D32F2F;font-size:12px}
 .del{background:#C62828;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:16px;font-weight:bold;line-height:1}
-.row{display:grid;grid-template-columns:2fr 1fr;gap:6px;margin-bottom:6px}
-.row input{padding:8px 10px;border:2px solid #FFB74D;border-radius:8px;font-size:13px;font-weight:600;outline:none;height:38px}
-.row input:focus{border-color:#D32F2F}
-.desc{color:#D32F2F}
-.amt{color:#2E7D32;text-align:right;font-size:14px;font-weight:700}
+
+.row{display:grid;grid-template-columns:1fr 70px;gap:6px;margin-bottom:6px;align-items:center}
+
+/* DESC - mahaba pa din */
+.row input.desc{
+  width:100%;
+  border:2px solid #FFB74D;
+  background:white;
+  border-radius:8px;
+  padding:8px 10px;
+  font-size:13px;
+  font-weight:600;
+  outline:none;
+  color:#D32F2F;
+  text-align:left;
+  box-sizing:border-box;
+}
+.row input.desc:focus{border-color:#D32F2F}
+
+/* AMOUNT - SQUARE NA BOSS */
+.row input.amt{
+  width:70px;
+  height:70px;
+  border:2px solid #2E7D32;
+  background:#F1F8F4;
+  border-radius:12px;
+  padding:5px;
+  font-size:18px;
+  font-weight:900;
+  outline:none;
+  color:#2E7D32;
+  text-align:center;
+  box-sizing:border-box;
+}
+.row input.amt:focus{border-color:#1B5E20;background:#E8F5E9}
+
 .cam{display:flex;gap:6px;align-items:center;padding-top:6px;border-top:1px dashed #FFCC80}
 .cam button{flex:1;background:#1976D2;color:white;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
 .cam button.ok{background:#2E7D32}
@@ -93,7 +124,6 @@ const st = getStorage(app);
 
 let no = 0;
 const files = {};
-
 document.getElementById('date').valueAsDate = new Date();
 
 function add() {
@@ -101,7 +131,7 @@ no++;
 const div = document.createElement('div');
 div.className = 'item';
 div.id = 'i' + no;
-div.innerHTML = '<div class="head"><span class="num">Item #' + no + '</span><button class="del" onclick="del(' + no + ')">×</button></div><div class="row"><input class="desc" placeholder="Desc ex: Oil 1L"><input type="number" class="amt" placeholder="0.00" step="0.01"></div><div class="cam"><button onclick="document.getElementById(\'f' + no + '\').click()">📷 Receipt</button><input type="file" id="f' + no + '" accept="image/*" capture="environment"><img id="p' + no + '" class="prev"><span id="s' + no + '" class="kb"></span></div>';
+div.innerHTML = '<div class="head"><span class="num">Item #' + no + '</span><button class="del" onclick="del(' + no + ')">×</button></div><div class="row"><input class="desc" placeholder="Desc ex: Oil 1L"><input type="number" class="amt" placeholder="0" step="0.01"></div><div class="cam"><button onclick="document.getElementById(\'f' + no + '\').click()">📷 Receipt</button><input type="file" id="f' + no + '" accept="image/*" capture="environment"><img id="p' + no + '" class="prev"><span id="s' + no + '" class="kb"></span></div>';
 document.getElementById('list').appendChild(div);
 
 document.getElementById('f' + no).onchange = async function(e) {
@@ -110,7 +140,6 @@ if(!file) return;
 const btn = div.querySelector('button');
 btn.innerText = 'Compressing...';
 btn.disabled = true;
-
 const reader = new FileReader();
 reader.onload = function(ev) {
 const img = new Image();
@@ -140,7 +169,6 @@ img.src = ev.target.result;
 };
 reader.readAsDataURL(file);
 };
-
 div.querySelector('.amt').oninput = total;
 }
 
@@ -164,7 +192,6 @@ if(!date) {
 alert('Select date first boss!');
 return;
 }
-
 const items = [];
 const cards = document.querySelectorAll('.item');
 for(let i = 0; i < cards.length; i++) {
@@ -181,39 +208,38 @@ url = await getDownloadURL(snap.ref);
 }
 items.push({description: desc, amount: amt, receipt: url});
 }
-}
-
 if(items.length === 0) {
 alert('Add at least 1 expense boss!');
 return;
 }
-
 const btn = document.getElementById('save');
 btn.disabled = true;
 btn.innerText = 'Saving...';
-
+try {
 await addDoc(collection(db, 'daily_expenses'), {
 date: date,
 items: items,
 total: parseFloat(document.getElementById('total').innerText.slice(1)),
 createdAt: serverTimestamp()
 });
-
 alert('✅ Saved successfully boss!');
 btn.disabled = false;
 btn.innerText = '💾 Save to Database';
-
 document.getElementById('list').innerHTML = '';
 no = 0;
 Object.keys(files).forEach(k => delete files[k]);
 total();
 add();
+} catch(e) {
+alert('Error: ' + e.message);
+btn.disabled = false;
+btn.innerText = '💾 Save to Database';
+}
 }
 
 function print() {
 const date = document.getElementById('date').value;
 let html = '<h3>SIOMAI FACTORY</h3><div style="text-align:center;font-size:9px">Daily Expenses Receipt</div><div class="line"></div><div>Date: ' + date + '</div><div>Time: ' + new Date().toLocaleTimeString() + '</div><div class="line"></div>';
-
 document.querySelectorAll('.item').forEach(function(card) {
 const d = card.querySelector('.desc').value.trim();
 const a = parseFloat(card.querySelector('.amt').value) || 0;
@@ -221,9 +247,7 @@ if(d && a > 0) {
 html += '<div class="row"><span>' + d + '</span><span>₱' + a.toFixed(2) + '</span></div>';
 }
 });
-
 html += '<div class="line"></div><div class="row bold"><span>TOTAL:</span><span>₱' + document.getElementById('total').innerText.slice(1) + '</span></div><div style="text-align:center;margin-top:10px;font-size:9px">Thank you boss!</div>';
-
 document.getElementById('ticket').innerHTML = html;
 document.getElementById('ticket').style.display = 'block';
 setTimeout(function() {
@@ -235,7 +259,6 @@ document.getElementById('ticket').style.display = 'none';
 document.getElementById('add').onclick = add;
 document.getElementById('save').onclick = save;
 document.getElementById('print').onclick = print;
-
 add();
 </script>
 </body>
