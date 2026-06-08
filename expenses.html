@@ -61,12 +61,19 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 .btn{padding:14px;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer}
 .save{background:#2E7D32;color:white}
 .print{background:#1976D2;color:white}
+
+/* FIXED TICKET CSS - may. para di mag-clash */
 #ticket{display:none;font-family:'Courier New',monospace;font-size:11px;color:black;background:white;padding:8mm;width:80mm;margin:0 auto;line-height:1.5}
 #ticket h3{text-align:center;margin:0 0 5px 0;font-size:14px}
 #ticket.line{border-bottom:1px dashed #000;margin:5px 0}
 #ticket.row{display:flex;justify-content:space-between;margin:2px 0}
 #ticket.bold{font-weight:900;font-size:13px}
-@media print{body *{visibility:hidden}#ticket,#ticket *{visibility:visible}#ticket{position:absolute;left:0;top:0;width:80mm;display:block;margin:0;padding:5mm}}
+
+@media print{
+  body *{visibility:hidden}
+  #ticket,#ticket *{visibility:visible}
+  #ticket{position:absolute;left:0;top:0;width:80mm;display:block;margin:0;padding:5mm}
+  @page{size:80mm auto;margin:0}
 </style>
 </head>
 <body>
@@ -202,7 +209,7 @@ url = await getDownloadURL(snap.ref);
 }
 items.push({description: desc, amount: amt, receipt: url});
 }
-} // <-- END NG FOR LOOP
+}
 
 if(items.length === 0) {
 alert('Add at least 1 expense boss!');
@@ -232,11 +239,12 @@ alert('Error: ' + e.message);
 btn.disabled = false;
 btn.innerText = '💾 Save to Database';
 }
-} // <-- ITO YUNG KULANG NA } SA SAVE FUNCTION
+}
 
 function print() {
 const date = document.getElementById('date').value;
 let html = '<h3>SIOMAI FACTORY</h3><div style="text-align:center;font-size:9px">Daily Expenses Receipt</div><div class="line"></div><div>Date: ' + date + '</div><div>Time: ' + new Date().toLocaleTimeString() + '</div><div class="line"></div>';
+
 document.querySelectorAll('.item').forEach(function(card) {
 const d = card.querySelector('.desc').value.trim();
 const a = parseFloat(card.querySelector('.amt').value) || 0;
@@ -244,13 +252,18 @@ if(d && a > 0) {
 html += '<div class="row"><span>' + d + '</span><span>₱' + a.toFixed(2) + '</span></div>';
 }
 });
+
 html += '<div class="line"></div><div class="row bold"><span>TOTAL:</span><span>₱' + document.getElementById('total').innerText.slice(1) + '</span></div><div style="text-align:center;margin-top:10px;font-size:9px">Thank you boss!</div>';
-document.getElementById('ticket').innerHTML = html;
-document.getElementById('ticket').style.display = 'block';
+
+const ticket = document.getElementById('ticket');
+ticket.innerHTML = html;
+ticket.style.display = 'block';
+
+// 500ms para sure render bago print
 setTimeout(function() {
 window.print();
-document.getElementById('ticket').style.display = 'none';
-}, 300);
+ticket.style.display = 'none';
+}, 500);
 }
 
 document.getElementById('add').onclick = add;
