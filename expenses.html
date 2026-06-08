@@ -8,60 +8,33 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
 body{background:#FFF8E1;padding:15px;min-height:100vh}
 .box{max-width:500px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
-h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
-.sub{text-align:center;color:#666;font-size:12px;margin-bottom:18px}
-.back{background:#757575;color:white;border:none;padding:8px 15px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-weight:600;font-size:13px}
-.datecard{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:18px}
-.datecard label{display:block;font-weight:800;color:#D32F2F;margin-bottom:6px;text-align:center;font-size:13px}
-.datecard input{font-size:16px;padding:10px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:42px}
-.item{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:10px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
-.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.num{font-weight:800;color:#D32F2F;font-size:12px}
-.del{background:#C62828;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:16px;font-weight:bold;line-height:1}
-
-/* 55% + 25% + 20% = 100% SAKTO BOSS */
-.row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
-.row input{
-  border:2px solid #FFB74D;
-  border-radius:8px;
-  padding:6px 8px;
-  font-size:13px;
-  font-weight:600;
-  outline:none;
-  height:38px;
-}
+h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:24px}
+.sub{text-align:center;color:#666;font-size:13px;margin-bottom:20px}
+.back{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-weight:600}
+.datecard{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:15px;margin-bottom:20px}
+.datecard label{display:block;font-weight:800;color:#D32F2F;margin-bottom:8px;text-align:center}
+.datecard input{font-size:18px;padding:14px;border:2px solid #D32F2F;border-radius:10px;font-weight:800;color:#D32F2F;text-align:center;width:100%}
+.item{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.num{font-weight:800;color:#D32F2F;font-size:13px}
+.del{background:#C62828;color:white;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:18px;font-weight:bold;line-height:1}
+.row{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px}
+.row input{padding:12px;border:2px solid #FFB74D;border-radius:8px;font-size:15px;font-weight:700;outline:none}
 .row input:focus{border-color:#D32F2F}
-
-.desc{width:55%;color:#D32F2F}
-.amt{width:25%;color:#2E7D32;text-align:center;font-size:14px;font-weight:700}
-
-/* X BUTTON 20% MAX 45px */
-.delbtn{
-  width:20%;
-  max-width:45px;
-  background:#C62828;
-  color:white;
-  border:none;
-  border-radius:8px;
-  height:38px;
-  font-size:18px;
-  font-weight:800;
-  cursor:pointer;
-  line-height:1;
-}
-
-.cam{display:flex;gap:6px;align-items:center;padding-top:6px;border-top:1px dashed #FFCC80;margin-top:6px}
-.cam button{flex:1;background:#1976D2;color:white;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+.desc{color:#D32F2F}
+.amt{color:#2E7D32;text-align:right}
+.cam{display:flex;gap:8px;align-items:center;padding-top:8px;border-top:1px dashed #FFCC80}
+.cam button{flex:1;background:#1976D2;color:white;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
 .cam button.ok{background:#2E7D32}
 .cam input{display:none}
-.prev{width:38px;height:38px;border-radius:6px;border:2px solid #FFB74D;object-fit:cover;display:none}
-.kb{font-size:10px;color:#2E7D32;font-weight:700;min-width:45px}
-.addbtn{width:100%;padding:14px;background:linear-gradient(135deg,#FF9800,#F57C00);color:white;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;margin:12px 0;box-shadow:0 4px 12px rgba(255,152,0,0.3)}
-.total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:25px 20px;text-align:center;margin:18px 0;box-shadow:0 6px 20px rgba(198,40,40,0.4)}
-.total label{font-size:12px;opacity:0.9;font-weight:700;letter-spacing:1px}
-.total div{font-size:42px;font-weight:900;margin-top:6px;text-shadow:0 2px 8px rgba(0,0,0,0.3)}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.btn{padding:14px;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer}
+.prev{width:45px;height:45px;border-radius:8px;border:2px solid #FFB74D;object-fit:cover;display:none}
+.kb{font-size:11px;color:#2E7D32;font-weight:700;min-width:50px}
+.addbtn{width:100%;padding:16px;background:linear-gradient(135deg,#FF9800,#F57C00);color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin:15px 0;box-shadow:0 4px 12px rgba(255,152,0,0.3)}
+.total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:30px 20px;text-align:center;margin:20px 0;box-shadow:0 6px 20px rgba(198,40,40,0.4)}
+.total label{font-size:13px;opacity:0.9;font-weight:700;letter-spacing:1px}
+.total div{font-size:48px;font-weight:900;margin-top:8px;text-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:16px;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer}
 .save{background:#2E7D32;color:white}
 .print{background:#1976D2;color:white}
 #ticket{display:none;font-family:'Courier New',monospace;font-size:11px;color:black;background:white;padding:8mm;width:80mm;margin:0 auto;line-height:1.5}
@@ -120,6 +93,7 @@ const st = getStorage(app);
 
 let no = 0;
 const files = {};
+
 document.getElementById('date').valueAsDate = new Date();
 
 function add() {
@@ -127,15 +101,16 @@ no++;
 const div = document.createElement('div');
 div.className = 'item';
 div.id = 'i' + no;
-div.innerHTML = '<div class="head"><span class="num">Item #' + no + '</span><button class="del" onclick="del(' + no + ')">×</button></div><div class="row"><input class="desc" placeholder="Desc ex: Oil 1L"><input type="number" class="amt" placeholder="0.00" step="0.01"><button class="delbtn" onclick="del(' + no + ')">×</button></div><div class="cam"><button onclick="document.getElementById(\'f' + no + '\').click()">📷 Receipt</button><input type="file" id="f' + no + '" accept="image/*" capture="environment"><img id="p' + no + '" class="prev"><span id="s' + no + '" class="kb"></span></div>';
+div.innerHTML = '<div class="head"><span class="num">Item #' + no + '</span><button class="del" onclick="del(' + no + ')">×</button></div><div class="row"><input class="desc" placeholder="Description ex: Oil 1L"><input type="number" class="amt" placeholder="0.00" step="0.01"></div><div class="cam"><button onclick="document.getElementById(\'f' + no + '\').click()">📷 Attach Receipt</button><input type="file" id="f' + no + '" accept="image/*" capture="environment"><img id="p' + no + '" class="prev"><span id="s' + no + '" class="kb"></span></div>';
 document.getElementById('list').appendChild(div);
 
 document.getElementById('f' + no).onchange = async function(e) {
 const file = e.target.files[0];
 if(!file) return;
-const btn = div.querySelector('.cam button');
+const btn = div.querySelector('button');
 btn.innerText = 'Compressing...';
 btn.disabled = true;
+
 const reader = new FileReader();
 reader.onload = function(ev) {
 const img = new Image();
@@ -156,7 +131,7 @@ files[no] = blob;
 document.getElementById('p' + no).src = URL.createObjectURL(blob);
 document.getElementById('p' + no).style.display = 'block';
 document.getElementById('s' + no).innerText = Math.round(blob.size/1024) + 'KB';
-btn.innerHTML = '✅ Attached';
+btn.innerHTML = '✅ Receipt Attached';
 btn.className = 'ok';
 btn.disabled = false;
 }, 'image/jpeg', 0.7);
@@ -165,13 +140,13 @@ img.src = ev.target.result;
 };
 reader.readAsDataURL(file);
 };
+
 div.querySelector('.amt').oninput = total;
 }
 
 window.del = function(id) {
 delete files[id];
-const el = document.getElementById('i' + id);
-if(el) el.remove();
+document.getElementById('i' + id).remove();
 total();
 }
 
@@ -189,6 +164,7 @@ if(!date) {
 alert('Select date first boss!');
 return;
 }
+
 const items = [];
 const cards = document.querySelectorAll('.item');
 for(let i = 0; i < cards.length; i++) {
@@ -205,38 +181,39 @@ url = await getDownloadURL(snap.ref);
 }
 items.push({description: desc, amount: amt, receipt: url});
 }
+}
+
 if(items.length === 0) {
 alert('Add at least 1 expense boss!');
 return;
 }
+
 const btn = document.getElementById('save');
 btn.disabled = true;
 btn.innerText = 'Saving...';
-try {
+
 await addDoc(collection(db, 'daily_expenses'), {
 date: date,
 items: items,
 total: parseFloat(document.getElementById('total').innerText.slice(1)),
 createdAt: serverTimestamp()
 });
-alert('✅ Saved successfully boss!');
+
+alert('✅ Saved successfully boss! Check Firebase > daily_expenses');
 btn.disabled = false;
 btn.innerText = '💾 Save to Database';
+
 document.getElementById('list').innerHTML = '';
 no = 0;
 Object.keys(files).forEach(k => delete files[k]);
 total();
 add();
-} catch(e) {
-alert('Error: ' + e.message);
-btn.disabled = false;
-btn.innerText = '💾 Save to Database';
-}
 }
 
 function print() {
 const date = document.getElementById('date').value;
 let html = '<h3>SIOMAI FACTORY</h3><div style="text-align:center;font-size:9px">Daily Expenses Receipt</div><div class="line"></div><div>Date: ' + date + '</div><div>Time: ' + new Date().toLocaleTimeString() + '</div><div class="line"></div>';
+
 document.querySelectorAll('.item').forEach(function(card) {
 const d = card.querySelector('.desc').value.trim();
 const a = parseFloat(card.querySelector('.amt').value) || 0;
@@ -244,7 +221,9 @@ if(d && a > 0) {
 html += '<div class="row"><span>' + d + '</span><span>₱' + a.toFixed(2) + '</span></div>';
 }
 });
+
 html += '<div class="line"></div><div class="row bold"><span>TOTAL:</span><span>₱' + document.getElementById('total').innerText.slice(1) + '</span></div><div style="text-align:center;margin-top:10px;font-size:9px">Thank you boss!</div>';
+
 document.getElementById('ticket').innerHTML = html;
 document.getElementById('ticket').style.display = 'block';
 setTimeout(function() {
@@ -256,6 +235,7 @@ document.getElementById('ticket').style.display = 'none';
 document.getElementById('add').onclick = add;
 document.getElementById('save').onclick = save;
 document.getElementById('print').onclick = print;
+
 add();
 </script>
 </body>
