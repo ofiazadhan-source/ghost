@@ -28,19 +28,14 @@ h2{color:#D32F2F;text-align:center;margin-bottom:4px;font-size:20px}
   outline:none;
   height:32px;
   box-sizing:border-box;
-}
-.row input:focus{border-color:#D32F2F}
-.desc{color:#D32F2F}
-.amt{color:#2E7D32;text-align:right;font-size:13px;font-weight:700}
-
-/* DAILY PRODUCTION FIX - para pumarehas kay Chrome mobile */
-.row input{
   min-height:auto!important;
   line-height:normal!important;
   -webkit-appearance:none!important;
   appearance:none!important;
 }
-
+.row input:focus{border-color:#D32F2F}
+.desc{color:#D32F2F}
+.amt{color:#2E7D32;text-align:right;font-size:13px;font-weight:700}
 .cam{display:flex;gap:5px;align-items:center;padding-top:5px;border-top:1px dashed #FFCC80}
 .cam button{flex:1;background:#1976D2;color:white;border:none;padding:6px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer}
 .cam button.ok{background:#2E7D32}
@@ -199,6 +194,10 @@ if(items.length === 0) {
 alert('Add 1 item boss!');
 return;
 }
+const btn = document.getElementById('save');
+btn.disabled = true;
+btn.innerText = 'Saving...';
+try {
 await addDoc(collection(db, 'daily_expenses'), {
 date: date,
 items: items,
@@ -211,6 +210,12 @@ no = 0;
 Object.keys(files).forEach(k => delete files[k]);
 total();
 add();
+} catch(e) {
+alert('Error: ' + e.message);
+} finally {
+btn.disabled = false;
+btn.innerText = '💾 Save';
+}
 }
 
 function print() {
