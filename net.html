@@ -4,25 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Net Profit - DHAN SIOMAI</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
-body{background:#FFF8E1}
-.header{background:linear-gradient(135deg,#D32F2F,#B71C1C);color:white;padding:15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
-.header h1{font-size:18px;font-weight:700}
-.back-btn{color:#D32F2F;background:white;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px}
-.container{padding:15px;max-width:800px;margin:0 auto}
-.card{background:white;border-radius:16px;padding:20px;box-shadow:0 3px 10px rgba(0,0,0,0.08);margin-bottom:15px}
-.card h3{color:#D32F2F;margin-bottom:15px;font-size:16px;font-weight:600}
-.filter-row{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
-.filter-row input{flex:1;min-width:140px;padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:14px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:#FFF8E1;padding:15px}
+.header{background:#D32F2F;color:white;padding:15px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.header h1{font-size:18px}
+.back-btn{color:#D32F2F;background:white;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px;font-size:13px}
+.card{background:white;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.card h3{color:#D32F2F;margin-bottom:15px;font-size:16px}
+.filter-row{display:flex;gap:10px;margin-bottom:15px}
+.filter-row input{flex:1;padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:14px}
 .filter-row button{padding:10px 20px;background:#D32F2F;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stat-box{background:#E8F5E9;padding:15px;border-radius:12px;text-align:center}
-.stat-box h4{font-size:12px;color:#666;margin-bottom:5px;font-weight:600}
+.stat-box h4{font-size:12px;color:#666;margin-bottom:5px}
 .stat-box p{font-size:24px;font-weight:700;color:#2E7D32}
 .sale-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:10px}
-.sale-head{display:flex;justify-content:space-between;margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed #FFCC80}
+.sale-head{display:flex;justify-content:space-between;margin-bottom:8px}
 .sale-date{font-weight:700;color:#D32F2F;font-size:13px}
 .sale-total{font-weight:800;color:#2E7D32;font-size:16px}
 .sale-items{font-size:12px;color:#555;line-height:1.6}
@@ -35,13 +33,12 @@ body{background:#FFF8E1}
 <a href="index.html" class="back-btn">← Back</a>
 </div>
 
-<div class="container">
 <div class="card">
-<h3>📊 Filter Date - Auto Load Today</h3>
+<h3>📊 Auto Load Today</h3>
 <div class="filter-row">
 <input type="date" id="dateFrom">
 <input type="date" id="dateTo">
-<button onclick="loadSales()">Load</button>
+<button id="loadBtn">Load</button>
 </div>
 <div class="stats-grid">
 <div class="stat-box">
@@ -59,7 +56,7 @@ body{background:#FFF8E1}
 <h3>📋 Sales List</h3>
 <div id="salesList" class="loading">Loading today sales...</div>
 </div>
-</div>
+
 <script type="module">
 import { db } from './firebase-config.js';
 import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -68,12 +65,10 @@ const today = new Date().toISOString().split('T')[0];
 document.getElementById('dateFrom').value = today;
 document.getElementById('dateTo').value = today;
 
-window.loadSales = async function() {
+async function loadSales() {
   const from = document.getElementById('dateFrom').value;
   const to = document.getElementById('dateTo').value;
   const listDiv = document.getElementById('salesList');
-
-  if(!from ||!to) {alert('Select date range boss!'); return;}
 
   listDiv.innerHTML = '<div class="loading">Loading sales...</div>';
   let totalSales = 0; let count = 0;
@@ -83,7 +78,7 @@ window.loadSales = async function() {
     const snap = await getDocs(q);
 
     if(snap.empty) {
-      listDiv.innerHTML = '<div class="loading">Wala pang sales sa date na to boss</div>';
+      listDiv.innerHTML = '<div class="loading">Wala pang sales ngayon boss</div>';
       document.getElementById('totalSales').textContent = '₱0';
       document.getElementById('totalCount').textContent = '0';
       return;
@@ -105,6 +100,8 @@ window.loadSales = async function() {
     listDiv.innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
   }
 }
+
+document.getElementById('loadBtn').addEventListener('click', loadSales);
 loadSales();
 </script>
 </body>
