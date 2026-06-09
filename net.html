@@ -30,8 +30,15 @@ body{background:#FFF8E1;padding:15px}
 .sale-date{font-weight:700;color:#D32F2F;font-size:13px}
 .sale-total{font-weight:800;color:#2E7D32;font-size:16px}
 .sale-items{font-size:12px;color:#555;line-height:1.6}
+.exp-card{background:#FFF5F5;border:2px solid #FFCDD2;border-radius:12px;padding:12px;margin-bottom:10px}
+.exp-head{display:flex;justify-content:space-between;margin-bottom:8px}
+.exp-desc{font-weight:700;color:#C62828;font-size:13px}
+.exp-amt{font-weight:800;color:#C62828;font-size:16px}
+.exp-receipt{margin-top:8px}
+.exp-receipt img{width:100%;max-width:200px;border-radius:8px;border:2px solid #FFCDD2}
 .loading{text-align:center;padding:40px;color:#666}
 .formula{font-size:13px;color:#666;text-align:center;margin-top:10px}
+.section-title{color:#D32F2F;font-weight:700;margin:15px 0 10px 0;font-size:15px}
 </style>
 </head>
 <body>
@@ -69,12 +76,16 @@ body{background:#FFF8E1;padding:15px}
 <div id="salesList" class="loading">Loading today sales...</div>
 </div>
 
+<div class="card">
+<h3>💸 Expenses with Receipt Proof</h3>
+<div id="expensesList" class="loading">Loading expenses...</div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// SAME CONFIG SA POS.HTML MO
-const firebaseConfig = { apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE", authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", projectId: "dhan-siomai-pos-fe1e5", storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app", messagingSenderId: "305932123173", appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc" };
+const firebaseConfig = { apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE", authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", projectId: "dhan-siomai-pos-fe1e5", storageBucket: "dhan-siomai-pos-fe1e5.appspot.com", messagingSenderId: "305932123173", appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc" };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -85,9 +96,11 @@ document.getElementById('dateTo').value = today;
 async function loadReport() {
   const from = document.getElementById('dateFrom').value;
   const to = document.getElementById('dateTo').value;
-  const listDiv = document.getElementById('salesList');
+  const salesList = document.getElementById('salesList');
+  const expList = document.getElementById('expensesList');
 
-  listDiv.innerHTML = '<div class="loading">Loading sales...</div>';
+  salesList.innerHTML = '<div class="loading">Loading sales...</div>';
+  expList.innerHTML = '<div class="loading">Loading expenses...</div>';
   let totalSales = 0;
   let totalExpenses = 0;
 
@@ -97,7 +110,7 @@ async function loadReport() {
     const salesSnap = await getDocs(salesQ);
 
     if(salesSnap.empty) {
-      listDiv.innerHTML = '<div class="loading">Wala pang sales ngayon boss<br><br>Mag-checkout ka muna sa POS</div>';
+      salesList.innerHTML = '<div class="loading">Wala pang sales ngayon boss</div>';
     } else {
       let html = '';
       salesSnap.forEach(doc => {
@@ -107,22 +120,44 @@ async function loadReport() {
         const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
         html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
       });
-      listDiv.innerHTML = html;
+      salesList.innerHTML = html;
     }
 
-    // Load Expenses - kung wala pa, ₱0 muna
-    const expQ = query(collection(db, "dhan-expenses"), where("date", ">=", from), where("date", "<=", to));
+    // Load Expenses with Receipt Proof - MATCH SA EXPENSES.HTML MO
+    const expQ = query(collection(db, "daily_expenses"), where("date", ">=", from), where("date", "<=", to), orderBy("date", "desc"));
     const expSnap = await getDocs(expQ);
-    expSnap.forEach(doc => totalExpenses += doc.data().amount || 0);
+
+    if(expSnap.empty) {
+      expList.innerHTML = '<div class="loading">Wala pang expenses ngayon boss</div>';
+    } else {
+      let expHtml = '';
+      expSnap.forEach(doc => {
+        const exp = doc.data();
+        totalExpenses += exp.total || 0;
+
+        expHtml += `<div class="section-title">📅 ${exp.date} - Total: ₱${(exp.total || 0).toLocaleString()}</div>`;
+
+        exp.items.forEach(item => {
+          const receiptImg = item.receipt? `<div class="exp-receipt"><img src="${item.receipt}" onclick="window.open('${item.receipt}')"></div>` : '';
+          expHtml += `<div class="exp-card">
+            <div class="exp-head">
+              <span class="exp-desc">${item.description}</span>
+              <span class="exp-amt">-₱${(item.amount || 0).toLocaleString()}</span>
+            </div>
+            ${receiptImg}
+          </div>`;
+        });
+      });
+      expList.innerHTML = expHtml;
+    }
 
     const netProfit = totalSales - totalExpenses;
-
     document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
     document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString();
     document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString();
 
   } catch(e) {
-    listDiv.innerHTML = '<div class="loading">Error: ' + e.message + '<br><br>Check Firestore Rules boss</div>';
+    salesList.innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
     console.error(e);
   }
 }
