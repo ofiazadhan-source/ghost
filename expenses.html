@@ -1,11 +1,9 @@
--------for testing -----
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Expenses - DHAN SIOMAI</title>
+<title>Daily Expenses v3 - DHAN SIOMAI</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
 body{background:#FFF8E1;padding:15px;min-height:100vh;padding-bottom:150px}
@@ -44,7 +42,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 <body>
 <div class="box">
 <a href="index.html" class="back">← Back to Menu</a>
-<h2>💸 Daily Expenses</h2>
+<h2>💸 Daily Expenses v3</h2>
 <p class="sub">DHAN SIOMAI</p>
 
 <div class="datecard">
@@ -68,7 +66,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
@@ -87,12 +85,15 @@ const st = getStorage(app);
 let no = 0;
 const files = {};
 
-// AUTO TODAY yyyy-mm-dd EXACT SA POS MO
-const today = new Date();
-const yyyy = today.getFullYear();
-const mm = String(today.getMonth() + 1).padStart(2, '0');
-const dd = String(today.getDate()).padStart(2, '0');
-document.getElementById('date').value = `${yyyy}-${mm}-${dd}`;
+// 🔥 FIX: HINTAY MUNA MAG-LOAD YUNG PAGE BAGO MAG-SET NG DATE
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  document.getElementById('date').value = `${yyyy}-${mm}-${dd}`;
+  console.log('Date set to:', document.getElementById('date').value);
+});
 
 function add() {
   no++;
@@ -153,7 +154,7 @@ function total() {
   document.getElementById('total').innerText = '₱' + sum.toFixed(2);
 }
 
-// 🔥 ITO BOSS - GINAYA KO EXACT FORMAT NI POS
+// 🔥 SAVE - EXACT FORMAT SA POS MO BOSS
 async function save() {
   const date = document.getElementById('date').value;
   if(!date) {
@@ -161,15 +162,12 @@ async function save() {
     return;
   }
 
-  // COLLECT ITEMS - SAME STRUCTURE SA POS: name/qty/price
   const items = [];
   document.querySelectorAll('.item').forEach(card => {
     const id = card.id.replace('i', '');
     const desc = card.querySelector('.desc').value.trim();
     const amt = parseFloat(card.querySelector('.amt').value) || 0;
-
     if(desc && amt > 0) {
-      // Ginaya ko structure ni POS: name/qty/price
       items.push({name: desc, qty: 1, price: amt, receipt: ''});
     }
   });
@@ -185,7 +183,6 @@ async function save() {
   btn.innerText = 'Saving...';
 
   try {
-    // UPLOAD RECEIPTS MUNA
     for(let i = 0; i < items.length; i++) {
       const card = document.querySelectorAll('.item')[i];
       const id = card.id.replace('i', '');
@@ -196,12 +193,11 @@ async function save() {
       }
     }
 
-    // 🔥 SAVE - EXACT FORMAT SA POS MO BOSS
     await addDoc(collection(db, 'daily_expenses'), {
-      date: date, // yyyy-mm-dd string
-      timestamp: new Date(), // Date object same sa POS
-      total: totalAmount, // number lang
-      items: items, // name/qty/price array
+      date: date,
+      timestamp: new Date(),
+      total: totalAmount,
+      items: items,
       receiptNo: 'EXP-' + Date.now().toString().slice(-6)
     });
 
@@ -225,7 +221,6 @@ function print() {
   const date = document.getElementById('date').value;
   let w = window.open('', '', 'width=300,height=600');
   let html = '<h3 style="text-align:center">DHAN SIOMAI</h3><div style="text-align:center;font-size:12px">Daily Expenses Receipt</div><hr>Date: ' + date + '<br>Time: ' + new Date().toLocaleTimeString() + '<hr>';
-
   document.querySelectorAll('.item').forEach(function(card) {
     const d = card.querySelector('.desc').value.trim();
     const a = parseFloat(card.querySelector('.amt').value) || 0;
@@ -233,7 +228,6 @@ function print() {
       html += d + ' x1........ ₱' + a.toFixed(2) + '<br>';
     }
   });
-
   html += '<hr><b>TOTAL: ₱' + document.getElementById('total').innerText.replace('₱','') + '</b><br><center>Thank you boss!</center>';
   w.document.write(html);
   w.print();
@@ -247,4 +241,3 @@ add();
 </script>
 </body>
 </html>
-------------for testing -------
