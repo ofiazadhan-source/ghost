@@ -3,167 +3,273 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Net Profit - DHAN SIOMAI</title>
+<title>Daily Expenses -One Siomai  </title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
-body{background:#FFF8E1;padding:15px}
-.header{background:#D32F2F;color:white;padding:15px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
-.header h1{font-size:18px}
-.back-btn{color:#D32F2F;background:white;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px;font-size:13px}
-.card{background:white;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.card h3{color:#D32F2F;margin-bottom:15px;font-size:16px}
-.filter-row{display:flex;gap:10px;margin-bottom:15px}
-.filter-row input{flex:1;padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:14px}
-.filter-row button{padding:10px 20px;background:#D32F2F;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.stat-box{padding:15px;border-radius:12px;text-align:center}
-.stat-box.green{background:#E8F5E9}
-.stat-box.red{background:#FFEBEE}
-.stat-box.blue{background:#E3F2FD}
-.stat-box h4{font-size:12px;color:#666;margin-bottom:5px}
-.stat-box p{font-size:22px;font-weight:700}
-.green p{color:#2E7D32}
-.red p{color:#C62828}
-.blue p{color:#1565C0}
-.sale-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:10px}
-.sale-head{display:flex;justify-content:space-between;margin-bottom:8px}
-.sale-date{font-weight:700;color:#D32F2F;font-size:13px}
-.sale-total{font-weight:800;color:#2E7D32;font-size:16px}
-.sale-items{font-size:12px;color:#555;line-height:1.6}
-.exp-card{background:#FFF5F5;border:2px solid #FFCDD2;border-radius:12px;padding:12px;margin-bottom:10px}
-.exp-head{display:flex;justify-content:space-between;margin-bottom:8px}
-.exp-desc{font-weight:700;color:#C62828;font-size:13px}
-.exp-amt{font-weight:800;color:#C62828;font-size:16px}
-.exp-receipt{margin-top:8px}
-.exp-receipt img{width:100%;max-width:200px;border-radius:8px;border:2px solid #FFCDD2}
-.loading{text-align:center;padding:40px;color:#666}
-.formula{font-size:13px;color:#666;text-align:center;margin-top:10px}
-.section-title{color:#D32F2F;font-weight:700;margin:15px 0 10px 0;font-size:15px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:15px;min-height:100vh}
+.box{max-width:500px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
+.sub{text-align:center;color:#666;font-size:12px;margin-bottom:18px}
+.back{background:#757575;color:white;border:none;padding:8px 15px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-weight:600;font-size:13px}
+.datecard{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:18px}
+.datecard label{display:block;font-weight:800;color:#D32F2F;margin-bottom:6px;text-align:center;font-size:13px}
+.datecard input{font-size:16px;padding:10px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:42px}
+.item{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:10px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.num{font-weight:800;color:#D32F2F;font-size:12px}
+.del{background:#C62828;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:16px;font-weight:bold;line-height:1}
+
+/* 55% + 25% + 20% = 100% */
+.row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+.row input{
+  border:2px solid #FFB74D;
+  border-radius:8px;
+  padding:6px 8px;
+  font-size:13px;
+  font-weight:600;
+  outline:none;
+  height:38px;
+}
+.row input:focus{border-color:#D32F2F}
+.desc{width:55%;color:#D32F2F}
+.amt{width:25%;color:#2E7D32;text-align:center;font-size:14px;font-weight:700}
+.delbtn{
+  width:20%;
+  max-width:45px;
+  background:#C62828;
+  color:white;
+  border:none;
+  border-radius:8px;
+  height:38px;
+  font-size:18px;
+  font-weight:800;
+  cursor:pointer;
+  line-height:1;
+}
+
+.cam{display:flex;gap:6px;align-items:center;padding-top:6px;border-top:1px dashed #FFCC80;margin-top:6px}
+.cam button{flex:1;background:#1976D2;color:white;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+.cam button.ok{background:#2E7D32}
+.cam input{display:none}
+.prev{width:38px;height:38px;border-radius:6px;border:2px solid #FFB74D;object-fit:cover;display:none}
+.kb{font-size:10px;color:#2E7D32;font-weight:700;min-width:45px}
+.addbtn{width:100%;padding:14px;background:linear-gradient(135deg,#FF9800,#F57C00);color:white;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;margin:12px 0}
+.total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:25px 20px;text-align:center;margin:18px 0}
+.total label{font-size:12px;opacity:0.9;font-weight:700;letter-spacing:1px}
+.total div{font-size:42px;font-weight:900;margin-top:6px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{padding:14px;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer}
+.save{background:#2E7D32;color:white}
+.print{background:#1976D2;color:white}
+
+/* FIXED TICKET CSS - may. para di mag-clash */
+#ticket{display:none;font-family:'Courier New',monospace;font-size:11px;color:black;background:white;padding:8mm;width:80mm;margin:0 auto;line-height:1.5}
+#ticket h3{text-align:center;margin:0 0 5px 0;font-size:14px}
+#ticket.line{border-bottom:1px dashed #000;margin:5px 0}
+#ticket.row{display:flex;justify-content:space-between;margin:2px 0}
+#ticket.bold{font-weight:900;font-size:13px}
+
+@media print{
+  body *{visibility:hidden}
+  #ticket,#ticket *{visibility:visible}
+  #ticket{position:absolute;left:0;top:0;width:80mm;display:block;margin:0;padding:5mm}
+  @page{size:80mm auto;margin:0}
 </style>
 </head>
 <body>
-<div class="header">
-<h1>💰 Net Profit Report</h1>
-<a href="index.html" class="back-btn">← Back</a>
+<div class="box">
+<button class="back" onclick="location='index.html'">← Back to Menu</button>
+<h2>💸One Siomai Daily Expenses </h2>
+<p class="sub">Dhan's code</p>
+
+<div class="datecard">
+<label>📅 Date of Purchase</label>
+<input type="date" id="date">
 </div>
 
-<div class="card">
-<h3>📊 Auto Load Today</h3>
-<div class="filter-row">
-<input type="date" id="dateFrom">
-<input type="date" id="dateTo">
-<button id="loadBtn">Load</button>
-</div>
-<div class="stats-grid">
-<div class="stat-box green">
-<h4>Total Sales</h4>
-<p id="totalSales">₱0</p>
-</div>
-<div class="stat-box red">
-<h4>Total Expenses</h4>
-<p id="totalExpenses">₱0</p>
-</div>
-<div class="stat-box blue">
-<h4>Net Profit</h4>
-<p id="netProfit">₱0</p>
-</div>
-</div>
-<div class="formula">Formula: Sales - Expenses = Net Profit</div>
+<div id="list"></div>
+
+<button class="addbtn" id="add">+ Add Expense Item</button>
+
+<div class="total">
+<label>TOTAL EXPENSES TODAY</label>
+<div id="total">₱0.00</div>
 </div>
 
-<div class="card">
-<h3>📋 Sales List</h3>
-<div id="salesList" class="loading">Loading today sales...</div>
+<div class="actions">
+<button class="btn save" id="save">💾 Save to Database</button>
+<button class="btn print" id="print">🖨️ Print Official Receipt</button>
 </div>
 
-<div class="card">
-<h3>💸 Expenses with Receipt Proof</h3>
-<div id="expensesList" class="loading">Loading expenses...</div>
+<div id="ticket"></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-const firebaseConfig = { apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE", authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", projectId: "dhan-siomai-pos-fe1e5", storageBucket: "dhan-siomai-pos-fe1e5.appspot.com", messagingSenderId: "305932123173", appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc" };
-const app = initializeApp(firebaseConfig);
+const cfg = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.appspot.com",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(cfg);
 const db = getFirestore(app);
+const st = getStorage(app);
 
-const today = new Date().toISOString().split('T')[0];
-document.getElementById('dateFrom').value = today;
-document.getElementById('dateTo').value = today;
+let no = 0;
+const files = {};
+document.getElementById('date').valueAsDate = new Date();
 
-async function loadReport() {
-  const from = document.getElementById('dateFrom').value;
-  const to = document.getElementById('dateTo').value;
-  const salesList = document.getElementById('salesList');
-  const expList = document.getElementById('expensesList');
+function add() {
+no++;
+const div = document.createElement('div');
+div.className = 'item';
+div.id = 'i' + no;
+div.innerHTML = '<div class="head"><span class="num">Item #' + no + '</span><button class="del" onclick="del(' + no + ')">×</button></div><div class="row"><input class="desc" placeholder="Desc ex: Oil 1L"><input type="number" class="amt" placeholder="0.00" step="0.01"><button class="delbtn" onclick="del(' + no + ')">×</button></div><div class="cam"><button onclick="document.getElementById(\'f' + no + '\').click()">📷 Receipt</button><input type="file" id="f' + no + '" accept="image/*" capture="environment"><img id="p' + no + '" class="prev"><span id="s' + no + '" class="kb"></span></div>';
+document.getElementById('list').appendChild(div);
 
-  salesList.innerHTML = '<div class="loading">Loading sales...</div>';
-  expList.innerHTML = '<div class="loading">Loading expenses...</div>';
-  let totalSales = 0;
-  let totalExpenses = 0;
-
-  try {
-    // Load Sales
-    const salesQ = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to), orderBy("date", "desc"));
-    const salesSnap = await getDocs(salesQ);
-
-    if(salesSnap.empty) {
-      salesList.innerHTML = '<div class="loading">Wala pang sales ngayon boss</div>';
-    } else {
-      let html = '';
-      salesSnap.forEach(doc => {
-        const sale = doc.data();
-        totalSales += sale.total || 0;
-        const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
-        const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
-        html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
-      });
-      salesList.innerHTML = html;
-    }
-
-    // Load Expenses with Receipt Proof - MATCH SA EXPENSES.HTML MO
-    const expQ = query(collection(db, "daily_expenses"), where("date", ">=", from), where("date", "<=", to), orderBy("date", "desc"));
-    const expSnap = await getDocs(expQ);
-
-    if(expSnap.empty) {
-      expList.innerHTML = '<div class="loading">Wala pang expenses ngayon boss</div>';
-    } else {
-      let expHtml = '';
-      expSnap.forEach(doc => {
-        const exp = doc.data();
-        totalExpenses += exp.total || 0;
-
-        expHtml += `<div class="section-title">📅 ${exp.date} - Total: ₱${(exp.total || 0).toLocaleString()}</div>`;
-
-        exp.items.forEach(item => {
-          const receiptImg = item.receipt? `<div class="exp-receipt"><img src="${item.receipt}" onclick="window.open('${item.receipt}')"></div>` : '';
-          expHtml += `<div class="exp-card">
-            <div class="exp-head">
-              <span class="exp-desc">${item.description}</span>
-              <span class="exp-amt">-₱${(item.amount || 0).toLocaleString()}</span>
-            </div>
-            ${receiptImg}
-          </div>`;
-        });
-      });
-      expList.innerHTML = expHtml;
-    }
-
-    const netProfit = totalSales - totalExpenses;
-    document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
-    document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString();
-    document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString();
-
-  } catch(e) {
-    salesList.innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
-    console.error(e);
-  }
+document.getElementById('f' + no).onchange = async function(e) {
+const file = e.target.files[0];
+if(!file) return;
+const btn = div.querySelector('.cam button');
+btn.innerText = 'Compressing...';
+btn.disabled = true;
+const reader = new FileReader();
+reader.onload = function(ev) {
+const img = new Image();
+img.onload = function() {
+let w = img.width;
+let h = img.height;
+const max = 800;
+if(w > max) {
+h = h * max / w;
+w = max;
+}
+const cv = document.createElement('canvas');
+cv.width = w;
+cv.height = h;
+cv.getContext('2d').drawImage(img, 0, 0, w, h);
+cv.toBlob(function(blob) {
+files[no] = blob;
+document.getElementById('p' + no).src = URL.createObjectURL(blob);
+document.getElementById('p' + no).style.display = 'block';
+document.getElementById('s' + no).innerText = Math.round(blob.size/1024) + 'KB';
+btn.innerHTML = '✅ Attached';
+btn.className = 'ok';
+btn.disabled = false;
+}, 'image/jpeg', 0.7);
+};
+img.src = ev.target.result;
+};
+reader.readAsDataURL(file);
+};
+div.querySelector('.amt').oninput = total;
 }
 
-document.getElementById('loadBtn').addEventListener('click', loadReport);
-loadReport();
+window.del = function(id) {
+delete files[id];
+const el = document.getElementById('i' + id);
+if(el) el.remove();
+total();
+}
+
+function total() {
+let sum = 0;
+document.querySelectorAll('.amt').forEach(function(inp) {
+sum += parseFloat(inp.value) || 0;
+});
+document.getElementById('total').innerText = '₱' + sum.toFixed(2);
+}
+
+async function save() {
+const date = document.getElementById('date').value;
+if(!date) {
+alert('Select date first boss!');
+return;
+}
+const items = [];
+const cards = document.querySelectorAll('.item');
+for(let i = 0; i < cards.length; i++) {
+const card = cards[i];
+const id = card.id.slice(1);
+const desc = card.querySelector('.desc').value.trim();
+const amt = parseFloat(card.querySelector('.amt').value) || 0;
+if(desc && amt > 0) {
+let url = '';
+if(files[id]) {
+const path = 'receipts/' + date + '/' + Date.now() + '_' + id + '.jpg';
+const snap = await uploadBytes(ref(st, path), files[id]);
+url = await getDownloadURL(snap.ref);
+}
+items.push({description: desc, amount: amt, receipt: url});
+}
+}
+
+if(items.length === 0) {
+alert('Add at least 1 expense boss!');
+return;
+}
+
+const btn = document.getElementById('save');
+btn.disabled = true;
+btn.innerText = 'Saving...';
+try {
+await addDoc(collection(db, 'daily_expenses'), {
+date: date,
+items: items,
+total: parseFloat(document.getElementById('total').innerText.slice(1)),
+createdAt: serverTimestamp()
+});
+alert('✅ Saved successfully boss!');
+btn.disabled = false;
+btn.innerText = '💾 Save to Database';
+document.getElementById('list').innerHTML = '';
+no = 0;
+Object.keys(files).forEach(k => delete files[k]);
+total();
+add();
+} catch(e) {
+alert('Error: ' + e.message);
+btn.disabled = false;
+btn.innerText = '💾 Save to Database';
+}
+}
+
+function print() {
+const date = document.getElementById('date').value;
+let html = '<h3>SIOMAI FACTORY</h3><div style="text-align:center;font-size:9px">Daily Expenses Receipt</div><div class="line"></div><div>Date: ' + date + '</div><div>Time: ' + new Date().toLocaleTimeString() + '</div><div class="line"></div>';
+
+document.querySelectorAll('.item').forEach(function(card) {
+const d = card.querySelector('.desc').value.trim();
+const a = parseFloat(card.querySelector('.amt').value) || 0;
+if(d && a > 0) {
+html += '<div class="row"><span>' + d + '</span><span>₱' + a.toFixed(2) + '</span></div>';
+}
+});
+
+html += '<div class="line"></div><div class="row bold"><span>TOTAL:</span><span>₱' + document.getElementById('total').innerText.slice(1) + '</span></div><div style="text-align:center;margin-top:10px;font-size:9px">Thank you boss!</div>';
+
+const ticket = document.getElementById('ticket');
+ticket.innerHTML = html;
+ticket.style.display = 'block';
+
+// 500ms para sure render bago print
+setTimeout(function() {
+window.print();
+ticket.style.display = 'none';
+}, 500);
+}
+
+document.getElementById('add').onclick = add;
+document.getElementById('save').onclick = save;
+document.getElementById('print').onclick = print;
+add();
 </script>
 </body>
 </html>
