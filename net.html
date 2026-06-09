@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Net Profit - DHAN SIOMAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+body{background:#FFF8E1}
+.header{background:linear-gradient(135deg,#D32F2F,#B71C1C);color:white;padding:15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+.header h1{font-size:18px;font-weight:700}
+.header a{color:#D32F2F;background:#fff;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px}
+.container{padding:15px;max-width:900px;margin:0 auto}
+.card{background:white;border-radius:16px;padding:20px;box-shadow:0 3px 10px rgba(0,0,0,0.08);margin-bottom:15px}
+.filter-row{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+.filter-row input,.filter-row button{padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:14px}
+.filter-row input{flex:1}
+.filter-row button{background:#D32F2F;color:white;border:none;font-weight:600;cursor:pointer}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:#FFF3E0;padding:15px;border-radius:12px;text-align:center}
+.stat-card h4{font-size:12px;color:#666;margin-bottom:5px}
+.stat-card p{font-size:20px;font-weight:700;color:#D32F2F}
+.stat-card.profit p{color:#4caf50}
+.stat-card.expense p{color:#f44336}
+.table{width:100%;border-collapse:collapse;font-size:14px}
+.table th{background:#FFE0B2;padding:10px;text-align:left;font-size:13px}
+.table td{padding:10px;border-bottom:1px solid #FFE0B2}
+.table td.desc{font-size:12px;color:#666}
+.loading{text-align:center;padding:40px;color:#666}
+.badge{display:inline-block;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600}
+.badge.sale{background:#E8F5E9;color:#2e7d32}
+.badge.expense{background:#FFEBEE;color:#c62828}
+@media(max-width:700px){.stats-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>💰 Net Profit</h1>
+  <a href="index.html">← Back</a>
+</div>
+
+<div class="container">
+  <div class="card">
+    <h3 style="margin-bottom:15px;color:#D32F2F">📊 Filter Date</h3>
+    <div class="filter-row">
+      <input type="date" id="dateFrom">
+      <input type="date" id="dateTo">
+      <button onclick="loadData()">Load</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h4>Total Sales</h4>
+        <p id="totalSales">₱0</p>
+      </div>
+      <div class="stat-card expense">
+        <h4>Total Expenses</h4>
+        <p id="totalExpense">₱0</p>
+      </div>
+      <div class="stat-card profit">
+        <h4>Net Profit</h4>
+        <p id="netProfit">₱0</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:15px;color:#D32F2F">📋 Transactions</h3>
+    <div id="transTable">
+      <div class="loading">Select date range and click Load</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { db } from './firebase-config.js';
+import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('dateFrom').value = today;
+document.getElementById('dateTo').value = today;
+
+window.loadData = async function() {
+  const dateFrom = document.getElementById('dateFrom').value;
+  const dateTo = document.getElementById('dateTo').value;
+  if(!dateFrom ||!dateTo) {
+    alert('Piliin mo muna date range boss');
+    return;
+  }
+
+  document.getElementById('transTable').innerHTML = '<div class="loading">Loading...</div>';
+
+  try {
+    // 1. GET SALES from pos.html → collection "dhan-sales"
+    const salesSnap = await getDocs(query(
+      collection(db, "dhan-sales"),
+      where("date", ">=", dateFrom),
+      where("date", "<=", dateTo)
+    ));
+
+    // 2. GET EXPENSES from expenses.html → collection "daily_expenses"
+    const expSnap = await getDocs(query(
+      collection(db, "daily_expenses"),
+      where("date", ">=", dateFrom),
+      where("date", "<=", dateTo)
+    ));
+
+    let totalSales = 0;
+    let totalExpense = 0;
+    let transactions = [];
+
+    // Process sales - auto from pos.html
+    salesSnap.forEach(doc => {
+      const sale = doc.data();
+      totalSales += sale.total || 0;
+      const itemsText = sale.items.map(i => `${i.name} x${i.qty}`).join(', ');
+      transactions.push({
+        date: sale.date,
+        type: 'sale',
+        desc: itemsText,
+        amount: sale.total,
+        payment: (sale.paymentMethod || 'cash').toUpperCase()
+      });
+    });
+
+    // Process expenses - auto from expenses.html
+    expSnap.forEach(doc => {
+      const exp = doc.data();
+      totalExpense += exp.total || 0;
+      // Loop items array ni expenses.html
+      exp.items.forEach(item => {
+        transactions.push({
+          date: exp.date,
+          type: 'expense',
+          desc: item.description,
+          amount: item.amount,
+          payment: 'CASH'
+        });
+      });
+    });
+
+    // Sort by date desc
+    transactions.sort((a, b) => b.date.localeCompare(a.date));
+
+    // Build table
+    let html = `<table class="table">
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Amount</th>
+      </tr>`;
+
+    transactions.forEach(t => {
+      html += `<tr>
+        <td>${t.date}</td>
+        <td><span class="badge ${t.type}">${t.type.toUpperCase()}</span></td>
+        <td class="desc">${t.desc}<br><small>${t.payment}</small></td>
+        <td style="font-weight:600;color:${t.type==='sale'?'#4caf50':'#f44336'}">
+          ${t.type==='sale'?'+':'-'}₱${t.amount.toLocaleString()}
+        </td>
+      </tr>`;
+    });
+
+    html += '</table>';
+    if(transactions.length === 0) html = '<div class="loading">No transactions found boss</div>';
+
+    // AUTO COMPUTE Net Profit = Sales - Expenses
+    const netProfit = totalSales - totalExpense;
+    document.getElementById('totalSales').textContent = `₱${totalSales.toLocaleString()}`;
+    document.getElementById('totalExpense').textContent = `₱${totalExpense.toLocaleString()}`;
+    document.getElementById('netProfit').textContent = `₱${netProfit.toLocaleString()}`;
+    document.getElementById('transTable').innerHTML = html;
+
+  } catch(e) {
+    document.getElementById('transTable').innerHTML = `<div class="loading">Error: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
