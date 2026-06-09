@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sales Report - DHAN SIOMAI</title>
+<title>Net Profit - DHAN SIOMAI</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
 body{background:#FFF8E1;padding:15px}
@@ -15,21 +15,28 @@ body{background:#FFF8E1;padding:15px}
 .filter-row{display:flex;gap:10px;margin-bottom:15px}
 .filter-row input{flex:1;padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:14px}
 .filter-row button{padding:10px 20px;background:#D32F2F;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat-box{background:#E8F5E9;padding:15px;border-radius:12px;text-align:center}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stat-box{padding:15px;border-radius:12px;text-align:center}
+.stat-box.green{background:#E8F5E9}
+.stat-box.red{background:#FFEBEE}
+.stat-box.blue{background:#E3F2FD}
 .stat-box h4{font-size:12px;color:#666;margin-bottom:5px}
-.stat-box p{font-size:24px;font-weight:700;color:#2E7D32}
+.stat-box p{font-size:22px;font-weight:700}
+.green p{color:#2E7D32}
+.red p{color:#C62828}
+.blue p{color:#1565C0}
 .sale-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:10px}
 .sale-head{display:flex;justify-content:space-between;margin-bottom:8px}
 .sale-date{font-weight:700;color:#D32F2F;font-size:13px}
 .sale-total{font-weight:800;color:#2E7D32;font-size:16px}
 .sale-items{font-size:12px;color:#555;line-height:1.6}
 .loading{text-align:center;padding:40px;color:#666}
+.formula{font-size:13px;color:#666;text-align:center;margin-top:10px}
 </style>
 </head>
 <body>
 <div class="header">
-<h1>💰 Sales Report</h1>
+<h1>💰 Net Profit Report</h1>
 <a href="index.html" class="back-btn">← Back</a>
 </div>
 
@@ -41,15 +48,20 @@ body{background:#FFF8E1;padding:15px}
 <button id="loadBtn">Load</button>
 </div>
 <div class="stats-grid">
-<div class="stat-box">
+<div class="stat-box green">
 <h4>Total Sales</h4>
 <p id="totalSales">₱0</p>
 </div>
-<div class="stat-box">
-<h4>Transactions</h4>
-<p id="totalCount">0</p>
+<div class="stat-box red">
+<h4>Total Expenses</h4>
+<p id="totalExpenses">₱0</p>
+</div>
+<div class="stat-box blue">
+<h4>Net Profit</h4>
+<p id="netProfit">₱0</p>
 </div>
 </div>
+<div class="formula">Formula: Sales - Expenses = Net Profit</div>
 </div>
 
 <div class="card">
@@ -70,47 +82,53 @@ const today = new Date().toISOString().split('T')[0];
 document.getElementById('dateFrom').value = today;
 document.getElementById('dateTo').value = today;
 
-async function loadSales() {
+async function loadReport() {
   const from = document.getElementById('dateFrom').value;
   const to = document.getElementById('dateTo').value;
   const listDiv = document.getElementById('salesList');
+
   listDiv.innerHTML = '<div class="loading">Loading sales...</div>';
   let totalSales = 0;
-  let count = 0;
+  let totalExpenses = 0;
 
   try {
-    const q = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to), orderBy("date", "desc"));
-    const snap = await getDocs(q);
+    // Load Sales
+    const salesQ = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to), orderBy("date", "desc"));
+    const salesSnap = await getDocs(salesQ);
 
-    if(snap.empty) {
+    if(salesSnap.empty) {
       listDiv.innerHTML = '<div class="loading">Wala pang sales ngayon boss<br><br>Mag-checkout ka muna sa POS</div>';
-      document.getElementById('totalSales').textContent = '₱0';
-      document.getElementById('totalCount').textContent = '0';
-      return;
+    } else {
+      let html = '';
+      salesSnap.forEach(doc => {
+        const sale = doc.data();
+        totalSales += sale.total || 0;
+        const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
+        const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
+        html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
+      });
+      listDiv.innerHTML = html;
     }
 
-    let html = '';
-    snap.forEach(doc => {
-      const sale = doc.data();
-      totalSales += sale.total || 0;
-      count++;
-      const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
-      const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
-      html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
-    });
+    // Load Expenses - kung wala pa, ₱0 muna
+    const expQ = query(collection(db, "dhan-expenses"), where("date", ">=", from), where("date", "<=", to));
+    const expSnap = await getDocs(expQ);
+    expSnap.forEach(doc => totalExpenses += doc.data().amount || 0);
 
-    listDiv.innerHTML = html;
+    const netProfit = totalSales - totalExpenses;
+
     document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
-    document.getElementById('totalCount').textContent = count;
+    document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString();
+    document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString();
 
   } catch(e) {
-    listDiv.innerHTML = '<div class="loading">Error: ' + e.message + '<br><br>Check mo Firestore Rules boss</div>';
+    listDiv.innerHTML = '<div class="loading">Error: ' + e.message + '<br><br>Check Firestore Rules boss</div>';
     console.error(e);
   }
 }
 
-document.getElementById('loadBtn').addEventListener('click', loadSales);
-loadSales();
+document.getElementById('loadBtn').addEventListener('click', loadReport);
+loadReport();
 </script>
 </body>
 </html>
