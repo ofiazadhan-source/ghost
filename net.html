@@ -10,192 +10,102 @@
 body{background:#FFF8E1}
 .header{background:linear-gradient(135deg,#D32F2F,#B71C1C);color:white;padding:15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
 .header h1{font-size:18px;font-weight:700}
-.header a{color:#D32F2F;background:#fff;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px}
-.container{padding:15px;max-width:900px;margin:0 auto}
+.back-btn{color:#D32F2F;background:white;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px}
+.container{padding:15px;max-width:800px;margin:0 auto}
 .card{background:white;border-radius:16px;padding:20px;box-shadow:0 3px 10px rgba(0,0,0,0.08);margin-bottom:15px}
+.card h3{color:#D32F2F;margin-bottom:15px;font-size:16px;font-weight:600}
 .filter-row{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
-.filter-row input,.filter-row button{padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:14px}
-.filter-row input{flex:1}
-.filter-row button{background:#D32F2F;color:white;border:none;font-weight:600;cursor:pointer}
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
-.stat-card{background:#FFF3E0;padding:15px;border-radius:12px;text-align:center}
-.stat-card h4{font-size:12px;color:#666;margin-bottom:5px}
-.stat-card p{font-size:20px;font-weight:700;color:#D32F2F}
-.stat-card.profit p{color:#4caf50}
-.stat-card.expense p{color:#f44336}
-.table{width:100%;border-collapse:collapse;font-size:14px}
-.table th{background:#FFE0B2;padding:10px;text-align:left;font-size:13px}
-.table td{padding:10px;border-bottom:1px solid #FFE0B2}
-.table td.desc{font-size:12px;color:#666}
+.filter-row input{flex:1;min-width:140px;padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:14px}
+.filter-row button{padding:10px 20px;background:#D32F2F;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.stat-box{background:#E8F5E9;padding:15px;border-radius:12px;text-align:center}
+.stat-box h4{font-size:12px;color:#666;margin-bottom:5px;font-weight:600}
+.stat-box p{font-size:24px;font-weight:700;color:#2E7D32}
+.sale-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:10px}
+.sale-head{display:flex;justify-content:space-between;margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed #FFCC80}
+.sale-date{font-weight:700;color:#D32F2F;font-size:13px}
+.sale-total{font-weight:800;color:#2E7D32;font-size:16px}
+.sale-items{font-size:12px;color:#555;line-height:1.6}
 .loading{text-align:center;padding:40px;color:#666}
-.badge{display:inline-block;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600}
-.badge.sale{background:#E8F5E9;color:#2e7d32}
-.badge.expense{background:#FFEBEE;color:#c62828}
-@media (max-width:700px){.stats-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="header">
-<h1>💰 Net Profit</h1>
-<a href="index.html">← Back</a>
+<h1>💰 Sales Report</h1>
+<a href="index.html" class="back-btn">← Back</a>
 </div>
 
 <div class="container">
 <div class="card">
-<h3 style="margin-bottom:15px;color:#D32F2F">📊 Filter Date</h3>
+<h3>📊 Filter Date - Auto Load Today</h3>
 <div class="filter-row">
 <input type="date" id="dateFrom">
 <input type="date" id="dateTo">
-<button onclick="loadData()">Load</button>
+<button onclick="loadSales()">Load</button>
 </div>
 <div class="stats-grid">
-<div class="stat-card">
+<div class="stat-box">
 <h4>Total Sales</h4>
 <p id="totalSales">₱0</p>
 </div>
-<div class="stat-card expense">
-<h4>Total Expenses</h4>
-<p id="totalExpense">₱0</p>
-</div>
-<div class="stat-card profit">
-<h4>Net Profit</h4>
-<p id="netProfit">₱0</p>
+<div class="stat-box">
+<h4>Transactions</h4>
+<p id="totalCount">0</p>
 </div>
 </div>
 </div>
 
 <div class="card">
-<h3 style="margin-bottom:15px;color:#D32F2F">📋 Transactions</h3>
-<div id="transTable">
-<div class="loading">Select date range and click Load</div>
+<h3>📋 Sales List</h3>
+<div id="salesList" class="loading">Loading today sales...</div>
 </div>
 </div>
-</div>
-
 <script type="module">
 import { db } from './firebase-config.js';
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const today = new Date().toISOString().split('T')[0];
 document.getElementById('dateFrom').value = today;
 document.getElementById('dateTo').value = today;
 
-window.loadData = async function() {
-const dateFrom = document.getElementById('dateFrom').value;
-const dateTo = document.getElementById('dateTo').value;
+window.loadSales = async function() {
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+  const listDiv = document.getElementById('salesList');
 
-if(!dateFrom ||!dateTo) {
-alert('Piliin mo muna date range boss');
-return;
+  if(!from ||!to) {alert('Select date range boss!'); return;}
+
+  listDiv.innerHTML = '<div class="loading">Loading sales...</div>';
+  let totalSales = 0; let count = 0;
+
+  try {
+    const q = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to), orderBy("date", "desc"));
+    const snap = await getDocs(q);
+
+    if(snap.empty) {
+      listDiv.innerHTML = '<div class="loading">Wala pang sales sa date na to boss</div>';
+      document.getElementById('totalSales').textContent = '₱0';
+      document.getElementById('totalCount').textContent = '0';
+      return;
+    }
+
+    let html = '';
+    snap.forEach(doc => {
+      const sale = doc.data();
+      totalSales += sale.total || 0; count++;
+      const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
+      const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
+      html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
+    });
+
+    listDiv.innerHTML = html;
+    document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
+    document.getElementById('totalCount').textContent = count;
+  } catch(e) {
+    listDiv.innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
+  }
 }
-
-document.getElementById('transTable').innerHTML = '<div class="loading">Loading...</div>';
-
-try {
-// Get sales from dhan-sales - galing POS mo
-const salesSnap = await getDocs(query(
-collection(db, "dhan-sales"),
-where("date", ">=", dateFrom),
-where("date", "<=", dateTo)
-));
-
-// Get expenses from daily_expenses - galing expenses.html mo with camera
-const expSnap = await getDocs(query(
-collection(db, "daily_expenses"),
-where("date", ">=", dateFrom),
-where("date", "<=", dateTo)
-));
-
-let totalSales = 0;
-let totalExpense = 0;
-let transactions = [];
-
-// Process sales
-salesSnap.forEach(doc => {
-const sale = doc.data();
-totalSales += sale.total || 0;
-const itemsText = sale.items? sale.items.map(i => `${i.name} x${i.qty}`).join(', ') : 'N/A';
-transactions.push({
-date: sale.date,
-type: 'sale',
-desc: itemsText,
-amount: sale.total,
-payment: (sale.paymentMethod || 'cash').toUpperCase()
-});
-});
-
-// Process expenses - BASAHIN YUNG ITEMS[] ARRAY BOSS 🔥
-expSnap.forEach(doc => {
-const exp = doc.data();
-const expDate = exp.date;
-
-// Loop sa items array galing expenses.html
-if(exp.items && exp.items.length > 0) {
-exp.items.forEach(item => {
-totalExpense += item.amount || 0;
-transactions.push({
-date: expDate,
-type: 'expense',
-desc: item.description + (item.receipt? ' 📷' : ''),
-amount: item.amount,
-payment: 'CASH'
-});
-} else {
-// Fallback pag walang items array
-totalExpense += exp.total || 0;
-transactions.push({
-date: expDate,
-type: 'expense',
-desc: 'Daily Expense',
-amount: exp.total,
-payment: 'CASH'
-});
-}
-});
-
-// Sort by date desc
-transactions.sort((a, b) => b.date.localeCompare(a.date));
-
-// Build table
-let html = `<table class="table">
-<tr>
-<th>Date</th>
-<th>Type</th>
-<th>Description</th>
-<th>Amount</th>
-</tr>`;
-
-if(transactions.length === 0) {
-html = '<div class="loading">No transactions found for this date range boss</div>';
-} else {
-transactions.forEach(t => {
-html += `<tr>
-<td>${t.date}</td>
-<td><span class="badge ${t.type}">${t.type.toUpperCase()}</span></td>
-<td class="desc">${t.desc}<br><small>${t.payment}</small></td>
-<td style="font-weight:600;color:${t.type==='sale'?'#4caf50':'#f44336'}">
-${t.type==='sale'?'+':'-'}₱${t.amount.toLocaleString()}
-</td>
-</tr>`;
-});
-html += '</table>';
-}
-
-// Update stats
-const netProfit = totalSales - totalExpense;
-document.getElementById('totalSales').textContent = `₱${totalSales.toLocaleString()}`;
-document.getElementById('totalExpense').textContent = `₱${totalExpense.toLocaleString()}`;
-document.getElementById('netProfit').textContent = `₱${netProfit.toLocaleString()}`;
-document.getElementById('transTable').innerHTML = html;
-
-} catch(e) {
-document.getElementById('transTable').innerHTML = `<div class="loading">Error: ${e.message}<br><br>Pag "needs index" error, click mo lang link sa console boss</div>`;
-console.error(e);
-}
-}
-
-// Auto load today pag open
-loadData();
+loadSales();
 </script>
 </body>
 </html>
