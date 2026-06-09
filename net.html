@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Net Profit - DHAN SIOMAI</title>
+<title>Sales Report - DHAN SIOMAI</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
 body{background:#FFF8E1;padding:15px}
@@ -58,8 +58,13 @@ body{background:#FFF8E1;padding:15px}
 </div>
 
 <script type="module">
-import { db } from './firebase-config.js';
-import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// SAME CONFIG SA POS.HTML MO
+const firebaseConfig = { apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE", authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", projectId: "dhan-siomai-pos-fe1e5", storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app", messagingSenderId: "305932123173", appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc" };
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 const today = new Date().toISOString().split('T')[0];
 document.getElementById('dateFrom').value = today;
@@ -69,16 +74,16 @@ async function loadSales() {
   const from = document.getElementById('dateFrom').value;
   const to = document.getElementById('dateTo').value;
   const listDiv = document.getElementById('salesList');
-
   listDiv.innerHTML = '<div class="loading">Loading sales...</div>';
-  let totalSales = 0; let count = 0;
+  let totalSales = 0;
+  let count = 0;
 
   try {
     const q = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to), orderBy("date", "desc"));
     const snap = await getDocs(q);
 
     if(snap.empty) {
-      listDiv.innerHTML = '<div class="loading">Wala pang sales ngayon boss</div>';
+      listDiv.innerHTML = '<div class="loading">Wala pang sales ngayon boss<br><br>Mag-checkout ka muna sa POS</div>';
       document.getElementById('totalSales').textContent = '₱0';
       document.getElementById('totalCount').textContent = '0';
       return;
@@ -87,7 +92,8 @@ async function loadSales() {
     let html = '';
     snap.forEach(doc => {
       const sale = doc.data();
-      totalSales += sale.total || 0; count++;
+      totalSales += sale.total || 0;
+      count++;
       const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
       const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
       html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
@@ -96,8 +102,10 @@ async function loadSales() {
     listDiv.innerHTML = html;
     document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
     document.getElementById('totalCount').textContent = count;
+
   } catch(e) {
-    listDiv.innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
+    listDiv.innerHTML = '<div class="loading">Error: ' + e.message + '<br><br>Check mo Firestore Rules boss</div>';
+    console.error(e);
   }
 }
 
