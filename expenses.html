@@ -85,14 +85,19 @@ const st = getStorage(app);
 let no = 0;
 const files = {};
 
-document.getElementById('date').valueAsDate = new Date();
+// SET TODAY FORMAT yyyy-mm-dd
+const today = new Date();
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth() + 1).padStart(2, '0');
+const dd = String(today.getDate()).padStart(2, '0');
+document.getElementById('date').value = `${yyyy}-${mm}-${dd}`;
 
 function add() {
   no++;
   const div = document.createElement('div');
   div.className = 'item';
   div.id = 'i' + no;
-  div.innerHTML = '<div class="head"><span class="num">Item #' + no + '</span><button class="del" onclick="del(' + no + ')">×</button></div><div class="row"><input class="desc" placeholder="Desc ex: Oil 1L"><input type="number" class="amt" placeholder="0.00" step="0.01"><button class="delbtn" onclick="del(' + no + ')">×</button></div><div class="cam"><button onclick="document.getElementById(\'f' + no + '\').click()">📷 Receipt</button><input type="file" id="f' + no + '" accept="image/*" capture="environment"><img id="p' + no + '" class="prev"><span id="s' + no + '" class="kb"></span></div>';
+  div.innerHTML = `<div class="head"><span class="num">Item #` + no + `</span><button class="del" onclick="del(` + no + `)">×</button></div><div class="row"><input class="desc" placeholder="Desc ex: Oil 1L"><input type="number" class="amt" placeholder="0.00" step="0.01" inputmode="decimal"><button class="delbtn" onclick="del(` + no + `)">×</button></div><div class="cam"><button onclick="document.getElementById('f` + no + `').click()">📷 Receipt</button><input type="file" id="f` + no + `" accept="image/*" capture="environment"><img id="p` + no + `" class="prev"><span id="s` + no + `" class="kb"></span></div>`;
   document.getElementById('list').appendChild(div);
 
   document.getElementById('f' + no).onchange = async function(e) {
@@ -153,18 +158,21 @@ async function save() {
     return;
   }
 
+  // COLLECT ITEMS - FIXED
   const items = [];
   document.querySelectorAll('.item').forEach(card => {
-    const id = card.id.slice(1);
+    const id = card.id.replace('i', '');
     const desc = card.querySelector('.desc').value.trim();
-    const amt = parseFloat(card.querySelector('.amt').value) || 0;
+    const amtVal = card.querySelector('.amt').value;
+    const amt = parseFloat(amtVal) || 0;
+
     if(desc && amt > 0) {
       items.push({description: desc, amount: amt, receipt: ''});
     }
   });
 
   if(items.length === 0) {
-    alert('Add at least 1 expense boss!');
+    alert('Add at least 1 expense boss! Lagyan mo desc at amount > 0');
     return;
   }
 
@@ -173,10 +181,10 @@ async function save() {
   btn.innerText = 'Saving...';
 
   try {
-    // UPLOAD RECEIPTS MUNA BAGO SAVE
+    // UPLOAD RECEIPTS
     for(let i = 0; i < items.length; i++) {
       const card = document.querySelectorAll('.item')[i];
-      const id = card.id.slice(1);
+      const id = card.id.replace('i', '');
       if(files[id]) {
         const path = 'receipts/' + date + '/' + Date.now() + '_' + id + '.jpg';
         const snap = await uploadBytes(ref(st, path), files[id]);
@@ -184,11 +192,11 @@ async function save() {
       }
     }
 
-    // SAVE - SAME STRUCTURE SA POS MO
+    // SAVE TO FIRESTORE
     await addDoc(collection(db, 'daily_expenses'), {
       date: date,
       items: items,
-      total: parseFloat(document.getElementById('total').innerText.slice(1)),
+      total: parseFloat(document.getElementById('total').innerText.replace('₱','')),
       createdAt: serverTimestamp(),
       timestamp: serverTimestamp()
     });
@@ -222,7 +230,7 @@ function print() {
     }
   });
 
-  html += '<hr><b>TOTAL: ₱' + document.getElementById('total').innerText.slice(1) + '</b><br><center>Thank you boss!</center>';
+  html += '<hr><b>TOTAL: ₱' + document.getElementById('total').innerText.replace('₱','') + '</b><br><center>Thank you boss!</center>';
   w.document.write(html);
   w.print();
   w.close();
