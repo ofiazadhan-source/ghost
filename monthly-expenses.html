@@ -24,6 +24,7 @@ tr:nth-child(even){background:#FFFDF7}
 td.amount{text-align:right;color:#2E7D32;font-weight:700}
 .loading{text-align:center;padding:30px;color:#D32F2F;font-weight:700}
 .no-data{text-align:center;padding:30px;color:#999}
+.error{text-align:center;padding:20px;color:red;font-size:12px}
 .btn{width:100%;padding:16px;background:#1976D2;color:white;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;margin-top:15px}
 </style>
 </head>
@@ -62,7 +63,7 @@ td.amount{text-align:right;color:#2E7D32;font-weight:700}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
@@ -76,7 +77,6 @@ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Generate month/year options
 const monthSelect = document.getElementById('monthSelect');
 const yearSelect = document.getElementById('yearSelect');
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -90,7 +90,6 @@ for(let y = currentYear; y >= currentYear-5; y--) {
 yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
 }
 
-// Set current month/year
 monthSelect.value = new Date().getMonth();
 yearSelect.value = currentYear;
 
@@ -104,13 +103,18 @@ try {
 const snap = await getDocs(collection(db, 'daily_expenses'));
 let total = 0;
 let html = '';
+let count = 0;
 
 snap.forEach(doc => {
 const data = doc.data();
-const date = new Date(data.date);
-if(date.getMonth() === month && date.getFullYear() === year) {
+const dateStr = data.date;
+const date = new Date(dateStr);
+
+if(!isNaN(date) && date.getMonth() === month && date.getFullYear() === year) {
+if(data.items && data.items.length > 0) {
 data.items.forEach(item => {
 total += item.amount;
+count++;
 html += `<tr>
 <td>${date.toLocaleDateString()}</td>
 <td>${item.description}</td>
@@ -122,13 +126,14 @@ html += `<tr>
 
 document.getElementById('total').innerText = '₱' + total.toFixed(2);
 
-if(html === '') {
-tbody.innerHTML = '<tr><td colspan="3" class="no-data">No expenses for this month</td></tr>';
+if(count === 0) {
+tbody.innerHTML = `<tr><td colspan="3" class="no-data">No expenses for ${months[month]} ${year}<br><small>Found ${snap.size} records in database</small></td></tr>`;
 } else {
 tbody.innerHTML = html;
 }
 } catch(e) {
-tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:red;">Error loading data</td></tr>';
+console.error('ERROR:', e);
+tbody.innerHTML = `<tr><td colspan="3" class="error">ERROR: ${e.message}<br><small>Check console F12</small></td></tr>`;
 }
 }
 
@@ -137,4 +142,4 @@ yearSelect.onchange = loadMonthlyExpenses;
 loadMonthlyExpenses();
 </script>
 </body>
-  </html>
+</html>
