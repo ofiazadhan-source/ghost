@@ -86,7 +86,7 @@ monthSelect.innerHTML += `<option value="${i}">${m}</option>`;
 });
 
 const currentYear = new Date().getFullYear();
-for(let y = currentYear; y >= currentYear-5; y--) {
+for(let y = currentYear; y >= 2021; y--) {
 yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
 }
 
@@ -107,17 +107,19 @@ let count = 0;
 
 snap.forEach(doc => {
 const data = doc.data();
+if(!data.date || !data.items) return;
+
 const date = new Date(data.date + 'T00:00:00');
+if(isNaN(date)) return;
 
 if(date.getMonth() === month && date.getFullYear() === year) {
-if(data.items) {
 data.items.forEach(item => {
-total += item.amount;
+total += parseFloat(item.amount) || 0;
 count++;
 html += `<tr>
 <td>${data.date}</td>
 <td>${item.description}</td>
-<td class="amount">₱${item.amount.toFixed(2)}</td>
+<td class="amount">₱${parseFloat(item.amount).toFixed(2)}</td>
 </tr>`;
 });
 }
@@ -126,7 +128,7 @@ html += `<tr>
 document.getElementById('total').innerText = '₱' + total.toFixed(2);
 
 if(count === 0) {
-tbody.innerHTML = '<tr><td colspan="3" class="no-data">No expenses for this month</td></tr>';
+tbody.innerHTML = `<tr><td colspan="3" class="no-data">No expenses for ${months[month]} ${year}</td></tr>`;
 } else {
 tbody.innerHTML = html;
 }
