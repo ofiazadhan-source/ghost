@@ -36,7 +36,6 @@ body{background:#FFF8E1;padding:15px}
 .exp-amt{font-weight:800;color:#C62828;font-size:16px}
 .loading{text-align:center;padding:40px;color:#666}
 .formula{font-size:13px;color:#666;text-align:center;margin-top:10px}
-.error{color:red;text-align:center;padding:20px;font-weight:700}
 </style>
 </head>
 <body>
@@ -83,17 +82,9 @@ body{background:#FFF8E1;padding:15px}
 import { db } from "./firebase-config.js";
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// FORCE SET TODAY - yyyy-mm-dd format
-function getToday() {
-  let d = new Date();
-  let year = d.getFullYear();
-  let month = String(d.getMonth() + 1).padStart(2, '0');
-  let day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-let today = getToday();
-console.log("Today date:", today);
+// Set today yyyy-mm-dd
+let d = new Date();
+let today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 document.getElementById('dateFrom').value = today;
 document.getElementById('dateTo').value = today;
 
@@ -103,8 +94,6 @@ async function loadReport() {
   const salesList = document.getElementById('salesList');
   const expList = document.getElementById('expensesList');
 
-  console.log("Loading from:", from, "to:", to);
-  
   salesList.innerHTML = '<div class="loading">Loading sales...</div>';
   expList.innerHTML = '<div class="loading">Loading expenses...</div>';
 
@@ -112,13 +101,9 @@ async function loadReport() {
   let totalExpenses = 0;
 
   try {
-    // 1. Load Sales - TINANGGAL KO MUNA orderBy para di mag-error sa index
-    const salesQ = query(collection(db, "dhan-sales"),
-      where("date", ">=", from),
-      where("date", "<=", to)
-    );
+    // SALES - walang orderBy para di mag-error
+    const salesQ = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to));
     const salesSnap = await getDocs(salesQ);
-    console.log("Sales found:", salesSnap.size);
 
     if(salesSnap.empty) {
       salesList.innerHTML = '<div class="loading">Wala pang sales ngayon boss</div>';
@@ -129,24 +114,14 @@ async function loadReport() {
         totalSales += sale.total || 0;
         const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
         const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
-        html += `<div class="sale-card">
-          <div class="sale-head">
-            <span class="sale-date">${sale.date} ${time}</span>
-            <span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span>
-          </div>
-          <div class="sale-items">${items}</div>
-        </div>`;
+        html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
       });
       salesList.innerHTML = html;
     }
 
-    // 2. Load Expenses - WALA DIN orderBy
-    const expQ = query(collection(db, "daily_expenses"),
-      where("date", ">=", from),
-      where("date", "<=", to)
-    );
+    // EXPENSES - walang orderBy din
+    const expQ = query(collection(db, "daily_expenses"), where("date", ">=", from), where("date", "<=", to));
     const expSnap = await getDocs(expQ);
-    console.log("Expenses found:", expSnap.size);
 
     if(expSnap.empty) {
       expList.innerHTML = '<div class="loading">Wala pang expenses ngayon boss</div>';
@@ -155,26 +130,19 @@ async function loadReport() {
       expSnap.forEach(doc => {
         const exp = doc.data();
         totalExpenses += exp.amount || 0;
-        expHtml += `<div class="exp-card">
-          <div class="exp-head">
-            <span class="exp-desc">${exp.date} - ${exp.desc}</span>
-            <span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span>
-          </div>
-        </div>`;
+        expHtml += `<div class="exp-card"><div class="exp-head"><span class="exp-desc">${exp.date} - ${exp.desc}</span><span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span></div></div>`;
       });
       expList.innerHTML = expHtml;
     }
 
-    // 3. Compute Net
     const netProfit = totalSales - totalExpenses;
     document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
     document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString();
     document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString();
 
   } catch(e) {
-    console.error("FIREBASE ERROR:", e);
-    salesList.innerHTML = '<div class="error">Error: ' + e.message + '<br><br>Check console F12 boss</div>';
-    expList.innerHTML = '<div class="error">Error: ' + e.message + '</div>';
+    salesList.innerHTML = '<div class="loading" style="color:red">Error: ' + e.message + '</div>';
+    console.error(e);
   }
 }
 
