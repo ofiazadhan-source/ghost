@@ -3,144 +3,170 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monthly Expenses - DHAN SIOMAI</title>
+<title>Daily Net - Siomai Factory</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
 body{background:#FFF8E1;padding:15px;min-height:100vh}
-.box{max-width:700px;margin:auto;background:white;border-radius:20px;padding:25px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
-h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:26px}
-.sub{text-align:center;color:#666;font-size:14px;margin-bottom:20px}
-.back{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-weight:600;font-size:14px;text-decoration:none;display:inline-block}
-.datecard{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:15px;margin-bottom:20px}
-.datecard label{display:block;font-weight:800;color:#D32F2F;margin-bottom:8px;text-align:center;font-size:14px}
-.datecard select{font-size:18px;padding:12px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:48px;margin-bottom:8px}
-.total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:30px 20px;text-align:center;margin:20px 0}
-.total label{font-size:14px;opacity:0.9;font-weight:700;letter-spacing:1px}
-.total div{font-size:48px;font-weight:900;margin-top:8px}
-table{width:100%;margin-top:20px;border-collapse:collapse}
-th,td{padding:12px;border:1px solid #ddd;text-align:left;font-size:13px}
-th{background:#D32F2F;color:white;font-weight:700}
-tr:nth-child(even){background:#FFFDF7}
-td.amount{text-align:right;color:#2E7D32;font-weight:700}
-.loading{text-align:center;padding:30px;color:#D32F2F;font-weight:700}
-.no-data{text-align:center;padding:30px;color:#999}
-.btn{width:100%;padding:16px;background:#1976D2;color:white;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;margin-top:15px}
+.container{max-width:480px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
+.subtitle{text-align:center;color:#666;font-size:13px;margin-bottom:20px}
+.back-btn{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-size:13px;font-weight:600}
+.filter-box{background:#FFF3E0;padding:15px;border-radius:12px;margin-bottom:15px;border:2px solid #FFCC80}
+label{font-weight:700;color:#B71C1C;font-size:13px;display:block;margin-top:8px}
+input,select{width:100%;padding:10px;border-radius:8px;border:2px solid #FFCC80;margin-top:4px;font-size:15px;font-weight:600}
+.summary-box{background:#D32F2F;color:white;padding:20px;border-radius:15px;text-align:center;margin-bottom:15px}
+.summary-box h3{font-size:13px;font-weight:600;opacity:0.9;margin-bottom:5px}
+.summary-box h1{font-size:32px;font-weight:900;margin:5px 0}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px}
+.card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:15px;text-align:center}
+.card h4{color:#666;font-size:12px;margin-bottom:5px}
+.card h2{color:#2E7D32;font-size:22px;margin:0}
+.card.expense h2{color:#C62828}
+.table-box{background:white;border-radius:12px;overflow:hidden;border:2px solid #FFCC80;margin-top:15px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#D32F2F;color:white;padding:10px;text-align:left;font-weight:800}
+td{padding:10px;border-bottom:1px solid #eee}
+td.right{text-align:right;font-weight:700}
+td.sales{color:#2E7D32}
+td.expense{color:#C62828}
+td.net{color:#D32F2F;font-weight:900}
+.loading{text-align:center;padding:40px;color:#D32F2F;font-weight:700}
 </style>
-</head>
-<body>
-<div class="box">
-<a href="./index.html" class="back">← Back to Menu</a>
-<h2>📊 Monthly Expenses</h2>
-<p class="sub">DHAN SIOMAI</p>
-
-<div class="datecard">
-<label>📅 Select Month & Year</label>
-<select id="monthSelect"></select>
-<select id="yearSelect"></select>
-</div>
-
-<div class="total">
-<label>TOTAL EXPENSES THIS MONTH</label>
-<div id="total">₱0.00</div>
-</div>
-
-<table id="expenseTable">
-<thead>
-<tr>
-<th>Date</th>
-<th>Description</th>
-<th class="amount">Amount</th>
-</tr>
-</thead>
-<tbody>
-<tr><td colspan="3" class="loading">Loading...</td></tr>
-</tbody>
-</table>
-
-<button class="btn" onclick="window.print()">🖨️ Print Report</button>
-</div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-projectId: "dhan-siomai-pos-fe1e5",
-storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-messagingSenderId: "305932123173",
-appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Generate Month/Year dropdowns
-const monthSelect = document.getElementById('monthSelect');
-const yearSelect = document.getElementById('yearSelect');
-const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-months.forEach((m,i) => {
-monthSelect.innerHTML += `<option value="${i}">${m}</option>`;
+// Set today as default
+document.addEventListener('DOMContentLoaded', () => {
+  let today = new Date().toISOString().split('T')[0];
+  document.getElementById('date').value = today;
+  loadNet();
 });
 
-const currentYear = new Date().getFullYear();
-for(let y = currentYear; y >= 2021; y--) {
-yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+window.loadNet = async () => {
+  let date = document.getElementById('date').value;
+  if(!date){alert('Pili ka muna date boss!');return}
+
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading">Loading...</td></tr>';
+
+  try {
+    // 1. KUHA SALES FROM dhan-sales
+    let salesSnap = await getDocs(query(collection(db,"dhan-sales"), where("date","==",date)));
+    let totalSales = 0;
+    salesSnap.forEach(doc => {
+      totalSales += doc.data().total || 0;
+    });
+
+    // 2. KUHA EXPENSES FROM daily_expenses
+    let expenseSnap = await getDocs(query(collection(db,"daily_expenses"), where("date","==",date), orderBy("created","desc")));
+    let totalExpense = 0;
+    let expenseRows = '';
+
+    expenseSnap.forEach(doc => {
+      let exp = doc.data();
+      totalExpense += exp.amount || 0;
+      expenseRows += `<tr>
+        <td>${exp.date}</td>
+        <td>${exp.desc}</td>
+        <td class="right expense">-₱${(exp.amount||0).toFixed(2)}</td>
+        <td class="right net">-</td>
+      </tr>`;
+    });
+
+    // 3. COMPUTE NET
+    let net = totalSales - totalExpense;
+
+    // 4. DISPLAY SUMMARY
+    document.getElementById('salesAmount').innerText = '₱' + totalSales.toLocaleString('en-PH',{minimumFractionDigits:2});
+    document.getElementById('expenseAmount').innerText = '₱' + totalExpense.toLocaleString('en-PH',{minimumFractionDigits:2});
+    document.getElementById('netAmount').innerText = '₱' + net.toLocaleString('en-PH',{minimumFractionDigits:2});
+
+    // 5. DISPLAY TABLE
+    let tbody = document.getElementById('tbody');
+    if(expenseSnap.empty && salesSnap.empty){
+      tbody.innerHTML = '<tr><td colspan="4" class="loading">No data for this date</td></tr>';
+    } else {
+      // Add Sales row on top
+      let salesRow = `<tr style="background:#E8F5E9">
+        <td>${date}</td>
+        <td><b>DAILY SALES</b></td>
+        <td class="right sales">+₱${totalSales.toFixed(2)}</td>
+        <td class="right net">-</td>
+      </tr>`;
+
+      // Add Net row sa baba
+      let netRow = `<tr style="background:#FFEBEE;font-weight:900">
+        <td colspan="2"><b>NET INCOME</b></td>
+        <td class="right">-</td>
+        <td class="right net" style="font-size:16px">₱${net.toFixed(2)}</td>
+      </tr>`;
+
+      tbody.innerHTML = salesRow + expenseRows + netRow;
+    }
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading" style="color:red">Error: '+e.message+'</td></tr>';
+  }
 }
-
-monthSelect.value = new Date().getMonth();
-yearSelect.value = currentYear;
-
-async function loadMonthlyExpenses() {
-const month = parseInt(monthSelect.value);
-const year = parseInt(yearSelect.value);
-const tbody = document.querySelector('#expenseTable tbody');
-tbody.innerHTML = '<tr><td colspan="3" class="loading">Loading...</td></tr>';
-
-try {
-const snap = await getDocs(collection(db, 'daily_expenses'));
-let total = 0;
-let html = '';
-let count = 0;
-
-snap.forEach(doc => {
-const data = doc.data();
-if(!data.date || !data.items) return;
-
-const date = new Date(data.date + 'T00:00:00');
-if(isNaN(date)) return;
-
-if(date.getMonth() === month && date.getFullYear() === year) {
-data.items.forEach(item => {
-total += parseFloat(item.amount) || 0;
-count++;
-html += `<tr>
-<td>${data.date}</td>
-<td>${item.description}</td>
-<td class="amount">₱${parseFloat(item.amount).toFixed(2)}</td>
-</tr>`;
-});
-}
-});
-
-document.getElementById('total').innerText = '₱' + total.toFixed(2);
-
-if(count === 0) {
-tbody.innerHTML = `<tr><td colspan="3" class="no-data">No expenses for ${months[month]} ${year}</td></tr>`;
-} else {
-tbody.innerHTML = html;
-}
-} catch(e) {
-tbody.innerHTML = `<tr><td colspan="3" class="no-data">Error: ${e.message}</td></tr>`;
-console.error(e);
-}
-}
-
-monthSelect.onchange = loadMonthlyExpenses;
-yearSelect.onchange = loadMonthlyExpenses;
-loadMonthlyExpenses();
 </script>
+</head>
+<body>
+<div class="container">
+  <button class="back-btn no-print" onclick="window.location='pos.html'">← Back to POS</button>
+  <h2>📊 Daily Net</h2>
+  <p class="subtitle">Auto compute: Sales - Expenses</p>
+
+  <div class="filter-box no-print">
+    <label>Select Date</label>
+    <input type="date" id="date" onchange="loadNet()">
+  </div>
+
+  <div class="summary-box">
+    <h3>NET INCOME</h3>
+    <h1 id="netAmount">₱0.00</h1>
+  </div>
+
+  <div class="summary-grid">
+    <div class="card">
+      <h4>DAILY SALES</h4>
+      <h2 id="salesAmount">₱0.00</h2>
+    </div>
+    <div class="card expense">
+      <h4>DAILY EXPENSES</h4>
+      <h2 id="expenseAmount">₱0.00</h2>
+    </div>
+  </div>
+
+  <div class="table-box">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th class="right">Amount</th>
+          <th class="right">Net</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="4" class="loading">Select date to load</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button class="back-btn no-print" onclick="window.print()" style="width:100%;margin-top:15px;background:#2E7D32">🖨️ Print Report</button>
+</div>
 </body>
 </html>
