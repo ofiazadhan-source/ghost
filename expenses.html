@@ -27,9 +27,8 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 .cam{display:flex;gap:6px;align-items:center;padding-top:6px;border-top:1px dashed #FFCC80;margin-top:6px}
 .cam button{flex:1;background:#1976D2;color:white;border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
 .cam button.ok{background:#2E7D32}
-.cam button.view{background:#FF9800}
 .cam input{display:none}
-.prev{width:38px;height:38px;border-radius:6px;border:2px solid #FFB74D;object-fit:cover;cursor:pointer}
+.prev{width:38px;height:38px;border-radius:6px;border:2px solid #FFB74D;object-fit:cover;display:none}
 .kb{font-size:10px;color:#2E7D32;font-weight:700;min-width:45px}
 .addbtn{width:100%;padding:14px;background:linear-gradient(135deg,#FF9800,#F57C00);color:white;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;margin:12px 0}
 .total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:25px 20px;text-align:center;margin:18px 0}
@@ -39,10 +38,6 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 .btn{padding:14px;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;position:relative;z-index:11}
 .save{background:#2E7D32;color:white}
 .print{background:#1976D2;color:white}
-/* Modal for receipt view */
-.modal{display:none;position:fixed;z-index:999;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.8)}
-.modal-content{margin:5% auto;display:block;max-width:90%;max-height:80vh;border-radius:12px}
-.close{position:absolute;top:15px;right:25px;color:white;font-size:35px;font-weight:bold;cursor:pointer}
 </style>
 </head>
 <body>
@@ -65,13 +60,6 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 <button class="btn print" id="print">🖨️ Print Receipt</button>
 </div>
 </div>
-
-<!-- Modal for viewing receipt -->
-<div id="imgModal" class="modal">
-<span class="close" onclick="closeModal()">&times;</span>
-<img class="modal-content" id="modalImg">
-</div>
-
 <script type="module">
 import { db } from './firebase-config.js';
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -79,19 +67,10 @@ import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/fir
 let no = 0;
 const files = {};
 
-// Auto date
+// 🔥 AUTO DATE - Green agad gaya sa Code #3 mo
 document.getElementById('date').valueAsDate = new Date();
 
-// Modal functions
-window.viewReceipt = function(src) {
-document.getElementById('modalImg').src = src;
-document.getElementById('imgModal').style.display = 'block';
-}
-window.closeModal = function() {
-document.getElementById('imgModal').style.display = 'none';
-}
-
-// Auto compress
+// 🔥 AUTO COMPRESS Base64 - Walang Storage upload kaya 2 seconds lang save
 async function compressImageAuto(file) {
 return new Promise((resolve) => {
 const reader = new FileReader();
@@ -127,9 +106,9 @@ tryCompress();
 resolve(base64);
 }
 tryCompress();
+};
+});
 }
-});
-});
 
 function add() {
 no++;
@@ -148,9 +127,8 @@ div.innerHTML = `
 </div>
 <div class="cam">
 <button onclick="document.getElementById('f${no}').click()">📷 Receipt</button>
-<button class="view" onclick="viewReceipt(document.getElementById('p${no}').src)" style="display:none" id="v${no}">👁️ View</button>
 <input type="file" id="f${no}" accept="image/*" capture="environment">
-<img id="p${no}" class="prev" onclick="viewReceipt(this.src)">
+<img id="p${no}" class="prev">
 <span id="s${no}" class="kb"></span>
 </div>`;
 document.getElementById('list').appendChild(div);
@@ -164,7 +142,6 @@ btn.disabled = true;
 files[no] = await compressImageAuto(file);
 document.getElementById('p' + no).src = files[no];
 document.getElementById('p' + no).style.display = 'block';
-document.getElementById('v' + no).style.display = 'block';
 document.getElementById('s' + no).innerText = Math.round(files[no].length/1024) + 'KB';
 btn.innerHTML = '✅ Attached';
 btn.className = 'ok';
@@ -189,6 +166,7 @@ sum += parseFloat(inp.value) || 0;
 document.getElementById('total').innerText = '₱' + sum.toFixed(2);
 }
 
+// 🔥 PERFECT SAVE - Collection: dhan-expenses + Fields: description, amount
 async function save() {
 const date = document.getElementById('date').value;
 if(!date) {
@@ -203,8 +181,8 @@ const desc = card.querySelector('.desc').value.trim();
 const amt = parseFloat(card.querySelector('.amt').value) || 0;
 if(desc && amt > 0) {
 items.push({
-description: desc,
-amount: amt,
+description: desc, // GAYA SA NET PROFIT MO CODE #1
+amount: amt, // GAYA SA NET PROFIT MO CODE #1
 receipt: files[id] || ''
 });
 }
@@ -221,7 +199,7 @@ btn.disabled = true;
 btn.innerText = 'Saving...';
 
 try {
-await addDoc(collection(db, 'dhan-expenses'), {
+await addDoc(collection(db, 'dhan-expenses'), { // GAYA SA CODE #1 & #3 MO
 date: date,
 timestamp: serverTimestamp(),
 total: totalAmount,
@@ -269,4 +247,4 @@ document.getElementById('print').onclick = print;
 add();
 </script>
 </body>
-  </html>
+</html>
