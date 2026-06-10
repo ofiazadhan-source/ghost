@@ -28,7 +28,7 @@
 </head>
 <body>
   <div class="container">
-    <button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+    <button class="back-btn" onclick="window.location='./index.html'">← Back to Menu</button>
     <h2>📝 Add Expense</h2>
 
     <div class="input-group">
@@ -229,7 +229,7 @@
 
     onAuthStateChanged(auth, user => {
       if(user) loadExpenses();
-      else window.location.href = 'login.html';
+      else window.location.href = './index.html'; // FIXED NA BOSS - DI NA LOGIN.HTML
     });
   </script>
 </body>
