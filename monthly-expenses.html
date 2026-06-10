@@ -13,7 +13,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 .back-btn{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-size:13px;font-weight:600}
 .filter-box{background:#FFF3E0;padding:15px;border-radius:12px;margin-bottom:15px;border:2px solid #FFCC80}
 label{font-weight:700;color:#B71C1C;font-size:13px;display:block;margin-top:8px}
-input,select{width:100%;padding:10px;border-radius:8px;border:2px solid #FFCC80;margin-top:4px;font-size:15px;font-weight:600}
+input{width:100%;padding:10px;border-radius:8px;border:2px solid #FFCC80;margin-top:4px;font-size:15px;font-weight:600}
 .summary-box{background:#D32F2F;color:white;padding:20px;border-radius:15px;text-align:center;margin-bottom:15px}
 .summary-box h3{font-size:13px;font-weight:600;opacity:0.9;margin-bottom:5px}
 .summary-box h1{font-size:32px;font-weight:900;margin:5px 0}
@@ -32,104 +32,14 @@ td.expense{color:#C62828}
 td.net{color:#D32F2F;font-weight:900}
 .loading{text-align:center;padding:40px;color:#D32F2F;font-weight:700}
 </style>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-  projectId: "dhan-siomai-pos-fe1e5",
-  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-  messagingSenderId: "305932123173",
-  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Set today as default
-document.addEventListener('DOMContentLoaded', () => {
-  let today = new Date().toISOString().split('T')[0];
-  document.getElementById('date').value = today;
-  loadNet();
-});
-
-window.loadNet = async () => {
-  let date = document.getElementById('date').value;
-  if(!date){alert('Pili ka muna date boss!');return}
-
-  document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading">Loading...</td></tr>';
-
-  try {
-    // 1. KUHA SALES FROM dhan-sales
-    let salesSnap = await getDocs(query(collection(db,"dhan-sales"), where("date","==",date)));
-    let totalSales = 0;
-    salesSnap.forEach(doc => {
-      totalSales += doc.data().total || 0;
-    });
-
-    // 2. KUHA EXPENSES FROM daily_expenses
-    let expenseSnap = await getDocs(query(collection(db,"daily_expenses"), where("date","==",date), orderBy("created","desc")));
-    let totalExpense = 0;
-    let expenseRows = '';
-
-    expenseSnap.forEach(doc => {
-      let exp = doc.data();
-      totalExpense += exp.amount || 0;
-      expenseRows += `<tr>
-        <td>${exp.date}</td>
-        <td>${exp.desc}</td>
-        <td class="right expense">-₱${(exp.amount||0).toFixed(2)}</td>
-        <td class="right net">-</td>
-      </tr>`;
-    });
-
-    // 3. COMPUTE NET
-    let net = totalSales - totalExpense;
-
-    // 4. DISPLAY SUMMARY
-    document.getElementById('salesAmount').innerText = '₱' + totalSales.toLocaleString('en-PH',{minimumFractionDigits:2});
-    document.getElementById('expenseAmount').innerText = '₱' + totalExpense.toLocaleString('en-PH',{minimumFractionDigits:2});
-    document.getElementById('netAmount').innerText = '₱' + net.toLocaleString('en-PH',{minimumFractionDigits:2});
-
-    // 5. DISPLAY TABLE
-    let tbody = document.getElementById('tbody');
-    if(expenseSnap.empty && salesSnap.empty){
-      tbody.innerHTML = '<tr><td colspan="4" class="loading">No data for this date</td></tr>';
-    } else {
-      // Add Sales row on top
-      let salesRow = `<tr style="background:#E8F5E9">
-        <td>${date}</td>
-        <td><b>DAILY SALES</b></td>
-        <td class="right sales">+₱${totalSales.toFixed(2)}</td>
-        <td class="right net">-</td>
-      </tr>`;
-
-      // Add Net row sa baba
-      let netRow = `<tr style="background:#FFEBEE;font-weight:900">
-        <td colspan="2"><b>NET INCOME</b></td>
-        <td class="right">-</td>
-        <td class="right net" style="font-size:16px">₱${net.toFixed(2)}</td>
-      </tr>`;
-
-      tbody.innerHTML = salesRow + expenseRows + netRow;
-    }
-
-  } catch(e) {
-    console.error(e);
-    document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading" style="color:red">Error: '+e.message+'</td></tr>';
-  }
-}
-</script>
 </head>
 <body>
 <div class="container">
-  <button class="back-btn no-print" onclick="window.location='pos.html'">← Back to POS</button>
+  <button class="back-btn" onclick="window.location='pos.html'">← Back to POS</button>
   <h2>📊 Daily Net</h2>
   <p class="subtitle">Auto compute: Sales - Expenses</p>
 
-  <div class="filter-box no-print">
+  <div class="filter-box">
     <label>Select Date</label>
     <input type="date" id="date" onchange="loadNet()">
   </div>
@@ -166,7 +76,80 @@ window.loadNet = async () => {
     </table>
   </div>
 
-  <button class="back-btn no-print" onclick="window.print()" style="width:100%;margin-top:15px;background:#2E7D32">🖨️ Print Report</button>
+  <button class="back-btn" onclick="window.print()" style="width:100%;margin-top:15px;background:#2E7D32">🖨️ Print Report</button>
 </div>
+
+<script type="module">
+import { db } from "./firebase-config.js";
+import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Set today as default
+let today = new Date().toISOString().split('T')[0];
+document.getElementById('date').value = today;
+loadNet();
+
+window.loadNet = async () => {
+  let date = document.getElementById('date').value;
+  if(!date){alert('Pili ka muna date boss!');return}
+
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading">Loading...</td></tr>';
+
+  try {
+    // 1. KUHA SALES FROM dhan-sales
+    let salesSnap = await getDocs(query(collection(db,"dhan-sales"), where("date","==",date)));
+    let totalSales = 0;
+    salesSnap.forEach(doc => {
+      totalSales += doc.data().total || 0;
+    });
+
+    // 2. KUHA EXPENSES FROM daily_expenses
+    let expenseSnap = await getDocs(query(collection(db,"daily_expenses"), where("date","==",date), orderBy("created","desc")));
+    let totalExpense = 0;
+    let expenseRows = '';
+
+    expenseSnap.forEach(doc => {
+      let exp = doc.data();
+      totalExpense += exp.amount || 0;
+      expenseRows += `<tr>
+        <td>${exp.date}</td>
+        <td>${exp.desc}</td>
+        <td class="right expense">-₱${(exp.amount||0).toFixed(2)}</td>
+        <td class="right net">-</td>
+      </tr>`;
+    });
+
+    // 3. COMPUTE NET
+    let net = totalSales - totalExpense;
+
+    // 4. DISPLAY
+    document.getElementById('salesAmount').innerText = '₱' + totalSales.toLocaleString('en-PH',{minimumFractionDigits:2});
+    document.getElementById('expenseAmount').innerText = '₱' + totalExpense.toLocaleString('en-PH',{minimumFractionDigits:2});
+    document.getElementById('netAmount').innerText = '₱' + net.toLocaleString('en-PH',{minimumFractionDigits:2});
+
+    // 5. TABLE
+    let tbody = document.getElementById('tbody');
+    if(expenseSnap.empty && salesSnap.empty){
+      tbody.innerHTML = '<tr><td colspan="4" class="loading">No data for this date</td></tr>';
+    } else {
+      let salesRow = `<tr style="background:#E8F5E9">
+        <td>${date}</td>
+        <td><b>DAILY SALES</b></td>
+        <td class="right sales">+₱${totalSales.toFixed(2)}</td>
+        <td class="right net">-</td>
+      </tr>`;
+      let netRow = `<tr style="background:#FFEBEE;font-weight:900">
+        <td colspan="2"><b>NET INCOME</b></td>
+        <td class="right">-</td>
+        <td class="right net" style="font-size:16px">₱${net.toFixed(2)}</td>
+      </tr>`;
+      tbody.innerHTML = salesRow + expenseRows + netRow;
+    }
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading" style="color:red">Error: '+e.message+'</td></tr>';
+  }
+}
+</script>
 </body>
-</html>
+  </html>
