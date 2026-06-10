@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Expenses - DHAN SIOMAI</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:15px;min-height:100vh}
+.box{max-width:700px;margin:auto;background:white;border-radius:20px;padding:25px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:26px}
+.sub{text-align:center;color:#666;font-size:14px;margin-bottom:20px}
+.back{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-weight:600;font-size:14px;text-decoration:none;display:inline-block}
+.filter{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:15px;margin-bottom:20px}
+.filter label{display:block;font-weight:800;color:#D32F2F;margin-bottom:8px;text-align:center;font-size:14px}
+.filter select{font-size:18px;padding:12px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:48px;margin-bottom:10px}
+.total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:30px 20px;text-align:center;margin:20px 0}
+.total label{font-size:14px;opacity:0.9;font-weight:700;letter-spacing:1px}
+.total div{font-size:48px;font-weight:900;margin-top:8px}
+table{width:100%;margin-top:20px;border-collapse:collapse}
+th,td{padding:12px;border:1px solid #ddd;text-align:left;font-size:13px}
+th{background:#D32F2F;color:white;font-weight:700}
+tr:nth-child(even){background:#FFFDF7}
+td.amount{text-align:right;color:#2E7D32;font-weight:700}
+.loading{text-align:center;padding:30px;color:#D32F2F;font-weight:700}
+.no-data{text-align:center;padding:30px;color:#999}
+.btn{width:100%;padding:16px;background:#1976D2;color:white;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;margin-top:15px}
+</style>
+</head>
+<body>
+<div class="box">
+<a href="./index.html" class="back">← Back to Menu</a>
+<h2>📊 Monthly Expenses</h2>
+<p class="sub">DHAN SIOMAI</p>
+
+<div class="filter">
+<label>📅 Select Month & Year</label>
+<select id="monthSelect"></select>
+<select id="yearSelect"></select>
+</div>
+
+<div class="total">
+<label>TOTAL EXPENSES THIS MONTH</label>
+<div id="total">₱0.00</div>
+</div>
+
+<table id="expenseTable">
+<thead>
+<tr>
+<th>Date</th>
+<th>Description</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody>
+<tr><td colspan="3" class="loading">Loading...</td></tr>
+</tbody>
+</table>
+
+<button class="btn" onclick="window.print()">🖨️ Print Report</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Generate month/year options
+const monthSelect = document.getElementById('monthSelect');
+const yearSelect = document.getElementById('yearSelect');
+const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+months.forEach((m,i) => {
+monthSelect.innerHTML += `<option value="${i}">${m}</option>`;
+});
+
+const currentYear = new Date().getFullYear();
+for(let y = currentYear; y >= currentYear-5; y--) {
+yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+}
+
+// Set current month/year
+monthSelect.value = new Date().getMonth();
+yearSelect.value = currentYear;
+
+async function loadMonthlyExpenses() {
+const month = parseInt(monthSelect.value);
+const year = parseInt(yearSelect.value);
+const tbody = document.querySelector('#expenseTable tbody');
+tbody.innerHTML = '<tr><td colspan="3" class="loading">Loading...</td></tr>';
+
+try {
+const snap = await getDocs(collection(db, 'daily_expenses'));
+let total = 0;
+let html = '';
+
+snap.forEach(doc => {
+const data = doc.data();
+const date = new Date(data.date);
+if(date.getMonth() === month && date.getFullYear() === year) {
+data.items.forEach(item => {
+total += item.amount;
+html += `<tr>
+<td>${date.toLocaleDateString()}</td>
+<td>${item.description}</td>
+<td class="amount">₱${item.amount.toFixed(2)}</td>
+</tr>`;
+});
+}
+});
+
+document.getElementById('total').innerText = '₱' + total.toFixed(2);
+
+if(html === '') {
+tbody.innerHTML = '<tr><td colspan="3" class="no-data">No expenses for this month</td></tr>';
+} else {
+tbody.innerHTML = html;
+}
+} catch(e) {
+tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:red;">Error loading data</td></tr>';
+}
+}
+
+monthSelect.onchange = loadMonthlyExpenses;
+yearSelect.onchange = loadMonthlyExpenses;
+loadMonthlyExpenses();
+</script>
+</body>
+  </html>
