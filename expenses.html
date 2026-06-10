@@ -13,9 +13,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 .back{background:#757575;color:white;border:none;padding:8px 15px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-weight:600;font-size:13px;text-decoration:none;display:inline-block}
 .datecard{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:18px}
 .datecard label{display:block;font-weight:800;color:#D32F2F;margin-bottom:6px;text-align:center;font-size:13px}
-.datecard input{font-size:16px;padding:10px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:42px}
-.datecard input:valid{border-color:#2E7D32}
-.datecard input:invalid{border-color:#D32F2F}
+.datecard input{font-size:16px;padding:10px;border:2px solid #2E7D32;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:42px;background:#F1F8E9}
 .item{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:10px;margin-bottom:10px}
 .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .num{font-weight:800;color:#D32F2F;font-size:12px}
@@ -68,13 +66,10 @@ import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/fir
 let no = 0;
 const files = {};
 
-// 🔥 AUTO SET TODAY'S DATE - para di na red border
-window.addEventListener('DOMContentLoaded', () => {
-const today = new Date().toISOString().split('T')[0];
-document.getElementById('date').value = today;
-});
+// 🔥 FORCE SET DATE - kahit di mag-load JS may date na
+document.getElementById('date').valueAsDate = new Date();
 
-// 🔥 AUTO COMPRESS IMAGE - same sa products.html mo
+// 🔥 AUTO COMPRESS
 async function compressImageAuto(file) {
 return new Promise((resolve) => {
 const reader = new FileReader();
@@ -170,7 +165,6 @@ sum += parseFloat(inp.value) || 0;
 document.getElementById('total').innerText = '₱' + sum.toFixed(2);
 }
 
-// 🔥 PERFECT SAVE - description + amount para tugma sa net-profit.html
 async function save() {
 const date = document.getElementById('date').value;
 if(!date) {
@@ -214,8 +208,6 @@ receiptNo: 'EXP-' + Date.now().toString().slice(-6)
 alert('✅ Saved successfully boss!');
 btn.disabled = false;
 btn.innerText = '💾 Save to Database';
-
-// Clear form
 document.getElementById('list').innerHTML = '';
 no = 0;
 Object.keys(files).forEach(k => delete files[k]);
