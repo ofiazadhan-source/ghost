@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: Arial; padding: 20px; background: #f5f5f5; }
-   .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+ .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
     input, select, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; }
     button { background: #ff6b6b; color: white; border: none; cursor: pointer; font-weight: bold; }
     button:hover { background: #ff5252; }
     table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; font-size: 14px; }
     th { background: #ff6b6b; color: white; }
     img { max-width: 80px; border-radius: 5px; }
-   .note { font-size: 12px; color: #666; margin-top: 5px; }
+ .note { font-size: 12px; color: #4caf50; margin-top: 5px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -30,7 +30,7 @@
         <option value="Other">Other</option>
       </select>
       <input type="file" id="receiptFile" accept="image/*" required>
-      <div class="note">Max 500KB lang boss. I-compress mo muna kung malaki</div>
+      <div class="note">✅ Auto compress 200px lang boss. Super tipid sa Firestore</div>
       <button type="submit">Save Expense</button>
     </form>
 
@@ -74,7 +74,6 @@
     const receiptFile = document.getElementById('receiptFile');
     const tbody = document.querySelector('#expenseTable tbody');
 
-    // SAVE EXPENSE - BASE64 VERSION
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -84,15 +83,30 @@
         return;
       }
 
-      if (file.size > 500000) {
-        alert('Masyado malaki boss. 500KB max lang. Compress mo muna sa phone');
-        return;
-      }
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
 
-      const reader = new FileReader();
+      img.onload = async function() {
+        // Auto resize to max 200px lang - super maliit
+        let width = img.width;
+        let height = img.height;
+        const maxSize = 200;
 
-      reader.onload = async function(e) {
-        const base64String = e.target.result;
+        if (width > height && width > maxSize) {
+          height = height * (maxSize / width);
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = width * (maxSize / height);
+          height = maxSize;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress to JPEG 60% quality para mas maliit pa
+        const base64String = canvas.toDataURL('image/jpeg', 0.6);
 
         await addDoc(collection(db, "expenses"), {
           item: itemName.value,
@@ -103,15 +117,14 @@
           createdBy: auth.currentUser.uid
         });
 
-        alert('✅ Saved! Walang CORS error to');
+        alert('✅ Saved! 200px lang yan boss, tipid na tipid');
         form.reset();
         loadExpenses();
       };
 
-      reader.readAsDataURL(file);
+      img.src = URL.createObjectURL(file);
     });
 
-    // LOAD EXPENSES
     async function loadExpenses() {
       tbody.innerHTML = '';
       const q = query(collection(db, "expenses"), orderBy("date", "desc"));
