@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Expenses + Production v4 - DHAN SIOMAI</title>
+<title>Daily Expenses - DHAN SIOMAI</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
 body{background:#FFF8E1;padding:15px;min-height:100vh;padding-bottom:150px}
@@ -14,7 +14,8 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 .datecard{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:18px}
 .datecard label{display:block;font-weight:800;color:#D32F2F;margin-bottom:6px;text-align:center;font-size:13px}
 .datecard input{font-size:16px;padding:10px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:42px}
-.section-title{color:#D32F2F;font-weight:800;margin:15px 0 10px 0;font-size:15px;border-left:4px solid #D32F2F;padding-left:8px}
+.datecard input:valid{border-color:#2E7D32}
+.datecard input:invalid{border-color:#D32F2F}
 .item{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:10px;margin-bottom:10px}
 .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .num{font-weight:800;color:#D32F2F;font-size:12px}
@@ -31,10 +32,6 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 .prev{width:38px;height:38px;border-radius:6px;border:2px solid #FFB74D;object-fit:cover;display:none}
 .kb{font-size:10px;color:#2E7D32;font-weight:700;min-width:45px}
 .addbtn{width:100%;padding:14px;background:linear-gradient(135deg,#FF9800,#F57C00);color:white;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;margin:12px 0}
-.prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:15px}
-.prod-box{background:#E8F5E9;border:2px solid #81C784;border-radius:10px;padding:10px}
-.prod-box label{display:block;font-size:11px;font-weight:700;color:#2E7D32;margin-bottom:4px}
-.prod-box input{width:100%;padding:8px;border:1.5px solid #A5D6A7;border-radius:6px;font-size:14px;font-weight:700;text-align:center}
 .total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:25px 20px;text-align:center;margin:18px 0}
 .total label{font-size:12px;opacity:0.9;font-weight:700;letter-spacing:1px}
 .total div{font-size:42px;font-weight:900;margin-top:6px}
@@ -47,65 +44,37 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px}
 <body>
 <div class="box">
 <a href="index.html" class="back">← Back to Menu</a>
-<h2>💸 Expenses + Production</h2>
+<h2>💸 Daily Expenses</h2>
 <p class="sub">DHAN SIOMAI</p>
-
 <div class="datecard">
-<label>📅 Date</label>
-<input type="date" id="date">
+<label>📅 Date of Purchase</label>
+<input type="date" id="date" required>
 </div>
-
-<div class="section-title">📦 DAILY PRODUCTION</div>
-<div class="prod-grid">
-<div class="prod-box">
-<label>65's Siomai Pcs</label>
-<input type="number" id="prod65" placeholder="0" min="0" value="0">
-</div>
-<div class="prod-box">
-<label>30's Siomai Pcs</label>
-<input type="number" id="prod30" placeholder="0" min="0" value="0">
-</div>
-<div class="prod-box">
-<label>Big Siomai Pcs</label>
-<input type="number" id="prodBig" placeholder="0" min="0" value="0">
-</div>
-<div class="prod-box">
-<label>Dumplings Pcs</label>
-<input type="number" id="prodDump" placeholder="0" min="0" value="0">
-</div>
-</div>
-
-<div class="section-title">💰 EXPENSES</div>
 <div id="list"></div>
 <button class="addbtn" id="add">+ Add Expense Item</button>
-
 <div class="total">
 <label>TOTAL EXPENSES TODAY</label>
 <div id="total">₱0.00</div>
 </div>
-
 <div class="actions">
-<button class="btn save" id="save">💾 Save All</button>
-<button class="btn print" id="print">🖨️ Print</button>
+<button class="btn save" id="save">💾 Save to Database</button>
+<button class="btn print" id="print">🖨️ Print Receipt</button>
 </div>
 </div>
-
 <script type="module">
 import { db } from './firebase-config.js';
-import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let no = 0;
 const files = {};
 
+// 🔥 AUTO SET TODAY'S DATE - para di na red border
 window.addEventListener('DOMContentLoaded', () => {
-const today = new Date();
-const yyyy = today.getFullYear();
-const mm = String(today.getMonth() + 1).padStart(2, '0');
-const dd = String(today.getDate()).padStart(2, '0');
-document.getElementById('date').value = `${yyyy}-${mm}-${dd}`;
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('date').value = today;
 });
 
-// 🔥 AUTO COMPRESS
+// 🔥 AUTO COMPRESS IMAGE - same sa products.html mo
 async function compressImageAuto(file) {
 return new Promise((resolve) => {
 const reader = new FileReader();
@@ -150,7 +119,22 @@ no++;
 const div = document.createElement('div');
 div.className = 'item';
 div.id = 'i' + no;
-div.innerHTML = `<div class="head"><span class="num">Item #` + no + `</span><button class="del" onclick="del(` + no + `)">×</button></div><div class="row"><input class="desc" placeholder="Desc ex: Mantika 1L"><input type="number" class="amt" placeholder="0.00" step="0.01" inputmode="decimal"><button class="delbtn" onclick="del(` + no + `)">×</button></div><div class="cam"><button onclick="document.getElementById('f` + no + `').click()">📷 Receipt</button><input type="file" id="f` + no + `" accept="image/*" capture="environment"><img id="p` + no + `" class="prev"><span id="s` + no + `" class="kb"></span></div>`;
+div.innerHTML = `
+<div class="head">
+<span class="num">Item #${no}</span>
+<button class="del" onclick="del(${no})">×</button>
+</div>
+<div class="row">
+<input class="desc" placeholder="Desc ex: Mantika 1L">
+<input type="number" class="amt" placeholder="0.00" step="0.01" inputmode="decimal">
+<button class="delbtn" onclick="del(${no})">×</button>
+</div>
+<div class="cam">
+<button onclick="document.getElementById('f${no}').click()">📷 Receipt</button>
+<input type="file" id="f${no}" accept="image/*" capture="environment">
+<img id="p${no}" class="prev">
+<span id="s${no}" class="kb"></span>
+</div>`;
 document.getElementById('list').appendChild(div);
 
 document.getElementById('f' + no).onchange = async function(e) {
@@ -186,21 +170,13 @@ sum += parseFloat(inp.value) || 0;
 document.getElementById('total').innerText = '₱' + sum.toFixed(2);
 }
 
-// 🔥 SAVE EXPENSES + PRODUCTION
+// 🔥 PERFECT SAVE - description + amount para tugma sa net-profit.html
 async function save() {
 const date = document.getElementById('date').value;
 if(!date) {
-alert('Select date first boss!');
+alert('Pili ka muna date boss!');
 return;
 }
-
-// Get production data
-const production = {
-siomai65: parseInt(document.getElementById('prod65').value) || 0,
-siomai30: parseInt(document.getElementById('prod30').value) || 0,
-siomaiBig: parseInt(document.getElementById('prodBig').value) || 0,
-dumplings: parseInt(document.getElementById('prodDump').value) || 0
-};
 
 const items = [];
 document.querySelectorAll('.item').forEach(card => {
@@ -216,8 +192,8 @@ receipt: files[id] || ''
 }
 });
 
-if(items.length === 0 && Object.values(production).every(v => v === 0)) {
-alert('Add expense or production data boss!');
+if(items.length === 0) {
+alert('Add at least 1 expense item boss!');
 return;
 }
 
@@ -229,16 +205,17 @@ btn.innerText = 'Saving...';
 try {
 await addDoc(collection(db, 'daily_expenses'), {
 date: date,
-timestamp: new Date(),
+timestamp: serverTimestamp(),
 total: totalAmount,
 items: items,
-production: production, // 🔥 ISINAMA NA PRODUCTION
 receiptNo: 'EXP-' + Date.now().toString().slice(-6)
 });
 
-alert('✅ Saved successfully boss! Expenses + Production');
+alert('✅ Saved successfully boss!');
 btn.disabled = false;
-btn.innerText = '💾 Save All';
+btn.innerText = '💾 Save to Database';
+
+// Clear form
 document.getElementById('list').innerHTML = '';
 no = 0;
 Object.keys(files).forEach(k => delete files[k]);
@@ -247,25 +224,21 @@ add();
 
 } catch(e) {
 alert('SAVE ERROR: ' + e.message);
-console.error(e);
+console.error('Error details:', e);
 btn.disabled = false;
-btn.innerText = '💾 Save All';
+btn.innerText = '💾 Save to Database';
 }
 }
 
 function print() {
 const date = document.getElementById('date').value;
 let w = window.open('', '', 'width=300,height=600');
-let html = '<h3 style="text-align:center">DHAN SIOMAI</h3><div style="text-align:center;font-size:12px">Daily Expenses + Production</div><hr>Date: ' + date + '<br><hr><b>PRODUCTION:</b><br>';
-html += '65s: ' + document.getElementById('prod65').value + ' pcs<br>';
-html += '30s: ' + document.getElementById('prod30').value + ' pcs<br>';
-html += 'Big: ' + document.getElementById('prodBig').value + ' pcs<br>';
-html += 'Dumplings: ' + document.getElementById('prodDump').value + ' pcs<br><hr><b>EXPENSES:</b><br>';
+let html = '<h3 style="text-align:center">DHAN SIOMAI</h3><div style="text-align:center;font-size:12px">Daily Expenses Receipt</div><hr>Date: ' + date + '<br>Time: ' + new Date().toLocaleTimeString() + '<hr>';
 document.querySelectorAll('.item').forEach(function(card) {
 const d = card.querySelector('.desc').value.trim();
 const a = parseFloat(card.querySelector('.amt').value) || 0;
 if(d && a > 0) {
-html += d + '........ ₱' + a.toFixed(2) + '<br>';
+html += d + ' x1........ ₱' + a.toFixed(2) + '<br>';
 }
 });
 html += '<hr><b>TOTAL: ₱' + document.getElementById('total').innerText.replace('₱','') + '</b><br><center>Thank you boss!</center>';
