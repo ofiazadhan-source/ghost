@@ -1,24 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Expenses - DHAN SIOMAI</title>
   <style>
-    body { font-family: Arial; padding: 15px; }
+    body { font-family: Arial; padding: 15px; background:#f5f5f5; }
     .card { background:#fff3cd; padding:15px; border-radius:10px; margin-bottom:15px }
     .total-box { background:#c62828; color:white; padding:20px; border-radius:12px; text-align:center; margin-bottom:15px }
-    input, select, button { width:100%; padding:8px; margin-top:5px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box }
-    button { background:#c62828; color:white; border:none; cursor:pointer }
-    table { width:100%; border-collapse:collapse; margin-top:15px }
-    th { background:#c62828; color:white; padding:8px }
-    td { padding:8px; border-bottom:1px solid #ddd }
-    td.amount { color:green; font-weight:bold }
+    input, select, button { width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-size:16px }
+    button { background:#c62828; color:white; border:none; cursor:pointer; margin-top:10px }
+    button:hover { background:#a02020 }
+    table { width:100%; border-collapse:collapse; margin-top:15px; background:white; border-radius:10px; overflow:hidden }
+    th { background:#c62828; color:white; padding:10px; text-align:left }
+    td { padding:10px; border-bottom:1px solid #eee }
+    td.amount { color:green; font-weight:bold; text-align:right }
+    h2 { margin-top:0 }
+    .loading { text-align:center; color:#666; padding:20px }
   </style>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
 <h2 id="pageTitle">Monthly Expenses - DHAN SIOMAI</h2>
 
-<!-- Dropdown Daily/Monthly -->
+<!-- Form -->
 <div class="card">
   <label><b>Tipo ng Expense</b></label>
   <select id="expenseType" onchange="toggleType()">
@@ -26,15 +35,24 @@
     <option value="daily">Daily</option>
   </select>
 
-  <label><b>Select Month & Year</b></label>
-  <select id="month"><option>June</option><option>July</option></select>
-  <select id="year"><option>2026</option><option>2025</option></select>
+  <label><b>Month</b></label>
+  <select id="month">
+    <option>January</option><option>February</option><option>March</option>
+    <option>April</option><option>May</option><option>June</option>
+    <option>July</option><option>August</option><option>September</option>
+    <option>October</option><option>November</option><option>December</option>
+  </select>
+
+  <label><b>Year</b></label>
+  <select id="year">
+    <option>2026</option><option>2025</option><option>2024</option>
+  </select>
 
   <label><b>Date</b></label>
   <input type="date" id="date">
 
   <label><b>Description</b></label>
-  <input type="text" id="desc" placeholder="Hal: Pamasahe, Yelo">
+  <input type="text" id="desc" placeholder="Hal: Pamasahe, Yelo, Rent">
 
   <label><b>Amount</b></label>
   <input type="number" id="amount" placeholder="0.00" step="0.01">
@@ -54,18 +72,35 @@
     <tr>
       <th>Date</th>
       <th>Description</th>
-      <th>Amount</th>
+      <th style="text-align:right">Amount</th>
     </tr>
   </thead>
-  <tbody id="expenseTable"></tbody>
+  <tbody id="expenseTable">
+    <tr><td colspan="3" class="loading">Loading...</td></tr>
+  </tbody>
 </table>
 
 <script>
-// Store data sa browser lang muna. Pag refresh mawawala.
-let dailyData = [];
-let monthlyData = [];
+// 1. PALITAN MO TO NG CONFIG MO GALING FIREBASE
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
 
+// 2. Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Set today as default date
 document.getElementById('date').valueAsDate = new Date();
+// Set current month/year
+let now = new Date();
+document.getElementById('month').value = now.toLocaleString('en-US', {month: 'long'});
+document.getElementById('year').value = now.getFullYear();
 
 function toggleType() {
   let type = document.getElementById('expenseType').value;
@@ -76,52 +111,83 @@ function toggleType() {
     document.getElementById('pageTitle').innerText = 'Monthly Expenses - DHAN SIOMAI';
     document.getElementById('totalLabel').innerText = 'TOTAL EXPENSES THIS MONTH';
   }
-  renderTable();
+  loadExpenses();
 }
 
 function addExpense() {
   let type = document.getElementById('expenseType').value;
   let date = document.getElementById('date').value;
-  let desc = document.getElementById('desc').value;
+  let month = document.getElementById('month').value;
+  let year = document.getElementById('year').value;
+  let desc = document.getElementById('desc').value.trim();
   let amount = parseFloat(document.getElementById('amount').value);
 
-  if(!date || !desc || isNaN(amount)) {
+  if(!date || !desc || isNaN(amount) || amount <= 0) {
     alert('Pakilagay lahat: Date, Description, Amount');
     return;
   }
 
-  let expense = {date, desc, amount};
+  let collection = type === 'daily' ? 'daily_expenses' : 'monthly_expenses';
   
-  if(type === 'daily') dailyData.push(expense);
-  else monthlyData.push(expense);
-
-  // Clear inputs
-  document.getElementById('desc').value = '';
-  document.getElementById('amount').value = '';
-  
-  renderTable();
-}
-
-function renderTable() {
-  let type = document.getElementById('expenseType').value;
-  let data = type === 'daily' ? dailyData : monthlyData;
-  let tbody = document.getElementById('expenseTable');
-  tbody.innerHTML = '';
-  
-  let total = 0;
-  data.forEach(item => {
-    total += item.amount;
-    tbody.innerHTML += `
-      <tr>
-        <td>${item.date}</td>
-        <td>${item.desc}</td>
-        <td class="amount">₱${item.amount.toFixed(2)}</td>
-      </tr>
-    `;
+  db.collection(collection).add({
+    date: date,
+    month: month,
+    year: year,
+    desc: desc,
+    amount: amount,
+    created: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    document.getElementById('desc').value = '';
+    document.getElementById('amount').value = '';
+  }).catch(err => {
+    alert('Error: ' + err.message);
   });
-  
-  document.getElementById('totalAmount').innerText = '₱' + total.toFixed(2);
 }
+
+function loadExpenses() {
+  let type = document.getElementById('expenseType').value;
+  let month = document.getElementById('month').value;
+  let year = document.getElementById('year').value;
+  let collection = type === 'daily' ? 'daily_expenses' : 'monthly_expenses';
+  
+  let query = db.collection(collection).orderBy('date','desc');
+  
+  // Pag Monthly, i-filter by month + year katulad sa screenshot mo
+  if(type === 'monthly') {
+    query = query.where('month','==',month).where('year','==',year);
+  }
+
+  query.onSnapshot(snapshot => {
+    let tbody = document.getElementById('expenseTable');
+    tbody.innerHTML = '';
+    let total = 0;
+    
+    if(snapshot.empty) {
+      tbody.innerHTML = '<tr><td colspan="3" class="loading">No expenses yet</td></tr>';
+      document.getElementById('totalAmount').innerText = '₱0.00';
+      return;
+    }
+    
+    snapshot.forEach(doc => {
+      let item = doc.data();
+      total += item.amount;
+      tbody.innerHTML += `
+        <tr>
+          <td>${item.date}</td>
+          <td>${item.desc}</td>
+          <td class="amount">₱${item.amount.toFixed(2)}</td>
+        </tr>
+      `;
+    });
+    document.getElementById('totalAmount').innerText = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2});
+  });
+}
+
+// Load pag open ng page
+window.onload = loadExpenses;
+// Reload pag nagpalit ng month/year
+document.getElementById('month').onchange = loadExpenses;
+document.getElementById('year').onchange = loadExpenses;
 </script>
 
 </body>
