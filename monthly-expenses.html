@@ -3,153 +3,169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Net - Siomai Factory</title>
+<title>Net Profit - DHAN SIOMAI</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
-body{background:#FFF8E1;padding:15px;min-height:100vh}
-.container{max-width:480px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
-h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
-.subtitle{text-align:center;color:#666;font-size:13px;margin-bottom:20px}
-.back-btn{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-size:13px;font-weight:600}
-.filter-box{background:#FFF3E0;padding:15px;border-radius:12px;margin-bottom:15px;border:2px solid #FFCC80}
-label{font-weight:700;color:#B71C1C;font-size:13px;display:block;margin-top:8px}
-input{width:100%;padding:10px;border-radius:8px;border:2px solid #FFCC80;margin-top:4px;font-size:15px;font-weight:600}
-.summary-box{background:#D32F2F;color:white;padding:20px;border-radius:15px;text-align:center;margin-bottom:15px}
-.summary-box h3{font-size:13px;font-weight:600;opacity:0.9;margin-bottom:5px}
-.summary-box h1{font-size:32px;font-weight:900;margin:5px 0}
-.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px}
-.card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:15px;text-align:center}
-.card h4{color:#666;font-size:12px;margin-bottom:5px}
-.card h2{color:#2E7D32;font-size:22px;margin:0}
-.card.expense h2{color:#C62828}
-.table-box{background:white;border-radius:12px;overflow:hidden;border:2px solid #FFCC80;margin-top:15px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:#D32F2F;color:white;padding:10px;text-align:left;font-weight:800}
-td{padding:10px;border-bottom:1px solid #eee}
-td.right{text-align:right;font-weight:700}
-td.sales{color:#2E7D32}
-td.expense{color:#C62828}
-td.net{color:#D32F2F;font-weight:900}
-.loading{text-align:center;padding:40px;color:#D32F2F;font-weight:700}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:#FFF8E1;padding:15px}
+.header{background:#D32F2F;color:white;padding:15px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.header h1{font-size:18px}
+.back-btn{color:#D32F2F;background:white;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px;font-size:13px}
+.card{background:white;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.card h3{color:#D32F2F;margin-bottom:15px;font-size:16px}
+.filter-row{display:flex;gap:10px;margin-bottom:15px}
+.filter-row input{flex:1;padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:14px}
+.filter-row button{padding:10px 20px;background:#D32F2F;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stat-box{padding:15px;border-radius:12px;text-align:center}
+.stat-box.green{background:#E8F5E9}
+.stat-box.red{background:#FFEBEE}
+.stat-box.blue{background:#E3F2FD}
+.stat-box h4{font-size:12px;color:#666;margin-bottom:5px}
+.stat-box p{font-size:22px;font-weight:700}
+.green p{color:#2E7D32}
+.red p{color:#C62828}
+.blue p{color:#1565C0}
+.sale-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:10px}
+.sale-head{display:flex;justify-content:space-between;margin-bottom:8px}
+.sale-date{font-weight:700;color:#D32F2F;font-size:13px}
+.sale-total{font-weight:800;color:#2E7D32;font-size:16px}
+.sale-items{font-size:12px;color:#555;line-height:1.6}
+.exp-card{background:#FFF5F5;border:2px solid #FFCDD2;border-radius:12px;padding:12px;margin-bottom:10px}
+.exp-head{display:flex;justify-content:space-between;margin-bottom:8px}
+.exp-desc{font-weight:700;color:#C62828;font-size:13px}
+.exp-amt{font-weight:800;color:#C62828;font-size:16px}
+.loading{text-align:center;padding:40px;color:#666}
+.formula{font-size:13px;color:#666;text-align:center;margin-top:10px}
 </style>
 </head>
 <body>
-<div class="container">
-  <button class="back-btn" onclick="window.location='pos.html'">← Back to POS</button>
-  <h2>📊 Daily Net</h2>
-  <p class="subtitle">Auto compute: Sales - Expenses</p>
+<div class="header">
+  <h1>💰 Net Profit Report</h1>
+  <a href="index.html" class="back-btn">← Back</a>
+</div>
 
-  <div class="filter-box">
-    <label>Select Date</label>
-    <input type="date" id="date" onchange="loadNet()">
+<div class="card">
+  <h3>📊 Auto Load Today</h3>
+  <div class="filter-row">
+    <input type="date" id="dateFrom">
+    <input type="date" id="dateTo">
+    <button id="loadBtn">Load</button>
   </div>
-
-  <div class="summary-box">
-    <h3>NET INCOME</h3>
-    <h1 id="netAmount">₱0.00</h1>
-  </div>
-
-  <div class="summary-grid">
-    <div class="card">
-      <h4>DAILY SALES</h4>
-      <h2 id="salesAmount">₱0.00</h2>
+  <div class="stats-grid">
+    <div class="stat-box green">
+      <h4>Total Sales</h4>
+      <p id="totalSales">₱0</p>
     </div>
-    <div class="card expense">
-      <h4>DAILY EXPENSES</h4>
-      <h2 id="expenseAmount">₱0.00</h2>
+    <div class="stat-box red">
+      <h4>Total Expenses</h4>
+      <p id="totalExpenses">₱0</p>
+    </div>
+    <div class="stat-box blue">
+      <h4>Net Profit</h4>
+      <p id="netProfit">₱0</p>
     </div>
   </div>
+  <div class="formula">Formula: Sales - Expenses = Net Profit</div>
+</div>
 
-  <div class="table-box">
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Description</th>
-          <th class="right">Amount</th>
-          <th class="right">Net</th>
-        </tr>
-      </thead>
-      <tbody id="tbody">
-        <tr><td colspan="4" class="loading">Select date to load</td></tr>
-      </tbody>
-    </table>
-  </div>
+<div class="card">
+  <h3>📋 Sales List</h3>
+  <div id="salesList" class="loading">Loading today sales...</div>
+</div>
 
-  <button class="back-btn" onclick="window.print()" style="width:100%;margin-top:15px;background:#2E7D32">🖨️ Print Report</button>
+<div class="card">
+  <h3>💸 Expenses List</h3>
+  <div id="expensesList" class="loading">Loading expenses...</div>
 </div>
 
 <script type="module">
 import { db } from "./firebase-config.js";
 import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Set today as default
-let today = new Date().toISOString().split('T')[0];
-document.getElementById('date').value = today;
-loadNet();
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('dateFrom').value = today;
+document.getElementById('dateTo').value = today;
 
-window.loadNet = async () => {
-  let date = document.getElementById('date').value;
-  if(!date){alert('Pili ka muna date boss!');return}
+async function loadReport() {
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+  const salesList = document.getElementById('salesList');
+  const expList = document.getElementById('expensesList');
 
-  document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading">Loading...</td></tr>';
+  salesList.innerHTML = '<div class="loading">Loading sales...</div>';
+  expList.innerHTML = '<div class="loading">Loading expenses...</div>';
+
+  let totalSales = 0;
+  let totalExpenses = 0;
 
   try {
-    // 1. KUHA SALES FROM dhan-sales
-    let salesSnap = await getDocs(query(collection(db,"dhan-sales"), where("date","==",date)));
-    let totalSales = 0;
-    salesSnap.forEach(doc => {
-      totalSales += doc.data().total || 0;
-    });
+    // 1. Load Sales from dhan-sales
+    const salesQ = query(collection(db, "dhan-sales"),
+      where("date", ">=", from),
+      where("date", "<=", to),
+      orderBy("date", "desc")
+    );
+    const salesSnap = await getDocs(salesQ);
 
-    // 2. KUHA EXPENSES FROM daily_expenses
-    let expenseSnap = await getDocs(query(collection(db,"daily_expenses"), where("date","==",date), orderBy("created","desc")));
-    let totalExpense = 0;
-    let expenseRows = '';
-
-    expenseSnap.forEach(doc => {
-      let exp = doc.data();
-      totalExpense += exp.amount || 0;
-      expenseRows += `<tr>
-        <td>${exp.date}</td>
-        <td>${exp.desc}</td>
-        <td class="right expense">-₱${(exp.amount||0).toFixed(2)}</td>
-        <td class="right net">-</td>
-      </tr>`;
-    });
-
-    // 3. COMPUTE NET
-    let net = totalSales - totalExpense;
-
-    // 4. DISPLAY
-    document.getElementById('salesAmount').innerText = '₱' + totalSales.toLocaleString('en-PH',{minimumFractionDigits:2});
-    document.getElementById('expenseAmount').innerText = '₱' + totalExpense.toLocaleString('en-PH',{minimumFractionDigits:2});
-    document.getElementById('netAmount').innerText = '₱' + net.toLocaleString('en-PH',{minimumFractionDigits:2});
-
-    // 5. TABLE
-    let tbody = document.getElementById('tbody');
-    if(expenseSnap.empty && salesSnap.empty){
-      tbody.innerHTML = '<tr><td colspan="4" class="loading">No data for this date</td></tr>';
+    if(salesSnap.empty) {
+      salesList.innerHTML = '<div class="loading">Wala pang sales ngayon boss</div>';
     } else {
-      let salesRow = `<tr style="background:#E8F5E9">
-        <td>${date}</td>
-        <td><b>DAILY SALES</b></td>
-        <td class="right sales">+₱${totalSales.toFixed(2)}</td>
-        <td class="right net">-</td>
-      </tr>`;
-      let netRow = `<tr style="background:#FFEBEE;font-weight:900">
-        <td colspan="2"><b>NET INCOME</b></td>
-        <td class="right">-</td>
-        <td class="right net" style="font-size:16px">₱${net.toFixed(2)}</td>
-      </tr>`;
-      tbody.innerHTML = salesRow + expenseRows + netRow;
+      let html = '';
+      salesSnap.forEach(doc => {
+        const sale = doc.data();
+        totalSales += sale.total || 0;
+        const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
+        const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
+        html += `<div class="sale-card">
+          <div class="sale-head">
+            <span class="sale-date">${sale.date} ${time}</span>
+            <span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span>
+          </div>
+          <div class="sale-items">${items}</div>
+        </div>`;
+      });
+      salesList.innerHTML = html;
     }
 
+    // 2. Load Expenses - PER ITEM DOCUMENT, di array
+    const expQ = query(collection(db, "daily_expenses"),
+      where("date", ">=", from),
+      where("date", "<=", to),
+      orderBy("date", "desc")
+    );
+    const expSnap = await getDocs(expQ);
+
+    if(expSnap.empty) {
+      expList.innerHTML = '<div class="loading">Wala pang expenses ngayon boss</div>';
+    } else {
+      let expHtml = '';
+      expSnap.forEach(doc => {
+        const exp = doc.data();
+        totalExpenses += exp.amount || 0;
+        expHtml += `<div class="exp-card">
+          <div class="exp-head">
+            <span class="exp-desc">${exp.date} - ${exp.desc}</span>
+            <span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span>
+          </div>
+        </div>`;
+      });
+      expList.innerHTML = expHtml;
+    }
+
+    // 3. Compute Net
+    const netProfit = totalSales - totalExpenses;
+    document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
+    document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString();
+    document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString();
+
   } catch(e) {
+    salesList.innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
     console.error(e);
-    document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading" style="color:red">Error: '+e.message+'</td></tr>';
   }
 }
+
+document.getElementById('loadBtn').addEventListener('click', loadReport);
+loadReport();
 </script>
 </body>
-  </html>
+</html>
