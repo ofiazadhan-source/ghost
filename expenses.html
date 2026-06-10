@@ -1,27 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Dhan Siomai - Expenses</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expenses - Dhan Siomai POS</title>
   <style>
-    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
- .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
-    input, select, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; }
-    button { background: #ff6b6b; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button:hover { background: #ff5252; }
+    * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
+    body {background:#FFF8E1; padding:15px; min-height:100vh;}
+   .container { max-width:480px; margin:auto; background:white; border-radius:20px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; }
+    h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
+   .back-btn { background:#757575; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; margin-bottom:15px; font-size:13px; font-weight:600; }
+   .input-group {margin-bottom:12px;}
+   .input-group label { font-size:12px; font-weight:700; color:#D32F2F; margin-bottom:4px; display:block; }
+   .input-group input,.input-group select { width:100%; padding:12px; border:2px solid #FFE0B2; border-radius:8px; font-size:14px; background:white; }
+   .input-group input:focus,.input-group select:focus {outline:none; border-color:#D32F2F;}
+   .input-group input[type="file"] { padding:8px; border:2px dashed #FFCC80; background:#FFFDF7; cursor:pointer; }
+   .add-btn { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:8px; font-weight:800; cursor:pointer; margin-top:8px; font-size:15px; }
+   .add-btn:disabled { background:#ccc; cursor:not-allowed; }
     table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; font-size: 14px; }
-    th { background: #ff6b6b; color: white; }
-    img { max-width: 80px; border-radius: 5px; }
- .note { font-size: 12px; color: #4caf50; margin-top: 5px; font-weight: bold; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; font-size: 13px; }
+    th { background: #D32F2F; color: white; }
+    img { max-width: 60px; border-radius: 8px; cursor: pointer; }
+   .img-preview { max-width:100px; max-height:100px; margin:8px auto; display:none; border-radius:8px; border:2px solid #FFCC80; }
+   .loading { text-align:center; padding:20px; color:#D32F2F; font-weight:700; }
+   .note { font-size: 12px; color: #2E7D32; margin-top: 5px; font-weight: 700; }
   </style>
 </head>
 <body>
   <div class="container">
+    <button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
     <h2>📝 Add Expense</h2>
-    <form id="expenseForm">
-      <input type="text" id="itemName" placeholder="Item name" required>
-      <input type="number" id="amount" placeholder="Amount" step="0.01" required>
+
+    <div class="input-group">
+      <label>Item Name</label>
+      <input type="text" id="itemName" placeholder="ex: Shoppe" required>
+    </div>
+    <div class="input-group">
+      <label>Amount</label>
+      <input type="number" id="amount" placeholder="2280" step="0.01" required>
+    </div>
+    <div class="input-group">
+      <label>Category</label>
       <select id="category" required>
         <option value="">Select category</option>
         <option value="Ingredients">Ingredients</option>
@@ -29,125 +48,188 @@
         <option value="Utilities">Utilities</option>
         <option value="Other">Other</option>
       </select>
+    </div>
+    <div class="input-group">
+      <label>📷 Receipt Image - Auto Compress</label>
       <input type="file" id="receiptFile" accept="image/*" required>
-      <div class="note">✅ Auto compress 200px lang boss. Super tipid sa Firestore</div>
-      <button type="submit">Save Expense</button>
-    </form>
+      <img id="imgPreview" class="img-preview">
+      <div class="note">✅ Same compress logic sa Products boss</div>
+    </div>
+    <button class="add-btn" id="saveBtn" onclick="addExpense()">Save Expense</button>
 
-    <h2>📋 Expense List</h2>
+    <h2 style="margin-top:30px;">📋 Expense List</h2>
     <table id="expenseTable">
       <thead>
         <tr>
           <th>Date</th>
           <th>Item</th>
           <th>Amount</th>
-          <th>Category</th>
           <th>Receipt</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
     </table>
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
+      apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
       authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
       projectId: "dhan-siomai-pos-fe1e5",
-      storageBucket: "dhan-siomai-pos-fe1e5.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+      messagingSenderId: "305932123173",
+      appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    const form = document.getElementById('expenseForm');
-    const itemName = document.getElementById('itemName');
-    const amount = document.getElementById('amount');
-    const category = document.getElementById('category');
-    const receiptFile = document.getElementById('receiptFile');
-    const tbody = document.querySelector('#expenseTable tbody');
+    let base64Receipt = '';
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    // EXACT SAME SA PRODUCTS - AUTO COMPRESS
+    async function compressImageAuto(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            let quality = 0.8;
+            let maxWidth = 600;
+            let canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d');
 
-      const file = receiptFile.files[0];
-      if (!file) {
-        alert('Pili ka muna ng receipt image boss');
-        return;
-      }
+            function tryCompress() {
+              let width = img.width;
+              let height = img.height;
+              if(width > maxWidth) {
+                height = (maxWidth / width) * height;
+                width = maxWidth;
+              }
+              canvas.width = width;
+              canvas.height = height;
+              ctx.drawImage(img, 0, 0, width, height);
+              let base64 = canvas.toDataURL('image/jpeg', quality);
+              let sizeKB = Math.round(base64.length / 1024);
 
-      const img = new Image();
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      img.onload = async function() {
-        // Auto resize to max 200px lang - super maliit
-        let width = img.width;
-        let height = img.height;
-        const maxSize = 200;
-
-        if (width > height && width > maxSize) {
-          height = height * (maxSize / width);
-          width = maxSize;
-        } else if (height > maxSize) {
-          width = width * (maxSize / height);
-          height = maxSize;
+              if(sizeKB > 900 && quality > 0.3) {
+                quality -= 0.1;
+                tryCompress();
+              } else if(sizeKB > 900 && maxWidth > 300) {
+                maxWidth -= 50;
+                quality = 0.8;
+                tryCompress();
+              } else {
+                resolve(base64);
+              }
+            }
+            tryCompress();
+          }
         }
-
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Compress to JPEG 60% quality para mas maliit pa
-        const base64String = canvas.toDataURL('image/jpeg', 0.6);
-
-        await addDoc(collection(db, "expenses"), {
-          item: itemName.value,
-          amount: parseFloat(amount.value),
-          category: category.value,
-          date: new Date(),
-          receipt: base64String,
-          createdBy: auth.currentUser.uid
-        });
-
-        alert('✅ Saved! 200px lang yan boss, tipid na tipid');
-        form.reset();
-        loadExpenses();
-      };
-
-      img.src = URL.createObjectURL(file);
-    });
-
-    async function loadExpenses() {
-      tbody.innerHTML = '';
-      const q = query(collection(db, "expenses"), orderBy("date", "desc"));
-      const snapshot = await getDocs(q);
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const date = data.date.toDate().toLocaleDateString();
-        tbody.innerHTML += `
-          <tr>
-            <td>${date}</td>
-            <td>${data.item}</td>
-            <td>₱${data.amount.toFixed(2)}</td>
-            <td>${data.category}</td>
-            <td><img src="${data.receipt}" alt="receipt"></td>
-          </tr>
-        `;
       });
     }
 
+    document.getElementById('receiptFile').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if(file) {
+        document.getElementById('saveBtn').innerText = 'Compressing image...';
+        document.getElementById('saveBtn').disabled = true;
+        base64Receipt = await compressImageAuto(file);
+        document.getElementById('imgPreview').src = base64Receipt;
+        document.getElementById('imgPreview').style.display = 'block';
+        document.getElementById('saveBtn').innerText = 'Save Expense';
+        document.getElementById('saveBtn').disabled = false;
+      } else {
+        base64Receipt = '';
+        document.getElementById('imgPreview').style.display = 'none';
+      }
+    });
+
+    window.addExpense = async () => {
+      const item = document.getElementById('itemName').value.trim();
+      const amount = parseFloat(document.getElementById('amount').value);
+      const category = document.getElementById('category').value;
+      const btn = document.getElementById('saveBtn');
+
+      if(!item ||!amount ||!category) {
+        alert('Complete mo muna boss!');
+        return;
+      }
+      if(!base64Receipt) {
+        alert('Pili ka muna ng receipt image!');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Saving...';
+
+      try {
+        await addDoc(collection(db, "expenses"), {
+          item,
+          amount,
+          category,
+          date: new Date(),
+          receipt: base64Receipt,
+          createdBy: auth.currentUser.uid
+        });
+
+        alert('✓ Expense Saved Successfully!');
+        document.getElementById('itemName').value = '';
+        document.getElementById('amount').value = '';
+        document.getElementById('category').value = '';
+        document.getElementById('receiptFile').value = '';
+        document.getElementById('imgPreview').style.display = 'none';
+        base64Receipt = '';
+        loadExpenses();
+      } catch(error) {
+        alert('Error boss: ' + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Save Expense';
+      }
+    }
+
+    async function loadExpenses() {
+      const tbody = document.querySelector('#expenseTable tbody');
+      tbody.innerHTML = '<tr><td colspan="4" class="loading">Loading...</td></tr>';
+
+      try {
+        const q = query(collection(db, "expenses"), orderBy("date", "desc"));
+        const snap = await getDocs(q);
+
+        if(snap.empty) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;">No expenses yet</td></tr>';
+          return;
+        }
+
+        let html = '';
+        snap.forEach(doc => {
+          const data = doc.data();
+          const date = data.date.toDate().toLocaleDateString();
+          html += `
+            <tr>
+              <td>${date}</td>
+              <td>${data.item}</td>
+              <td>₱${data.amount.toFixed(2)}</td>
+              <td><img src="${data.receipt}" onclick="window.open(this.src)"></td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+      } catch(error) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">Error loading</td></tr>';
+      }
+    }
+
     onAuthStateChanged(auth, user => {
-      if (user) loadExpenses();
-      else alert('Login ka muna boss');
+      if(user) loadExpenses();
+      else window.location.href = 'login.html';
     });
   </script>
 </body>
