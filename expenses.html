@@ -1,177 +1,128 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Expenses - DHAN SIOMAI</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
-body{background:#FFF8E1;padding:15px;min-height:100vh}
-.box{max-width:700px;margin:auto;background:white;border-radius:20px;padding:25px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
-h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:26px}
-.sub{text-align:center;color:#666;font-size:14px;margin-bottom:20px}
-.back{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-weight:600;font-size:14px;text-decoration:none;display:inline-block}
-.datecard{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:15px;margin-bottom:20px}
-.datecard label{display:block;font-weight:800;color:#D32F2F;margin-bottom:8px;text-align:center;font-size:14px}
-.datecard input{font-size:18px;padding:12px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:48px}
-.item{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:12px}
-.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.num{font-weight:800;color:#D32F2F;font-size:14px}
-.del{background:#C62828;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:18px;font-weight:bold;line-height:1}
-.row{display:flex;gap:6px;align-items:center} /* gap 6px na lang */
-.row input{border:2px solid #FFB74D;border-radius:8px;padding:8px;font-size:14px;font-weight:600;outline:none;height:42px}
-.desc{width:55%;color:#D32F2F} /* PINALITAN: 55% na lang */
-.amt{width:80px;color:#2E7D32;text-align:center;font-size:14px;font-weight:700} /* PINALITAN: 80px */
-.delbtn{width:38px;background:#C62828;color:white;border:none;border-radius:8px;height:42px;font-size:18px;font-weight:800;cursor:pointer}
-.addbtn{width:100%;padding:16px;background:linear-gradient(135deg,#FF9800,#F57C00);color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin:15px 0}
-.total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:30px 20px;text-align:center;margin:20px 0}
-.total label{font-size:14px;opacity:0.9;font-weight:700;letter-spacing:1px}
-.total div{font-size:48px;font-weight:900;margin-top:8px}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.btn{padding:16px;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer}
-.save{background:#2E7D32;color:white}
-.print{background:#1976D2;color:white}
-.success{background:#E8F5E9;color:#2E7D32;padding:12px;border-radius:8px;text-align:center;font-weight:700;margin-bottom:15px;display:none;border:2px solid #2E7D32}
-</style>
+  <title>Expenses - DHAN SIOMAI</title>
+  <style>
+    body { font-family: Arial; padding: 15px; }
+    .card { background:#fff3cd; padding:15px; border-radius:10px; margin-bottom:15px }
+    .total-box { background:#c62828; color:white; padding:20px; border-radius:12px; text-align:center; margin-bottom:15px }
+    input, select, button { width:100%; padding:8px; margin-top:5px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box }
+    button { background:#c62828; color:white; border:none; cursor:pointer }
+    table { width:100%; border-collapse:collapse; margin-top:15px }
+    th { background:#c62828; color:white; padding:8px }
+    td { padding:8px; border-bottom:1px solid #ddd }
+    td.amount { color:green; font-weight:bold }
+  </style>
 </head>
 <body>
-<div class="box">
-<a href="./index.html" class="back">← Back to Menu</a>
-<h2>💸 Daily Expenses</h2>
-<p class="sub">DHAN SIOMAI</p>
 
-<div id="success" class="success">✅ Saved Successfully!</div>
+<h2 id="pageTitle">Monthly Expenses - DHAN SIOMAI</h2>
 
-<div class="datecard">
-<label>📅 Date of Purchase</label>
-<input type="date" id="date">
+<!-- Dropdown Daily/Monthly -->
+<div class="card">
+  <label><b>Tipo ng Expense</b></label>
+  <select id="expenseType" onchange="toggleType()">
+    <option value="monthly">Monthly</option>
+    <option value="daily">Daily</option>
+  </select>
+
+  <label><b>Select Month & Year</b></label>
+  <select id="month"><option>June</option><option>July</option></select>
+  <select id="year"><option>2026</option><option>2025</option></select>
+
+  <label><b>Date</b></label>
+  <input type="date" id="date">
+
+  <label><b>Description</b></label>
+  <input type="text" id="desc" placeholder="Hal: Pamasahe, Yelo">
+
+  <label><b>Amount</b></label>
+  <input type="number" id="amount" placeholder="0.00" step="0.01">
+
+  <button onclick="addExpense()">Add Expense</button>
 </div>
-<div id="list"></div>
-<button class="addbtn" id="add">+ Add Expense Item</button>
-<div class="total">
-<label>TOTAL EXPENSES TODAY</label>
-<div id="total">₱0.00</div>
-</div>
-<div class="actions">
-<button class="btn save" id="save">💾 Save to Database</button>
-<button class="btn print" id="print">🖨️ Print Receipt</button>
-</div>
+
+<!-- Total -->
+<div class="total-box">
+  <div id="totalLabel">TOTAL EXPENSES THIS MONTH</div>
+  <h1 id="totalAmount">₱0.00</h1>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<!-- Table -->
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Description</th>
+      <th>Amount</th>
+    </tr>
+  </thead>
+  <tbody id="expenseTable"></tbody>
+</table>
 
-const firebaseConfig = {
-apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-projectId: "dhan-siomai-pos-fe1e5",
-storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-messagingSenderId: "305932123173",
-appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-let no = 0;
+<script>
+// Store data sa browser lang muna. Pag refresh mawawala.
+let dailyData = [];
+let monthlyData = [];
 
 document.getElementById('date').valueAsDate = new Date();
 
-function add() {
-no++;
-const div = document.createElement('div');
-div.className = 'item';
-div.id = 'i' + no;
-div.innerHTML = '<div class="head"><span class="num">Item #' + no + '</span><button class="del" onclick="del(' + no + ')">×</button></div><div class="row"><input class="desc" placeholder="Desc ex: Oil 1L"><input type="number" class="amt" placeholder="0.00" step="0.01"><button class="delbtn" onclick="del(' + no + ')">×</button></div>';
-document.getElementById('list').appendChild(div);
-div.querySelector('.amt').oninput = total;
+function toggleType() {
+  let type = document.getElementById('expenseType').value;
+  if(type === 'daily') {
+    document.getElementById('pageTitle').innerText = 'Daily Expenses - DHAN SIOMAI';
+    document.getElementById('totalLabel').innerText = 'TOTAL TODAY';
+  } else {
+    document.getElementById('pageTitle').innerText = 'Monthly Expenses - DHAN SIOMAI';
+    document.getElementById('totalLabel').innerText = 'TOTAL EXPENSES THIS MONTH';
+  }
+  renderTable();
 }
 
-window.del = function(id) {
-const el = document.getElementById('i' + id);
-if(el) el.remove();
-total();
+function addExpense() {
+  let type = document.getElementById('expenseType').value;
+  let date = document.getElementById('date').value;
+  let desc = document.getElementById('desc').value;
+  let amount = parseFloat(document.getElementById('amount').value);
+
+  if(!date || !desc || isNaN(amount)) {
+    alert('Pakilagay lahat: Date, Description, Amount');
+    return;
+  }
+
+  let expense = {date, desc, amount};
+  
+  if(type === 'daily') dailyData.push(expense);
+  else monthlyData.push(expense);
+
+  // Clear inputs
+  document.getElementById('desc').value = '';
+  document.getElementById('amount').value = '';
+  
+  renderTable();
 }
 
-function total() {
-let sum = 0;
-document.querySelectorAll('.amt').forEach(function(inp) {
-sum += parseFloat(inp.value) || 0;
-});
-document.getElementById('total').innerText = '₱' + sum.toFixed(2);
+function renderTable() {
+  let type = document.getElementById('expenseType').value;
+  let data = type === 'daily' ? dailyData : monthlyData;
+  let tbody = document.getElementById('expenseTable');
+  tbody.innerHTML = '';
+  
+  let total = 0;
+  data.forEach(item => {
+    total += item.amount;
+    tbody.innerHTML += `
+      <tr>
+        <td>${item.date}</td>
+        <td>${item.desc}</td>
+        <td class="amount">₱${item.amount.toFixed(2)}</td>
+      </tr>
+    `;
+  });
+  
+  document.getElementById('totalAmount').innerText = '₱' + total.toFixed(2);
 }
-
-async function save() {
-const date = document.getElementById('date').value;
-if(!date) {
-alert('Select date first boss!');
-return;
-}
-
-const items = [];
-document.querySelectorAll('.item').forEach(card => {
-const desc = card.querySelector('.desc').value.trim();
-const amt = parseFloat(card.querySelector('.amt').value) || 0;
-if(desc && amt > 0) {
-items.push({description: desc, amount: amt});
-}
-});
-
-if(items.length === 0) {
-alert('Add at least 1 expense boss!');
-return;
-}
-
-const btn = document.getElementById('save');
-btn.disabled = true;
-btn.innerText = 'Saving...';
-
-try {
-await addDoc(collection(db, 'daily_expenses'), {
-date: date,
-items: items,
-total: parseFloat(document.getElementById('total').innerText.slice(1)),
-createdAt: serverTimestamp()
-});
-
-document.getElementById('success').style.display = 'block';
-setTimeout(() => document.getElementById('success').style.display = 'none', 3000);
-
-btn.disabled = false;
-btn.innerText = '💾 Save to Database';
-document.getElementById('list').innerHTML = '';
-no = 0;
-total();
-add();
-} catch(e) {
-alert('SAVE ERROR: ' + e.message);
-console.error(e);
-btn.disabled = false;
-btn.innerText = '💾 Save to Database';
-}
-}
-
-function print() {
-const date = document.getElementById('date').value;
-let w = window.open('', '', 'width=300,height=600');
-let html = '<h3 style="text-align:center">DHAN SIOMAI</h3><div style="text-align:center;font-size:12px">Daily Expenses Receipt</div><hr>Date: ' + date + '<br>Time: ' + new Date().toLocaleTimeString() + '<hr>';
-document.querySelectorAll('.item').forEach(function(card) {
-const d = card.querySelector('.desc').value.trim();
-const a = parseFloat(card.querySelector('.amt').value) || 0;
-if(d && a > 0) {
-html += d + '........ ₱' + a.toFixed(2) + '<br>';
-}
-});
-html += '<hr><b>TOTAL: ₱' + document.getElementById('total').innerText.slice(1) + '</b><br><center>Thank you boss!</center>';
-w.document.write(html);
-w.print();
-w.close();
-}
-
-document.getElementById('add').onclick = add;
-document.getElementById('save').onclick = save;
-document.getElementById('print').onclick = print;
-add();
 </script>
+
 </body>
 </html>
