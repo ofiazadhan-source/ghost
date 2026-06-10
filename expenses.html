@@ -7,8 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
-body{background:#FFF8E1;padding:15px;min-height:100vh}
-.box{max-width:500px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+body{background:#FFF8E1;padding:15px;min-height:100vh;padding-bottom:150px}
+.box{max-width:500px;margin:auto;background:white;border-radius:20px;padding:20px 20px 120px 20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
 h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px;font-weight:800}
 .sub{text-align:center;color:#666;font-size:12px;margin-bottom:18px}
 .back{background:#757575;color:white;padding:8px 15px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;display:inline-block;margin-bottom:15px}
@@ -34,7 +34,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:22px;font-weight:
 .total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:25px 20px;text-align:center;margin:18px 0}
 .total label{font-size:12px;font-weight:700;letter-spacing:1px}
 .total div{font-size:42px;font-weight:900;margin-top:6px}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:30px}
 .btn{padding:14px;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;color:white}
 .save{background:#2E7D32}
 .print{background:#1976D2}
@@ -92,20 +92,21 @@ div.innerHTML = `<div class="head"><span class="num">Item #${no}</span><button c
 
 document.getElementById('list').appendChild(div);
 
-// 🔥 ULTRA COMPRESS FIXED - 500px + 0.4 quality
+// 🔥 MABILIS UPLOAD - SAME SA POS MO: 500px + 0.4 quality
 document.getElementById('f' + no).onchange = function(e) {
 const file = e.target.files[0];
 if(!file) return;
 const btn = div.querySelector('.cam button');
 btn.innerText = 'Compressing...';
 btn.disabled = true;
+
 const reader = new FileReader();
 reader.onload = function(ev) {
 const img = new Image();
 img.onload = function() {
 let w = img.width;
 let h = img.height;
-const max = 500;
+const max = 500; // 500px lang para 15-25KB
 if(w > h && w > max) {
 h = h * max / w;
 w = max;
@@ -125,7 +126,7 @@ document.getElementById('s' + no).innerText = Math.round(blob.size/1024) + 'KB';
 btn.innerHTML = '✅ ' + Math.round(blob.size/1024) + 'KB';
 btn.className = 'ok';
 btn.disabled = false;
-}, 'image/jpeg', 0.4);
+}, 'image/jpeg', 0.4); // 0.4 quality = super liit pero mababasa pa
 };
 img.src = ev.target.result;
 };
@@ -176,6 +177,7 @@ btn.disabled = true;
 btn.innerText = 'Saving...';
 
 try {
+// 🔥 UPLOAD RECEIPTS MUNA - MABILIS KASI 15-25KB LANG
 for(let i = 0; i < items.length; i++) {
 const card = document.querySelectorAll('.item')[i];
 const id = card.id.slice(1);
@@ -186,6 +188,7 @@ items[i].receipt = await getDownloadURL(snap.ref);
 }
 }
 
+// SAVE SA daily_expenses - TUGMA SA net.html MO
 await addDoc(collection(db, 'daily_expenses'), {
 date: date,
 items: items,
@@ -193,7 +196,7 @@ total: parseFloat(document.getElementById('total').innerText.slice(1)),
 timestamp: serverTimestamp()
 });
 
-alert('✅ Saved! 15-25KB lang per image');
+alert('✅ Saved! 1-2 seconds lang boss!');
 btn.disabled = false;
 btn.innerText = '💾 Save to Database';
 document.getElementById('list').innerHTML = '';
@@ -204,6 +207,7 @@ add();
 
 } catch(e) {
 alert('Error: ' + e.message);
+console.error(e);
 btn.disabled = false;
 btn.innerText = '💾 Save to Database';
 }
@@ -230,4 +234,4 @@ document.getElementById('print').onclick = print;
 add();
 </script>
 </body>
-  </html>
+</html>
