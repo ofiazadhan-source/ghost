@@ -11,9 +11,9 @@ body{background:#FFF8E1;padding:15px;min-height:100vh}
 h2{color:#D32F2F;text-align:center;margin-bottom:5px;font-size:26px}
 .sub{text-align:center;color:#666;font-size:14px;margin-bottom:20px}
 .back{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-weight:600;font-size:14px;text-decoration:none;display:inline-block}
-.filter{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:15px;margin-bottom:20px}
-.filter label{display:block;font-weight:800;color:#D32F2F;margin-bottom:8px;text-align:center;font-size:14px}
-.filter select{font-size:18px;padding:12px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:48px;margin-bottom:10px}
+.datecard{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border:2px solid #FFCC80;border-radius:12px;padding:15px;margin-bottom:20px}
+.datecard label{display:block;font-weight:800;color:#D32F2F;margin-bottom:8px;text-align:center;font-size:14px}
+.datecard select{font-size:18px;padding:12px;border:2px solid #D32F2F;border-radius:8px;font-weight:700;color:#D32F2F;text-align:center;width:100%;height:48px;margin-bottom:8px}
 .total{background:linear-gradient(135deg,#C62828,#B71C1C);color:white;border-radius:15px;padding:30px 20px;text-align:center;margin:20px 0}
 .total label{font-size:14px;opacity:0.9;font-weight:700;letter-spacing:1px}
 .total div{font-size:48px;font-weight:900;margin-top:8px}
@@ -24,7 +24,6 @@ tr:nth-child(even){background:#FFFDF7}
 td.amount{text-align:right;color:#2E7D32;font-weight:700}
 .loading{text-align:center;padding:30px;color:#D32F2F;font-weight:700}
 .no-data{text-align:center;padding:30px;color:#999}
-.error{text-align:center;padding:20px;color:red;font-size:12px}
 .btn{width:100%;padding:16px;background:#1976D2;color:white;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;margin-top:15px}
 </style>
 </head>
@@ -34,7 +33,7 @@ td.amount{text-align:right;color:#2E7D32;font-weight:700}
 <h2>📊 Monthly Expenses</h2>
 <p class="sub">DHAN SIOMAI</p>
 
-<div class="filter">
+<div class="datecard">
 <label>📅 Select Month & Year</label>
 <select id="monthSelect"></select>
 <select id="yearSelect"></select>
@@ -50,7 +49,7 @@ td.amount{text-align:right;color:#2E7D32;font-weight:700}
 <tr>
 <th>Date</th>
 <th>Description</th>
-<th>Amount</th>
+<th class="amount">Amount</th>
 </tr>
 </thead>
 <tbody>
@@ -77,6 +76,7 @@ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Generate Month/Year dropdowns
 const monthSelect = document.getElementById('monthSelect');
 const yearSelect = document.getElementById('yearSelect');
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -107,16 +107,15 @@ let count = 0;
 
 snap.forEach(doc => {
 const data = doc.data();
-const dateStr = data.date;
-const date = new Date(dateStr);
+const date = new Date(data.date + 'T00:00:00');
 
-if(!isNaN(date) && date.getMonth() === month && date.getFullYear() === year) {
-if(data.items && data.items.length > 0) {
+if(date.getMonth() === month && date.getFullYear() === year) {
+if(data.items) {
 data.items.forEach(item => {
 total += item.amount;
 count++;
 html += `<tr>
-<td>${date.toLocaleDateString()}</td>
+<td>${data.date}</td>
 <td>${item.description}</td>
 <td class="amount">₱${item.amount.toFixed(2)}</td>
 </tr>`;
@@ -127,13 +126,13 @@ html += `<tr>
 document.getElementById('total').innerText = '₱' + total.toFixed(2);
 
 if(count === 0) {
-tbody.innerHTML = `<tr><td colspan="3" class="no-data">No expenses for ${months[month]} ${year}<br><small>Found ${snap.size} records in database</small></td></tr>`;
+tbody.innerHTML = '<tr><td colspan="3" class="no-data">No expenses for this month</td></tr>';
 } else {
 tbody.innerHTML = html;
 }
 } catch(e) {
-console.error('ERROR:', e);
-tbody.innerHTML = `<tr><td colspan="3" class="error">ERROR: ${e.message}<br><small>Check console F12</small></td></tr>`;
+tbody.innerHTML = `<tr><td colspan="3" class="no-data">Error: ${e.message}</td></tr>`;
+console.error(e);
 }
 }
 
