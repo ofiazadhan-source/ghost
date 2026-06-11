@@ -1,194 +1,191 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expenses - DHAN SIOMAI</title>
-  <style>
-    body { font-family: Arial; padding: 15px; background:#f5f5f5; }
-    .card { background:#fff3cd; padding:15px; border-radius:10px; margin-bottom:15px }
-    .total-box { background:#c62828; color:white; padding:20px; border-radius:12px; text-align:center; margin-bottom:15px }
-    input, select, button { width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-size:16px }
-    button { background:#c62828; color:white; border:none; cursor:pointer; margin-top:10px }
-    button:hover { background:#a02020 }
-    table { width:100%; border-collapse:collapse; margin-top:15px; background:white; border-radius:10px; overflow:hidden }
-    th { background:#c62828; color:white; padding:10px; text-align:left }
-    td { padding:10px; border-bottom:1px solid #eee }
-    td.amount { color:green; font-weight:bold; text-align:right }
-    h2 { margin-top:0 }
-    .loading { text-align:center; color:#666; padding:20px }
-  </style>
-  
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Expenses - DHAN SIOMAI</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:#FFF8E1;padding:15px}
+.header{background:#C62828;color:white;padding:15px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.header h1{font-size:18px}
+.back-btn{color:#C62828;background:white;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px;font-size:13px}
+.card{background:white;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.card h3{color:#C62828;margin-bottom:15px;font-size:16px}
+.input-group{margin-bottom:12px}
+.input-group label{display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:5px}
+.input-group input,.input-group textarea{width:100%;padding:12px;border:2px solid #FFCDD2;border-radius:10px;font-size:15px}
+.input-group input[type="file"]{padding:8px;border:2px dashed #C62828;cursor:pointer}
+.preview-img{max-width:100%;max-height:150px;margin-top:8px;border-radius:8px;border:2px solid #C62828;display:none}
+.btn-save{width:100%;padding:15px;background:#2E7D32;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer}
+.btn-save:disabled{background:#ccc;cursor:not-allowed}
+.total-box{background:#FFEBEE;border:2px solid #C62828;border-radius:12px;padding:15px;text-align:center;margin-bottom:15px}
+.total-box h4{color:#C62828;font-size:13px;margin-bottom:5px}
+.total-box p{font-size:28px;font-weight:900;color:#C62828}
+.exp-card{background:#FFF5F5;border:2px solid #FFCDD2;border-radius:12px;padding:12px;margin-bottom:10px}
+.exp-head{display:flex;justify-content:space-between;margin-bottom:8px}
+.exp-desc{font-weight:700;color:#C62828;font-size:14px}
+.exp-amt{font-weight:800;color:#C62828;font-size:18px}
+.exp-date{font-size:11px;color:#999;margin-bottom:5px}
+.exp-receipt{margin-top:8px}
+.exp-receipt img{width:100%;max-width:200px;border-radius:8px;border:2px solid #FFCDD2;cursor:pointer}
+.loading{text-align:center;padding:40px;color:#666}
+</style>
 </head>
 <body>
+<div class="header">
+<h1>💸 Daily Expenses</h1>
+<a href="index.html" class="back-btn">← Back</a>
+</div>
 
-<h2 id="pageTitle">Monthly Expenses - DHAN SIOMAI</h2>
-
-<!-- Form -->
 <div class="card">
-  <label><b>Tipo ng Expense</b></label>
-  <select id="expenseType" onchange="toggleType()">
-    <option value="monthly">Monthly</option>
-    <option value="daily">Daily</option>
-  </select>
-
-  <label><b>Month</b></label>
-  <select id="month">
-    <option>January</option><option>February</option><option>March</option>
-    <option>April</option><option>May</option><option>June</option>
-    <option>July</option><option>August</option><option>September</option>
-    <option>October</option><option>November</option><option>December</option>
-  </select>
-
-  <label><b>Year</b></label>
-  <select id="year">
-    <option>2026</option><option>2025</option><option>2024</option>
-  </select>
-
-  <label><b>Date</b></label>
-  <input type="date" id="date">
-
-  <label><b>Description</b></label>
-  <input type="text" id="desc" placeholder="Hal: Pamasahe, Yelo, Rent">
-
-  <label><b>Amount</b></label>
-  <input type="number" id="amount" placeholder="0.00" step="0.01">
-
-  <button onclick="addExpense()">Add Expense</button>
+<h3>➕ Add Expense</h3>
+<div class="input-group">
+<label>Date</label>
+<input type="date" id="expDate">
+</div>
+<div class="input-group">
+<label>Description / Ginastos sa ano?</label>
+<input type="text" id="expDesc" placeholder="Hal: Gas, Plastic, Rent...">
+</div>
+<div class="input-group">
+<label>Amount ₱</label>
+<input type="number" id="expAmount" placeholder="0">
+</div>
+<div class="input-group">
+<label>Receipt Proof - Picture</label>
+<input type="file" id="expReceipt" accept="image/*" onchange="previewReceipt(event)">
+<img id="receiptPreview" class="preview-img">
+</div>
+<button class="btn-save" id="saveBtn" onclick="saveExpense()">Save Expense</button>
 </div>
 
-<!-- Total -->
 <div class="total-box">
-  <div id="totalLabel">TOTAL EXPENSES THIS MONTH</div>
-  <h1 id="totalAmount">₱0.00</h1>
+<h4>Total Expenses Today</h4>
+<p id="totalToday">₱0</p>
 </div>
 
-<!-- Table -->
-<table>
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Description</th>
-      <th style="text-align:right">Amount</th>
-    </tr>
-  </thead>
-  <tbody id="expenseTable">
-    <tr><td colspan="3" class="loading">Loading...</td></tr>
-  </tbody>
-</table>
+<div class="card">
+<h3>📋 Expense List Today</h3>
+<div id="expList" class="loading">Loading...</div>
+</div>
 
-<script>
-// 1. PALITAN MO TO NG CONFIG MO GALING FIREBASE
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 🔥 SAME FIREBASE CONFIG SA POS.HTML MO BOSS
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-// 2. Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+let receiptImage = '';
 
-// Set today as default date
-document.getElementById('date').valueAsDate = new Date();
-// Set current month/year
-let now = new Date();
-document.getElementById('month').value = now.toLocaleString('en-US', {month: 'long'});
-document.getElementById('year').value = now.getFullYear();
+// Auto set today yyyy-mm-dd
+let d = new Date();
+let today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+document.getElementById('expDate').value = today;
 
-function toggleType() {
-  let type = document.getElementById('expenseType').value;
-  if(type === 'daily') {
-    document.getElementById('pageTitle').innerText = 'Daily Expenses - DHAN SIOMAI';
-    document.getElementById('totalLabel').innerText = 'TOTAL TODAY';
-  } else {
-    document.getElementById('pageTitle').innerText = 'Monthly Expenses - DHAN SIOMAI';
-    document.getElementById('totalLabel').innerText = 'TOTAL EXPENSES THIS MONTH';
-  }
-  loadExpenses();
+window.previewReceipt = (event)=>{
+const file = event.target.files[0];
+if(file){
+const reader = new FileReader();
+reader.onload = function(e){
+receiptImage = e.target.result;
+document.getElementById('receiptPreview').src = receiptImage;
+document.getElementById('receiptPreview').style.display = 'block';
+}
+reader.readAsDataURL(file);
+}
 }
 
-function addExpense() {
-  let type = document.getElementById('expenseType').value;
-  let date = document.getElementById('date').value;
-  let month = document.getElementById('month').value;
-  let year = document.getElementById('year').value;
-  let desc = document.getElementById('desc').value.trim();
-  let amount = parseFloat(document.getElementById('amount').value);
+window.saveExpense = async ()=>{
+const date = document.getElementById('expDate').value;
+const desc = document.getElementById('expDesc').value.trim();
+const amount = parseFloat(document.getElementById('expAmount').value);
 
-  if(!date || !desc || isNaN(amount) || amount <= 0) {
-    alert('Pakilagay lahat: Date, Description, Amount');
-    return;
-  }
-
-  let collection = type === 'daily' ? 'daily_expenses' : 'monthly_expenses';
-  
-  db.collection(collection).add({
-    date: date,
-    month: month,
-    year: year,
-    desc: desc,
-    amount: amount,
-    created: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => {
-    document.getElementById('desc').value = '';
-    document.getElementById('amount').value = '';
-  }).catch(err => {
-    alert('Error: ' + err.message);
-  });
+if(!date ||!desc ||!amount || amount<=0){
+alert('Kumpletuhin mo muna boss! Date, Description, at Amount required.');
+return;
 }
 
-function loadExpenses() {
-  let type = document.getElementById('expenseType').value;
-  let month = document.getElementById('month').value;
-  let year = document.getElementById('year').value;
-  let collection = type === 'daily' ? 'daily_expenses' : 'monthly_expenses';
-  
-  let query = db.collection(collection).orderBy('date','desc');
-  
-  // Pag Monthly, i-filter by month + year katulad sa screenshot mo
-  if(type === 'monthly') {
-    query = query.where('month','==',month).where('year','==',year);
-  }
+const btn = document.getElementById('saveBtn');
+btn.disabled = true;
+btn.innerText = 'Saving...';
 
-  query.onSnapshot(snapshot => {
-    let tbody = document.getElementById('expenseTable');
-    tbody.innerHTML = '';
-    let total = 0;
-    
-    if(snapshot.empty) {
-      tbody.innerHTML = '<tr><td colspan="3" class="loading">No expenses yet</td></tr>';
-      document.getElementById('totalAmount').innerText = '₱0.00';
-      return;
-    }
-    
-    snapshot.forEach(doc => {
-      let item = doc.data();
-      total += item.amount;
-      tbody.innerHTML += `
-        <tr>
-          <td>${item.date}</td>
-          <td>${item.desc}</td>
-          <td class="amount">₱${item.amount.toFixed(2)}</td>
-        </tr>
-      `;
-    });
-    document.getElementById('totalAmount').innerText = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2});
-  });
+try{
+await addDoc(collection(db,"daily_expenses"),{
+date: date,
+desc: desc,
+amount: amount,
+receipt: receiptImage,
+timestamp: new Date()
+});
+
+alert('✓ Saved! Na-record na expense mo boss.');
+document.getElementById('expDesc').value = '';
+document.getElementById('expAmount').value = '';
+document.getElementById('expReceipt').value = '';
+document.getElementById('receiptPreview').style.display = 'none';
+receiptImage = '';
+
+loadExpenses(); // Refresh list
+
+}catch(e){
+alert('Error: '+e.message);
+}finally{
+btn.disabled = false;
+btn.innerText = 'Save Expense';
+}
 }
 
-// Load pag open ng page
-window.onload = loadExpenses;
-// Reload pag nagpalit ng month/year
-document.getElementById('month').onchange = loadExpenses;
-document.getElementById('year').onchange = loadExpenses;
+async function loadExpenses(){
+const expList = document.getElementById('expList');
+expList.innerHTML = '<div class="loading">Loading...</div>';
+let total = 0;
+
+try{
+// Kuha expenses ng today lang para mabilis
+const expQ = query(collection(db,"daily_expenses"), where("date","==",today));
+const expSnap = await getDocs(expQ);
+
+if(expSnap.empty){
+expList.innerHTML = '<div class="loading">Wala pang expenses today boss</div>';
+document.getElementById('totalToday').textContent = '₱0';
+return;
+}
+
+let html = '';
+expSnap.forEach(doc=>{
+const exp = doc.data();
+total += exp.amount || 0;
+const receiptImg = exp.receipt? `<div class="exp-receipt"><img src="${exp.receipt}" onclick="window.open('${exp.receipt}')"></div>` : '';
+html += `<div class="exp-card">
+<div class="exp-date">${exp.date}</div>
+<div class="exp-head">
+<span class="exp-desc">${exp.desc}</span>
+<span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span>
+</div>
+${receiptImg}
+</div>`;
+});
+expList.innerHTML = html;
+document.getElementById('totalToday').textContent = '₱' + total.toLocaleString();
+
+}catch(e){
+expList.innerHTML = '<div class="loading" style="color:red">Error: '+e.message+'</div>';
+console.error(e);
+}
+}
+
+loadExpenses();
 </script>
-
 </body>
 </html>
