@@ -3,77 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POS - DHAN SIOMAI</title>
+<title>Store POS - Siomai Factory</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
-body{background:#FFF8E1;padding:15px}
-.header{background:#D32F2F;color:white;padding:15px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
-.header h1{font-size:18px}
-.back-btn{color:#D32F2F;background:white;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px;font-size:13px}
-.customer-type{display:flex;gap:10px;margin-bottom:15px}
-.cust-btn{flex:1;padding:12px;border:3px solid #FFCDD2;background:white;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:15px;min-height:100vh}
+.container{max-width:480px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
+.subtitle{text-align:center;color:#666;font-size:13px;margin-bottom:15px}
+.back-btn{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-size:13px;font-weight:600}
+
+/* DAGDAG: Customer Type */
+.cust-type{display:flex;gap:8px;margin-bottom:15px}
+.cust-btn{flex:1;padding:10px;border:3px solid #FFCC80;background:white;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;color:#D32F2F}
 .cust-btn.active{background:#D32F2F;color:white;border-color:#D32F2F}
-.item-card{background:white;border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
-.item-name{font-weight:700;font-size:15px;color:#333;margin-bottom:5px}
-.item-price{font-size:13px;color:#666;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
-.price-input{width:80px;padding:5px;border:2px solid #FFCDD2;border-radius:6px;font-size:14px;font-weight:700;text-align:center}
-.qty-control{display:flex;align-items:center;gap:10px;margin-top:8px}
-.qty-btn{width:40px;height:40px;border-radius:50%;border:none;background:#FFCDD2;color:#C62828;font-size:20px;font-weight:800;cursor:pointer}
-.qty-display{font-size:18px;font-weight:700;min-width:40px;text-align:center}
-.cart{background:white;border-radius:16px;padding:20px;margin-top:20px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-.cart h3{color:#D32F2F;margin-bottom:15px}
-.cart-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #FFCDD2;font-size:14px}
-.total-box{display:flex;justify-content:space-between;margin-top:15px;padding-top:15px;border-top:3px solid #D32F2F}
-.total-label{font-size:16px;font-weight:700;color:#333}
-.total-amount{font-size:24px;font-weight:800;color:#2E7D32}
-.input-group{margin-top:15px}
-.input-group label{display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:5px}
-.input-group input{width:100%;padding:12px;border:2px solid #FFCDD2;border-radius:10px;font-size:16px}
-.balance-box{margin-top:10px;padding:12px;background:#FFF3E0;border:2px solid #FF9800;border-radius:10px}
-.balance-box h4{font-size:12px;color:#E65100;margin-bottom:5px}
-.balance-box p{font-size:20px;font-weight:800;color:#E65100}
-.btn-save{width:100%;padding:16px;background:#2E7D32;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin-top:15px}
-.btn-save:disabled{background:#ccc}
-.note{font-size:11px;color:#999;margin-top:5px}
+
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:15px}
+.cat-btn{padding:12px 5px;border:none;border-radius:12px;background:linear-gradient(135deg,#FFCC80,#FFB74D);color:#B71C1C;font-weight:800;font-size:12px;cursor:pointer;text-align:center}
+.cat-btn:active{transform:scale(0.95)}
+.cat-btn.active{background:#D32F2F;color:white}
+.prod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:110px}
+.prod-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:0.2s}
+.prod-card:active{transform:scale(0.95);background:#FFE0B2}
+.prod-img{width:100%;height:70px;object-fit:cover;border-radius:8px;margin-bottom:6px;background:#f0f0f0}
+.prod-name{font-weight:800;font-size:13px;color:#D32F2F;margin-bottom:4px;height:32px;overflow:hidden}
+.prod-price{font-size:16px;font-weight:900;color:#2E7D32;margin-bottom:2px}
+.prod-stock{font-size:10px;color:#666}
+
+/* DAGDAG: Price input pag wholesale */
+.price-input{width:70px;padding:4px;border:2px solid #FFCC80;border-radius:6px;font-size:12px;font-weight:700;text-align:center;margin-top:4px}
+
+.cart-bar{position:fixed;bottom:0;left:0;right:0;background:white;border-top:3px solid #D32F2F;border-radius:20px 20px 0 0;padding:15px;box-shadow:0 -4px 15px rgba(0,0,0,0.2);max-width:480px;margin:auto;z-index:999}
+.cart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cart-title{font-weight:800;color:#D32F2F;font-size:15px}
+.cart-badge{background:#D32F2F;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.cart-list{max-height:200px;overflow-y:auto;margin-bottom:10px}
+.cart-row{display:grid;grid-template-columns:20px 1fr 85px 65px;gap:6px;align-items:center;font-size:12px;padding:6px 0;border-bottom:1px dashed #eee}
+.del-btn{background:#C62828;color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:16px;line-height:1;cursor:pointer;font-weight:800}
+.qty-box{display:flex;gap:4px;align-items:center}
+.qty-btn{width:26px;height:26px;border:none;background:#D32F2F;color:white;border-radius:5px;font-weight:800;cursor:pointer;font-size:15px}
+.qty-input{width:45px;height:26px;text-align:center;border:1px solid #ddd;border-radius:5px;font-size:12px}
+.item-name{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item-total{text-align:right;font-weight:700;color:#2E7D32}
+.cart-sum{font-size:22px;font-weight:900;color:#D32F2F;text-align:right;margin:10px 0}
+.checkout-btn{width:100%;padding:15px;background:#2E7D32;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer}
+.checkout-btn:disabled{background:#ccc;cursor:not-allowed}
+.loading{text-align:center;padding:40px;color:#D32F2F;font-weight:700}
+
+/* DAGDAG: Balance box sa payment modal */
+.balance-box{margin-top:10px;padding:10px;background:#FFF3E0;border:2px solid #FF9800;border-radius:8px}
+.balance-box h4{font-size:12px;color:#E65100;margin-bottom:3px}
+.balance-box p{font-size:18px;font-weight:800;color:#E65100}
+
+#receipt{display:none;font-family:monospace;font-size:14px;color:black;background:white;padding:15px;width:100%;max-width:300px;margin:20px auto 140px auto;line-height:1.6;text-align:left;border:2px dashed #D32F2F;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+@media print{.no-print{display:none!important}body *{visibility:hidden}#receipt,#receipt *{visibility:visible}#receipt{position:absolute;left:0;top:0;width:80mm;display:block!important;font-size:11px;margin:0!important;border:none!important;box-shadow:none!important;padding:3mm!important;line-height:1.4}@page{size:80mm auto;margin:0}}
 </style>
 </head>
 <body>
-<div class="header">
-<h1>📦 POS - DHAN SIOMAI</h1>
-<a href="index.html" class="back-btn">← Back</a>
+<div class="container">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+<h2>🛒 Store POS</h2>
+<p class="subtitle">Tap product to add to cart</p>
+
+<!-- DAGDAG: Customer Type buttons -->
+<div class="cust-type">
+<button class="cust-btn active" id="retailBtn" onclick="setCustType('retail')">👤 Retail</button>
+<button class="cust-btn" id="wholesaleBtn" onclick="setCustType('wholesale')">🏢 Wholesale - Manual Price</button>
 </div>
 
-<div class="customer-type">
-<button class="cust-btn active" id="retailBtn" onclick="setCustomerType('retail')">👤 Retail</button>
-<button class="cust-btn" id="wholesaleBtn" onclick="setCustomerType('wholesale')">🏢 Wholesale - Manual Price</button>
+<div class="cat-grid">
+<button class="cat-btn active" onclick="filterCat('all',this)">All</button>
+<button class="cat-btn" onclick="filterCat('65s',this)">65's</button>
+<button class="cat-btn" onclick="filterCat('30s',this)">30's</button>
+<button class="cat-btn" onclick="filterCat('big',this)">Big SIOMAI</button>
+<button class="cat-btn" onclick="filterCat('dumplings',this)">Dumplings</button>
+<button class="cat-btn" onclick="filterCat('siopao',this)">SIOPAO</button>
+<button class="cat-btn" onclick="filterCat('sauce',this)">Sauce</button>
+<button class="cat-btn" onclick="filterCat('others',this)">Others</button>
+</div>
+<div class="prod-grid" id="prodGrid"><div class="loading">Loading products...</div></div>
 </div>
 
-<div id="itemsList"></div>
-
-<div class="cart">
-<h3>🛒 Cart</h3>
-<div id="cartItems">Wala pang order boss</div>
-<div class="total-box">
-<span class="total-label">Total:</span>
-<span class="total-amount" id="totalAmount">₱0</span>
+<div class="cart-bar">
+<div class="cart-head">
+<span class="cart-title">🛒 Cart</span>
+<span class="cart-badge" id="cartBadge">0</span>
+</div>
+<div class="cart-list" id="cartList"><p style="text-align:center;color:#999;font-size:12px;padding:20px 0">No items yet</p></div>
+<div class="cart-sum" id="cartSum">Total: ₱0</div>
+<button class="checkout-btn" id="checkoutBtn" disabled onclick="openPayModal()">Checkout</button>
 </div>
 
-<div class="input-group">
-<label>Amount Paid / Binayad ni Customer ₱</label>
-<input type="number" id="amountPaid" placeholder="0" oninput="computeBalance()">
+<div id="payModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:9999">
+<div style="background:white;padding:25px;border-radius:12px;width:90%;max-width:380px;max-height:90vh;overflow-y:auto">
+<span onclick="closePayModal()" style="float:right;cursor:pointer;font-size:28px;color:#999">&times;</span>
+<h2 style="margin-top:0;color:#D32F2F">Payment</h2>
+<p id="reviewTotal" style="font-size:20px;font-weight:bold;margin:15px 0">Total: ₱0.00</p>
+
+<!-- DAGDAG: Amount Paid + Balance -->
+<div style="margin:12px 0">
+<label style="font-size:13px;color:#666;font-weight:700">Amount Paid / Binayad ni Customer ₱</label>
+<input type="number" id="cashIn" placeholder="0" oninput="computeBalance()" style="width:100%;padding:12px;font-size:18px;font-weight:700;text-align:right;border:2px solid #FFCC80;border-radius:8px">
 </div>
 
 <div class="balance-box">
 <h4>Balance / Utang pa</h4>
-<p id="balanceAmount">₱0</p>
+<p id="balance">₱0.00</p>
 </div>
 
-<button class="btn-save" id="saveBtn" onclick="saveSale()">Save Sale</button>
+<div style="margin:15px 0">
+<label style="font-size:13px;color:#666;font-weight:700;display:block;margin-bottom:5px">Payment Method:</label>
+<select id="payMethod" onchange="togglePay()" style="width:100%;padding:12px;font-size:16px;border:2px solid #FFCC80;border-radius:8px;font-weight:700">
+<option value="Cash">Cash</option>
+<option value="Gcash">Gcash</option>
+</select>
 </div>
+
+<div id="gcashBox" style="margin:12px 0;display:none">
+<p style="font-size:13px;color:#007BFF;font-weight:700">📱 Send to Gcash: 09XX XXXX</p>
+<div style="margin:12px 0">
+<label style="font-size:13px;color:#666;font-weight:700">Proof of Payment:</label>
+<input type="file" id="gcashProof" accept="image/*" onchange="previewProof(event)" style="width:100%;padding:8px;border:2px solid #007BFF;border-radius:8px;cursor:pointer;margin-top:5px">
+<img id="proofPreview" style="max-width:100%;margin-top:8px;border-radius:8px;border:2px solid #007BFF;display:none">
+</div>
+</div>
+
+<button onclick="confirmPay()" style="width:100%;padding:14px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:700;margin-top:10px">Confirm Payment</button>
+<button onclick="closePayModal()" style="width:100%;padding:10px;margin-top:8px;background:#999;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer">Cancel</button>
+</div>
+</div>
+
+<div id="receipt"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, where, addDoc, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
@@ -86,142 +149,261 @@ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let customerType = 'retail';
+let products = [];
 let cart = [];
+let curCat = 'all';
+let currentTotal = 0;
+let proofImage = '';
+let customerType = 'retail'; // DAGDAG
 
-// Items - retail price + cost lang. Wholesale price = manual input
-const items = [
-{name:'Japanese Crabstic 20s', retail:150, cost:90, price:150, qty:0},
-{name:'Chicken 65s', retail:70, cost:40, price:70, qty:0},
-{name:'Pork Siomai 30s', retail:120, cost:70, price:120, qty:0},
-{name:'Beef Siomai 30s', retail:130, cost:75, price:130, qty:0}
-];
-
-let d = new Date();
-let today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-
-function displayItems(){
-const list = document.getElementById('itemsList');
-list.innerHTML = '';
-items.forEach((item,i)=>{
-const showPriceInput = customerType === 'wholesale';
-list.innerHTML += `
-<div class="item-card">
-<div class="item-name">${item.name}</div>
-<div class="item-price">
-<span>Price: ₱${item.retail} ${customerType==='wholesale'? '(Retail)' : ''}</span>
-${showPriceInput? `<input type="number" class="price-input" id="price${i}" value="${item.price}" onchange="updatePrice(${i})">` : ''}
-</div>
-${showPriceInput? `<div class="note">Edit price para kay wholesale boss</div>` : ''}
-<div class="qty-control">
-<button class="qty-btn" onclick="updateQty(${i},-1)">-</button>
-<span class="qty-display" id="qty${i}">${item.qty}</span>
-<button class="qty-btn" onclick="updateQty(${i},1)">+</button>
-</div>
-</div>`;
-});
-}
-
-window.setCustomerType = (type)=>{
+// DAGDAG: Set customer type
+window.setCustType = (type)=>{
 customerType = type;
 document.getElementById('retailBtn').classList.remove('active');
 document.getElementById('wholesaleBtn').classList.remove('active');
 document.getElementById(type+'Btn').classList.add('active');
-
-// Pag balik sa retail, reset price sa retail
-if(type === 'retail'){
-items.forEach(i=>i.price = i.retail);
-}
-displayItems();
-updateCart();
+renderProducts(products);
+renderCart();
 }
 
-window.updatePrice = (index)=>{
-const newPrice = parseFloat(document.getElementById('price'+index).value) || items[index].retail;
-items[index].price = newPrice;
-updateCart();
+async function loadProducts() {
+const grid = document.getElementById('prodGrid');
+grid.innerHTML = '<div class="loading">Loading products...</div>';
+try {
+let q = collection(db,"products");
+if(curCat!='all'){q = query(collection(db,"products"),where("category","==",curCat))}
+const snap = await getDocs(q);
+products = [];
+snap.forEach(d=>products.push({id:d.id,...d.data()}));
+renderProducts(products);
+}catch(error){
+console.error('Load Error:',error);
+grid.innerHTML = '<p style="grid-column:span 2;text-align:center;color:#C62828;padding:40px">Error: '+error.message+'</p>';
+}
 }
 
-window.updateQty = (index,change)=>{
-items[index].qty = Math.max(0, items[index].qty + change);
-document.getElementById('qty'+index).innerText = items[index].qty;
-updateCart();
-}
-
-function updateCart(){
-cart = items.filter(i=>i.qty>0);
-
-const cartDiv = document.getElementById('cartItems');
-if(cart.length === 0){
-cartDiv.innerHTML = 'Wala pang order boss';
-document.getElementById('totalAmount').innerText = '₱0';
-document.getElementById('balanceAmount').innerText = '₱0';
+function renderProducts(list){
+const grid = document.getElementById('prodGrid');
+if(list.length===0){
+grid.innerHTML = '<p style="grid-column:span 2;text-align:center;color:#999;padding:40px">No products yet. Add muna sa Products page boss!</p>';
 return;
 }
-
 let html = '';
-let total = 0;
-cart.forEach(i=>{
-const subtotal = i.price * i.qty;
-total += subtotal;
-html += `<div class="cart-item"><span>${i.name} x${i.qty} @₱${i.price}</span><span>₱${subtotal.toLocaleString()}</span></div>`;
+list.forEach(prod=>{
+// DAGDAG: Price input pag wholesale
+const priceInput = customerType==='wholesale'? `<input type="number" class="price-input" id="price_${prod.id}" value="${prod.price}" onchange="updateCartPrice('${prod.id}')">` : '';
+html += `<div class="prod-card" onclick="addToCart('${prod.id}')">
+${prod.image?`<img src="${prod.image}" class="prod-img">`:'<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">No Image</div>'}
+<div class="prod-name">${prod.name}</div>
+<div class="prod-price">₱${prod.price}</div>
+${priceInput}
+<div class="prod-stock">Stock: ${prod.stock}</div>
+</div>`;
 });
-cartDiv.innerHTML = html;
-document.getElementById('totalAmount').innerText = '₱' + total.toLocaleString();
+grid.innerHTML = html;
+}
+
+// DAGDAG: Update price sa cart pag edit
+window.updateCartPrice = (prodId)=>{
+const newPrice = parseFloat(document.getElementById('price_'+prodId).value) || 0;
+const item = cart.find(i=>i.id===prodId);
+if(item) item.price = newPrice;
+renderCart();
+}
+
+window.filterCat = (cat,btn)=>{
+curCat = cat;
+document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+loadProducts();
+}
+
+window.addToCart = (prodId)=>{
+const prod = products.find(p=>p.id===prodId);
+if(!prod||prod.stock<=0){alert('Out of stock boss!');return}
+const existing = cart.find(item=>item.id===prodId);
+const price = customerType==='wholesale'? parseFloat(document.getElementById('price_'+prodId).value) || prod.price : prod.price;
+
+if(existing){
+if(existing.qty>=prod.stock){alert('Max stock reached boss!');return}
+existing.qty++;
+}else{
+cart.push({id:prodId,name:prod.name,price:price,qty:1});
+}
+renderCart();
+}
+
+function renderCart(){
+const cartList = document.getElementById('cartList');
+const cartBadge = document.getElementById('cartBadge');
+const cartSum = document.getElementById('cartSum');
+const checkoutBtn = document.getElementById('checkoutBtn');
+let total = 0;
+let count = 0;
+if(cart.length===0){
+cartList.innerHTML = '<p style="text-align:center;color:#999;font-size:12px;padding:20px 0">No items yet</p>';
+checkoutBtn.disabled = true;
+}else{
+let html = '';
+cart.forEach((item,i)=>{
+const subtotal = item.price*item.qty;
+total += subtotal;
+count += item.qty;
+html += `<div class="cart-row">
+<button class="del-btn" onclick="removeItem(${i})">×</button>
+<span class="item-name">${item.name} @₱${item.price}</span>
+<div class="qty-box">
+<button class="qty-btn" onclick="changeQty(${i},-1)">-</button>
+<input type="number" class="qty-input" value="${item.qty}" min="1" oninput="setQty(${i},this.value)">
+<button class="qty-btn" onclick="changeQty(${i},1)">+</button>
+</div>
+<span class="item-total">₱${subtotal.toFixed(2)}</span>
+</div>`;
+});
+cartList.innerHTML = html;
+checkoutBtn.disabled = false;
+}
+cartBadge.innerText = count;
+cartSum.innerText = 'Total: ₱'+total.toFixed(2);
+currentTotal = total;
+}
+
+window.removeItem = (index)=>{cart.splice(index,1);renderCart()}
+window.changeQty = (index,delta)=>{
+cart[index].qty += delta;
+const prod = products.find(p=>p.id===cart[index].id);
+if(cart[index].qty<1)cart[index].qty=1;
+if(prod&&cart[index].qty>prod.stock)cart[index].qty=prod.stock;
+renderCart();
+}
+window.setQty = (index,value)=>{
+let qty = parseInt(value)||1;
+const prod = products.find(p=>p.id===cart[index].id);
+if(qty<1)qty=1;
+if(prod&&qty>prod.stock){qty=prod.stock;alert('Max stock: '+prod.stock+' only boss!')}
+cart[index].qty = qty;
+renderCart();
+}
+
+window.openPayModal = ()=>{
+if(cart.length===0){alert('Walang items sa cart boss!');return}
+currentTotal = cart.reduce((sum,item)=>sum+(item.price*item.qty),0);
+document.getElementById('reviewTotal').innerHTML = 'Total: ₱'+currentTotal.toFixed(2);
+document.getElementById('cashIn').value = '';
 computeBalance();
+document.getElementById('gcashProof').value = '';
+document.getElementById('proofPreview').style.display = 'none';
+proofImage = '';
+document.getElementById('payModal').style.display = 'flex';
+togglePay();
 }
 
+window.closePayModal = ()=>{document.getElementById('payModal').style.display='none'}
+window.togglePay = ()=>{
+let method = document.getElementById('payMethod').value;
+document.getElementById('gcashBox').style.display = method==='Gcash'? 'block' : 'none';
+}
+
+// BINAGO: Compute balance instead of change
 window.computeBalance = ()=>{
-const total = cart.reduce((sum,i)=>sum + (i.price*i.qty),0);
-const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
-const balance = total - paid;
-document.getElementById('balanceAmount').innerText = '₱' + balance.toLocaleString();
+let paid = parseFloat(document.getElementById('cashIn').value)||0;
+let balance = currentTotal - paid;
+if(balance>0){
+document.getElementById('balance').innerText = '₱'+balance.toFixed(2);
+document.getElementById('balance').style.color = '#C62828';
+}else{
+document.getElementById('balance').innerText = '₱0.00';
+document.getElementById('balance').style.color = '#2E7D32';
+}
 }
 
-window.saveSale = async ()=>{
-const total = cart.reduce((sum,i)=>sum + (i.price*i.qty),0);
-const cost = cart.reduce((sum,i)=>sum + (i.cost*i.qty),0);
-const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
-const balance = total - amountPaid;
+window.previewProof = (event)=>{
+const file = event.target.files[0];
+if(file){
+const reader = new FileReader();
+reader.onload = function(e){
+proofImage = e.target.result;
+document.getElementById('proofPreview').src = proofImage;
+document.getElementById('proofPreview').style.display = 'block';
+}
+reader.readAsDataURL(file);
+}
+}
 
-if(cart.length === 0){
-alert('Walang item sa cart boss!');
+// BINAGO: Save with customerType, amountPaid, balance
+window.confirmPay = async ()=>{
+let method = document.getElementById('payMethod').value;
+let amountPaid = parseFloat(document.getElementById('cashIn').value)||0;
+let balance = currentTotal - amountPaid;
+
+if(method==='Gcash' &&!proofImage){
+alert('Upload mo muna proof of payment boss!');
 return;
 }
-
-const btn = document.getElementById('saveBtn');
-btn.disabled = true;
-btn.innerText = 'Saving...';
 
 try{
 await addDoc(collection(db,"dhan-sales"),{
-date: today,
+date: new Date().toISOString().split('T')[0],
+timestamp: new Date(),
 customerType: customerType,
-items: cart.map(i=>({name:i.name, price:i.price, cost:i.cost, qty:i.qty})),
-total: total,
-cost: cost,
+total: currentTotal,
 amountPaid: amountPaid,
 balance: balance,
-timestamp: new Date()
+items: cart.map(i=>({name:i.name,qty:i.qty,price:i.price})),
+paymentMethod: method.toLowerCase(),
+receiptNo: 'SIOMAI-'+Date.now().toString().slice(-6)
 });
 
-alert(`✓ Saved!\nCustomer: ${customerType}\nTotal: ₱${total.toLocaleString()}\nPaid: ₱${amountPaid.toLocaleString()}\nBalance: ₱${balance.toLocaleString()}`);
-
-// Reset
-items.forEach(i=>{i.qty=0; i.price=i.retail;});
-document.getElementById('amountPaid').value = '';
-displayItems();
-updateCart();
+let updatePromises = [];
+cart.forEach(item=>{
+updatePromises.push(
+updateDoc(doc(db, "products", item.id), { stock: increment(-item.qty) })
+);
+});
+await Promise.all(updatePromises);
 
 }catch(e){
-alert('Error: '+e.message);
-}finally{
-btn.disabled = false;
-btn.innerText = 'Save Sale';
-}
+alert('Error saving sale: '+e.message);
+return;
 }
 
-displayItems();
+generateReceipt(method, amountPaid, balance);
+closePayModal();
+alert(`Payment Success via ${method}!\nTotal: ₱${currentTotal.toFixed(2)}\nPaid: ₱${amountPaid.toFixed(2)}\nBalance: ₱${balance.toFixed(2)}\nNa-bawasan na stocks ✅`);
+setTimeout(()=>{window.print()},300);
+setTimeout(()=>{loadProducts()},500);
+}
+
+function generateReceipt(method, amountPaid, balance){
+let now = new Date();
+let date = now.toLocaleDateString('en-PH');
+let time = now.toLocaleTimeString('en-PH');
+let receiptNo = 'SIOMAI-'+now.getTime().toString().slice(-6);
+let html = `<div style="text-align:center;font-weight:900;font-size:13px">SIOMAI FACTORY</div>
+<div style="text-align:center;font-size:9px;margin-bottom:3px">Store POS Receipt</div>
+<div style="border-bottom:1px dashed #000;margin:3px 0"></div>
+<div>Receipt: ${receiptNo}</div>
+<div>Date: ${date} ${time}</div>
+<div>Type: ${customerType.toUpperCase()}</div>
+<div>Payment: ${method}</div>
+<div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
+cart.forEach(item=>{
+html += `<div>${item.name} x${item.qty} @₱${item.price}</div>`;
+html += `<div style="text-align:right">₱${(item.price*item.qty).toFixed(2)}</div>`;
+});
+html += `<div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
+html += `<div style="display:flex;justify-content:space-between;font-weight:900"><span>TOTAL:</span><span>₱${currentTotal.toFixed(2)}</span></div>`;
+html += `<div style="display:flex;justify-content:space-between"><span>PAID:</span><span>₱${amountPaid.toFixed(2)}</span></div>`;
+html += `<div style="display:flex;justify-content:space-between;font-weight:900"><span>BALANCE:</span><span>₱${balance.toFixed(2)}</span></div>`;
+html += `<div style="text-align:center;margin-top:6px;font-size:9px">Thank you boss! Balik ka ulit!</div>`;
+document.getElementById('receipt').innerHTML = html;
+document.getElementById('receipt').style.display = 'block';
+document.getElementById('receipt').scrollIntoView({behavior:'smooth'});
+cart = [];
+renderCart();
+}
+
+loadProducts();
 </script>
 </body>
 </html>
