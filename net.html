@@ -35,7 +35,7 @@ body{background:#FFF8E1;padding:15px}
 .exp-desc{font-weight:700;color:#C62828;font-size:13px}
 .exp-amt{font-weight:800;color:#C62828;font-size:16px}
 .exp-receipt{margin-top:8px}
-.exp-receipt img{width:100%;max-width:200px;border-radius:8px;border:2px solid #FFCDD2}
+.exp-receipt img{width:100%;max-width:200px;border-radius:8px;border:2px solid #FFCDD2;cursor:pointer}
 .loading{text-align:center;padding:40px;color:#666}
 .formula{font-size:13px;color:#666;text-align:center;margin-top:10px}
 </style>
@@ -70,19 +70,32 @@ body{background:#FFF8E1;padding:15px}
 </div>
 <div class="card">
 <h3>📋 Sales List</h3>
-<div id="salesList" class="loading">Loading...</div>
+<div id="salesList" class="loading">Loading today sales...</div>
 </div>
 <div class="card">
 <h3>💸 Expenses with Receipt</h3>
-<div id="expensesList" class="loading">Loading...</div>
+<div id="expensesList" class="loading">Loading expenses...</div>
 </div>
 
 <script type="module">
-import { db } from "./firebase-config.js";
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Auto set today
-const today = new Date().toISOString().split('T')[0];
+// 🔥 FIREBASE CONFIG MO DITO BOSS - SAME SA POS.HTML
+const firebaseConfig = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Auto set today yyyy-mm-dd
+let d = new Date();
+let today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 document.getElementById('dateFrom').value = today;
 document.getElementById('dateTo').value = today;
 
@@ -92,6 +105,11 @@ const to = document.getElementById('dateTo').value;
 const salesList = document.getElementById('salesList');
 const expList = document.getElementById('expensesList');
 
+if(!from || !to){
+alert('Pili ka muna date range boss!');
+return;
+}
+
 salesList.innerHTML = '<div class="loading">Loading sales...</div>';
 expList.innerHTML = '<div class="loading">Loading expenses...</div>';
 
@@ -99,60 +117,60 @@ let totalSales = 0;
 let totalExpenses = 0;
 
 try {
-    // 1. Load Sales from dhan-sales - same sa POS mo
-    const salesQ = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to));
-    const salesSnap = await getDocs(salesQ);
+// 1. Load Sales from dhan-sales - same sa POS mo
+const salesQ = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to));
+const salesSnap = await getDocs(salesQ);
 
-    if(salesSnap.empty) {
-        salesList.innerHTML = '<div class="loading">Wala pang sales boss</div>';
-    } else {
-        let html = '';
-        salesSnap.forEach(doc => {
-            const sale = doc.data();
-            totalSales += sale.total || 0;
-            const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
-            const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
-            html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
-        });
-        salesList.innerHTML = html;
-    }
+if(salesSnap.empty) {
+salesList.innerHTML = '<div class="loading">Wala pang sales boss</div>';
+} else {
+let html = '';
+salesSnap.forEach(doc => {
+const sale = doc.data();
+totalSales += sale.total || 0;
+const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
+const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
+html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
+});
+salesList.innerHTML = html;
+}
 
-    // 2. Load Expenses from daily_expenses - tugma sa expenses.html mo
-    const expQ = query(collection(db, "daily_expenses"), where("date", ">=", from), where("date", "<=", to));
-    const expSnap = await getDocs(expQ);
+// 2. Load Expenses from daily_expenses - tugma sa expenses.html
+const expQ = query(collection(db, "daily_expenses"), where("date", ">=", from), where("date", "<=", to));
+const expSnap = await getDocs(expQ);
 
-    if(expSnap.empty) {
-        expList.innerHTML = '<div class="loading">Wala pang expenses boss</div>';
-    } else {
-        let expHtml = '';
-        expSnap.forEach(doc => {
-            const exp = doc.data();
-            totalExpenses += exp.amount || 0;
-            const receiptImg = exp.receipt? `<div class="exp-receipt"><img src="${exp.receipt}" onclick="window.open('${exp.receipt}')"></div>` : '';
-            expHtml += `<div class="exp-card">
-                <div class="exp-head">
-                    <span class="exp-desc">${exp.date} - ${exp.desc}</span>
-                    <span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span>
-                </div>
-                ${receiptImg}
-            </div>`;
-        });
-        expList.innerHTML = expHtml;
-    }
+if(expSnap.empty) {
+expList.innerHTML = '<div class="loading">Wala pang expenses boss</div>';
+} else {
+let expHtml = '';
+expSnap.forEach(doc => {
+const exp = doc.data();
+totalExpenses += exp.amount || 0;
+const receiptImg = exp.receipt? `<div class="exp-receipt"><img src="${exp.receipt}" onclick="window.open('${exp.receipt}')"></div>` : '';
+expHtml += `<div class="exp-card">
+<div class="exp-head">
+<span class="exp-desc">${exp.date} - ${exp.desc}</span>
+<span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span>
+</div>
+${receiptImg}
+</div>`;
+});
+expList.innerHTML = expHtml;
+}
 
-    const netProfit = totalSales - totalExpenses;
-    document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
-    document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString();
-    document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString();
+const netProfit = totalSales - totalExpenses;
+document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
+document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString();
+document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString();
 
 } catch(e) {
-    salesList.innerHTML = '<div class="loading" style="color:red">Error: ' + e.message + '</div>';
-    console.error(e);
+salesList.innerHTML = '<div class="loading" style="color:red">Error: ' + e.message + '</div>';
+console.error(e);
 }
 }
 
 document.getElementById('loadBtn').addEventListener('click', loadReport);
-loadReport();
+loadReport(); // Auto load pag open
 </script>
 </body>
 </html>
