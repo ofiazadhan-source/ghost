@@ -59,7 +59,6 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 </div>
 <div class="prod-grid" id="prodGrid"><div class="loading">Loading products...</div></div>
 </div>
-
 <div class="cart-bar">
 <div class="cart-head">
 <span class="cart-title">🛒 Cart</span>
@@ -69,7 +68,6 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 <div class="cart-sum" id="cartSum">Total: ₱0</div>
 <button class="checkout-btn" id="checkoutBtn" disabled onclick="openPayModal()">Checkout</button>
 </div>
-
 <div id="payModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:9999">
 <div style="background:white;padding:25px;border-radius:12px;width:90%;max-width:380px;max-height:90vh;overflow-y:auto">
 <span onclick="closePayModal()" style="float:right;cursor:pointer;font-size:28px;color:#999">&times;</span>
@@ -101,12 +99,11 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 <button onclick="closePayModal()" style="width:100%;padding:10px;margin-top:8px;background:#999;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer">Cancel</button>
 </div>
 </div>
-
 <div id="receipt"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, where, addDoc, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
@@ -116,10 +113,8 @@ storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
 messagingSenderId: "305932123173",
 appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 let products = [];
 let cart = [];
 let curCat = 'all';
@@ -230,7 +225,6 @@ if(prod&&qty>prod.stock){qty=prod.stock;alert('Max stock: '+prod.stock+' only bo
 cart[index].qty = qty;
 renderCart();
 }
-
 window.openPayModal = ()=>{
 if(cart.length===0){alert('Walang items sa cart boss!');return}
 currentTotal = cart.reduce((sum,item)=>sum+(item.price*item.qty),0);
@@ -244,8 +238,8 @@ proofImage = '';
 document.getElementById('payModal').style.display = 'flex';
 togglePay();
 }
-
 window.closePayModal = ()=>{document.getElementById('payModal').style.display='none'}
+
 window.togglePay = ()=>{
 let method = document.getElementById('payMethod').value;
 if(method==='Cash'){
@@ -255,7 +249,7 @@ document.getElementById('gcashBox').style.display='none';
 document.getElementById('cashSection').style.display='none';
 document.getElementById('gcashBox').style.display='block';
 }
-}
+} // <- dito dapat mag-close
 
 window.computeChange = ()=>{
 let cash = parseFloat(document.getElementById('cashIn').value)||0;
@@ -267,7 +261,7 @@ document.getElementById('change').style.color = '#C62828';
 document.getElementById('change').innerText = 'Change: ₱'+change.toFixed(2);
 document.getElementById('change').style.color = '#2E7D32';
 }
-}
+} // <- dito dapat mag-close
 
 window.previewProof = (event)=>{
 const file = event.target.files[0];
@@ -282,10 +276,9 @@ reader.readAsDataURL(file);
 }
 }
 
-// 🔥 ITO YUNG INAYOS KO BOSS - AUTO SAVE SA FIREBASE
+// 🔥 AUTO BAWS STOCK - REPAIRED
 window.confirmPay = async ()=>{
 let method = document.getElementById('payMethod').value;
-
 if(method==='Cash'){
 let cash = parseFloat(document.getElementById('cashIn').value)||0;
 if(cash<currentTotal){
@@ -299,7 +292,6 @@ return;
 }
 }
 
-// SAVE SA dhan-sales COLLECTION
 try{
 await addDoc(collection(db,"dhan-sales"),{
 date: new Date().toISOString().split('T')[0],
@@ -309,6 +301,17 @@ items: cart.map(i=>({name:i.name,qty:i.qty,price:i.price})),
 paymentMethod: method.toLowerCase(),
 receiptNo: 'SIOMAI-'+Date.now().toString().slice(-6)
 });
+
+let updatePromises = [];
+cart.forEach(item=>{
+updatePromises.push(
+updateDoc(doc(db, "products", item.id), {
+stock: increment(-item.qty)
+})
+);
+});
+await Promise.all(updatePromises);
+
 }catch(e){
 alert('Error saving sale: '+e.message);
 return;
@@ -316,10 +319,9 @@ return;
 
 generateReceipt(method);
 closePayModal();
-alert('Payment Success via '+method+'! Salamat boss!');
-
-// AUTO PRINT after 300ms
+alert('Payment Success via '+method+'! Na-bawasan na stocks ✅ Salamat boss!');
 setTimeout(()=>{window.print()},300);
+setTimeout(()=>{loadProducts()},500);
 }
 
 function generateReceipt(method){
@@ -334,15 +336,12 @@ let html = `<div style="text-align:center;font-weight:900;font-size:13px">SIOMAI
 <div>Date: ${date} ${time}</div>
 <div>Payment: ${method}</div>
 <div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
-
 cart.forEach(item=>{
 html += `<div>${item.name} x${item.qty}</div>`;
 html += `<div style="text-align:right">₱${(item.price*item.qty).toFixed(2)}</div>`;
 });
-
 let cashTendered = method==='Cash'?parseFloat(document.getElementById('cashIn').value):0;
 let change = method==='Cash'?cashTendered-currentTotal:0;
-
 html += `<div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
 html += `<div style="display:flex;justify-content:space-between;font-weight:900"><span>TOTAL:</span><span>₱${currentTotal.toFixed(2)}</span></div>`;
 if(method==='Cash'){
@@ -350,16 +349,13 @@ html += `<div style="display:flex;justify-content:space-between"><span>CASH:</sp
 html += `<div style="display:flex;justify-content:space-between;font-weight:900"><span>CHANGE:</span><span>₱${change.toFixed(2)}</span></div>`;
 }
 html += `<div style="text-align:center;margin-top:6px;font-size:9px">Thank you boss! Balik ka ulit!</div>`;
-
 document.getElementById('receipt').innerHTML = html;
 document.getElementById('receipt').style.display = 'block';
 document.getElementById('receipt').scrollIntoView({behavior:'smooth'});
-
 cart = [];
 renderCart();
 }
-
 loadProducts();
 </script>
 </body>
-</html>
+  </html>
