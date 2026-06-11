@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Expenses - DHAN SIOMAI</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:#FFF8E1;padding:15px}
+.header{background:#6A1B9A;color:white;padding:15px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.header h1{font-size:18px}
+.back-btn{color:#6A1B9A;background:white;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px;font-size:13px}
+.card{background:white;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.card h3{color:#6A1B9A;margin-bottom:15px;font-size:16px}
+.input-group{margin-bottom:12px}
+.input-group label{display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:5px}
+.input-group input,.input-group select{width:100%;padding:12px;border:2px solid #E1BEE7;border-radius:10px;font-size:15px}
+.input-group input[type="file"]{padding:8px;border:2px dashed #6A1B9A;cursor:pointer}
+.preview-img{max-width:100%;max-height:150px;margin-top:8px;border-radius:8px;border:2px solid #6A1B9A;display:none}
+.btn-save{width:100%;padding:15px;background:#8E24AA;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer}
+.btn-save:disabled{background:#ccc;cursor:not-allowed}
+.total-box{background:#F3E5F5;border:3px solid #6A1B9A;border-radius:12px;padding:15px;text-align:center;margin-bottom:15px}
+.total-box h4{color:#6A1B9A;font-size:13px;margin-bottom:5px}
+.total-box p{font-size:28px;font-weight:900;color:#6A1B9A}
+.exp-card{background:#F9F3FC;border:2px solid #E1BEE7;border-radius:12px;padding:12px;margin-bottom:10px}
+.exp-head{display:flex;justify-content:space-between;margin-bottom:8px}
+.exp-desc{font-weight:700;color:#6A1B9A;font-size:14px}
+.exp-amt{font-weight:800;color:#6A1B9A;font-size:18px}
+.exp-month{font-size:11px;color:#999;margin-bottom:5px}
+.exp-receipt{margin-top:8px}
+.exp-receipt img{width:100%;max-width:200px;border-radius:8px;border:2px solid #E1BEE7;cursor:pointer}
+.loading{text-align:center;padding:40px;color:#666}
+.size-info{font-size:11px;color:#8E24AA;margin-top:5px;font-weight:600}
+.filter-row{display:flex;gap:10px;margin-bottom:15px}
+.filter-row select{flex:1;padding:10px;border:2px solid #E1BEE7;border-radius:10px;font-size:14px}
+.filter-row button{padding:10px 20px;background:#6A1B9A;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>📅 Monthly Expenses</h1>
+<a href="index.html" class="back-btn">← Back</a>
+</div>
+
+<div class="card">
+<h3>➕ Add Monthly Expense</h3>
+<div class="input-group">
+<label>Month</label>
+<select id="expMonth"></select>
+</div>
+<div class="input-group">
+<label>Year</label>
+<select id="expYear"></select>
+</div>
+<div class="input-group">
+<label>Description / Para saan?</label>
+<input type="text" id="expDesc" placeholder="Hal: Karne, Arena Rent, Utilities...">
+</div>
+<div class="input-group">
+<label>Amount ₱</label>
+<input type="number" id="expAmount" placeholder="0">
+</div>
+<div class="input-group">
+<label>Receipt/Invoice - Picture</label>
+<input type="file" id="expReceipt" accept="image/*" onchange="compressAndPreview(event)">
+<img id="receiptPreview" class="preview-img">
+<div id="sizeInfo" class="size-info"></div>
+</div>
+<button class="btn-save" id="saveBtn" onclick="saveExpense()">Save Monthly Expense</button>
+</div>
+
+<div class="card">
+<h3>📊 Filter by Month/Year</h3>
+<div class="filter-row">
+<select id="filterMonth"></select>
+<select id="filterYear"></select>
+<button id="loadBtn">Load</button>
+</div>
+<div class="total-box">
+<h4>Total Expenses This Month</h4>
+<p id="totalMonth">₱0</p>
+</div>
+<div id="expList" class="loading">Select month & year then Load...</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let receiptImage = '';
+
+// Auto fill month/year dropdowns
+const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const monthSelect = document.getElementById('expMonth');
+const filterMonth = document.getElementById('filterMonth');
+const yearSelect = document.getElementById('expYear');
+const filterYear = document.getElementById('filterYear');
+
+months.forEach((m,i)=>{
+monthSelect.innerHTML += `<option value="${i+1}">${m}</option>`;
+filterMonth.innerHTML += `<option value="${i+1}">${m}</option>`;
+});
+
+const currentYear = new Date().getFullYear();
+for(let y = currentYear-2; y <= currentYear+1; y++){
+yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+filterYear.innerHTML += `<option value="${y}">${y}</option>`;
+}
+
+// Auto set current month/year
+const now = new Date();
+monthSelect.value = now.getMonth() + 1;
+filterMonth.value = now.getMonth() + 1;
+yearSelect.value = currentYear;
+filterYear.value = currentYear;
+
+// 🔥 AUTO COMPRESS TO MAX 250KB - same sa daily
+window.compressAndPreview = (event)=>{
+const file = event.target.files[0];
+if(!file) return;
+
+const reader = new FileReader();
+reader.onload = function(e){
+const img = new Image();
+img.onload = function(){
+const canvas = document.createElement('canvas');
+let width = img.width;
+let height = img.height;
+const maxWidth = 800;
+
+if(width > maxWidth){
+height = (maxWidth / width) * height;
+width = maxWidth;
+}
+
+canvas.width = width;
+canvas.height = height;
+const ctx = canvas.getContext('2d');
+ctx.drawImage(img, 0, 0, width, height);
+
+let quality = 0.8;
+let compressedData = canvas.toDataURL('image/jpeg', quality);
+
+while(compressedData.length > 250000 && quality > 0.1){
+quality -= 0.05;
+compressedData = canvas.toDataURL('image/jpeg', quality);
+}
+
+receiptImage = compressedData;
+document.getElementById('receiptPreview').src = receiptImage;
+document.getElementById('receiptPreview').style.display = 'block';
+
+const sizeKB = Math.round(compressedData.length / 1024);
+document.getElementById('sizeInfo').innerText = '✓ Compressed: ' + sizeKB + 'KB / Max 250KB';
+};
+img.src = e.target.result;
+};
+reader.readAsDataURL(file);
+}
+
+window.saveExpense = async ()=>{
+const month = parseInt(document.getElementById('expMonth').value);
+const year = parseInt(document.getElementById('expYear').value);
+const desc = document.getElementById('expDesc').value.trim();
+const amount = parseFloat(document.getElementById('expAmount').value);
+
+if(!desc ||!amount || amount<=0){
+alert('Kumpletuhin mo muna boss! Description at Amount required.');
+return;
+}
+
+const btn = document.getElementById('saveBtn');
+btn.disabled = true;
+btn.innerText = 'Saving...';
+
+try{
+await addDoc(collection(db,"monthly_expenses"),{
+month: month,
+year: year,
+desc: desc,
+amount: amount,
+receipt: receiptImage,
+timestamp: new Date()
+});
+
+alert(`✓ Saved! Na-record na ${months[month-1]} ${year} expense mo boss.`);
+document.getElementById('expDesc').value = '';
+document.getElementById('expAmount').value = '';
+document.getElementById('expReceipt').value = '';
+document.getElementById('receiptPreview').style.display = 'none';
+document.getElementById('sizeInfo').innerText = '';
+receiptImage = '';
+
+loadExpenses(); // Refresh list
+
+}catch(e){
+alert('Error: '+e.message);
+}finally{
+btn.disabled = false;
+btn.innerText = 'Save Monthly Expense';
+}
+}
+
+async function loadExpenses(){
+const month = parseInt(document.getElementById('filterMonth').value);
+const year = parseInt(document.getElementById('filterYear').value);
+const expList = document.getElementById('expList');
+expList.innerHTML = '<div class="loading">Loading...</div>';
+let total = 0;
+
+try{
+const expQ = query(collection(db,"monthly_expenses"), where("month","==",month), where("year","==",year));
+const expSnap = await getDocs(expQ);
+
+if(expSnap.empty){
+expList.innerHTML = `<div class="loading">Wala pang expenses sa ${months[month-1]} ${year} boss</div>`;
+document.getElementById('totalMonth').textContent = '₱0';
+return;
+}
+
+let html = '';
+expSnap.forEach(doc=>{
+const exp = doc.data();
+total += exp.amount || 0;
+const receiptImg = exp.receipt? `<div class="exp-receipt"><img src="${exp.receipt}" onclick="window.open('${exp.receipt}')"></div>` : '';
+html += `<div class="exp-card">
+<div class="exp-month">${months[exp.month-1]} ${exp.year}</div>
+<div class="exp-head">
+<span class="exp-desc">${exp.desc}</span>
+<span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span>
+</div>
+${receiptImg}
+</div>`;
+});
+expList.innerHTML = html;
+document.getElementById('totalMonth').textContent = '₱' + total.toLocaleString();
+
+}catch(e){
+expList.innerHTML = '<div class="loading" style="color:red">Error: '+e.message+'</div>';
+console.error(e);
+}
+}
+
+document.getElementById('loadBtn').addEventListener('click', loadExpenses);
+loadExpenses();
+</script>
+</body>
+  </html>
