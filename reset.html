@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reset Data - Siomai Factory</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:15px;min-height:100vh}
+.container{max-width:480px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
+.subtitle{text-align:center;color:#666;font-size:13px;margin-bottom:20px}
+.back-btn{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-size:13px;font-weight:600}
+.warning{background:#FFEBEE;border:2px solid #C62828;border-radius:12px;padding:15px;margin-bottom:20px}
+.warning h3{color:#C62828;margin-bottom:8px;font-size:15px}
+.warning p{color:#666;font-size:12px;line-height:1.6}
+.btn-reset{width:100%;padding:16px;background:#C62828;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin-bottom:12px}
+.btn-reset:disabled{background:#ccc;cursor:not-allowed}
+.btn-green{width:100%;padding:16px;background:#2E7D32;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin-bottom:12px}
+.info-box{background:#E3F2FD;border:2px solid #1976D2;border-radius:12px;padding:12px;margin-bottom:15px;font-size:12px;color:#1565C0}
+</style>
+</head>
+<body>
+<div class="container">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+<h2>⚠️ Reset Data</h2>
+<p class="subtitle">Burahin lahat ng benta at expenses</p>
+
+<div class="warning">
+<h3>⚠️ DELIKADO TO BOSS!</h3>
+<p>Pag na-reset mo, hindi na mababalik yung data. Siguraduhin mo muna na-print/export mo na lahat ng reports.</p>
+</div>
+
+<div class="info-box">
+💡 Tip: Gamitin mo lang to pag end of month/year na, o pag gusto mo mag-umpisa ulit sa zero.
+</div>
+
+<button class="btn-reset" id="resetSalesBtn" onclick="resetSales()">🗑️ Reset All Sales</button>
+<button class="btn-reset" id="resetExpensesBtn" onclick="resetExpenses()">🗑️ Reset All Expenses</button>
+<button class="btn-green" onclick="window.location='net.html'">← Back to Reports</button>
+
+</div>
+
+<script type="module">
+import { db } from "./firebase-config.js";
+import { collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+window.resetSales = async ()=>{
+if(!confirm('SURE KA BA BOSS?\n\nBuburahin lahat ng sales sa dhan-sales.\nHindi na to mababalik!\n\nClick OK para magpatuloy.')){
+return;
+}
+
+const btn = document.getElementById('resetSalesBtn');
+btn.disabled = true;
+btn.innerText = 'Deleting sales...';
+
+try{
+const snap = await getDocs(collection(db,"dhan-sales"));
+let count = 0;
+const promises = [];
+snap.forEach(docSnap=>{
+promises.push(deleteDoc(doc(db,"dhan-sales",docSnap.id)));
+count++;
+});
+await Promise.all(promises);
+alert('✓ Na-reset na lahat ng sales!\n\nTotal deleted: '+count+' records');
+}catch(e){
+alert('Error: '+e.message);
+}finally{
+btn.disabled = false;
+btn.innerText = '🗑️ Reset All Sales';
+}
+}
+
+window.resetExpenses = async ()=>{
+if(!confirm('SURE KA BA BOSS?\n\nBuburahin lahat ng expenses sa daily_expenses.\nHindi na to mababalik!\n\nClick OK para magpatuloy.')){
+return;
+}
+
+const btn = document.getElementById('resetExpensesBtn');
+btn.disabled = true;
+btn.innerText = 'Deleting expenses...';
+
+try{
+const snap = await getDocs(collection(db,"daily_expenses"));
+let count = 0;
+const promises = [];
+snap.forEach(docSnap=>{
+promises.push(deleteDoc(doc(db,"daily_expenses",docSnap.id)));
+count++;
+});
+await Promise.all(promises);
+alert('✓ Na-reset na lahat ng expenses!\n\nTotal deleted: '+count+' records');
+}catch(e){
+alert('Error: '+e.message);
+}finally{
+btn.disabled = false;
+btn.innerText = '🗑️ Reset All Expenses';
+}
+</script>
+</body>
+</html>
