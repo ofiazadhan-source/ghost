@@ -38,7 +38,6 @@ body{background:#FFF8E1;padding:15px}
 .exp-receipt img{width:100%;max-width:200px;border-radius:8px;border:2px solid #FFCDD2}
 .loading{text-align:center;padding:40px;color:#666}
 .formula{font-size:13px;color:#666;text-align:center;margin-top:10px}
-.section-title{color:#D32F2F;font-weight:700;margin:15px 0 10px 0;font-size:15px}
 </style>
 </head>
 <body>
@@ -46,9 +45,8 @@ body{background:#FFF8E1;padding:15px}
 <h1>💰 Net Profit Report</h1>
 <a href="index.html" class="back-btn">← Back</a>
 </div>
-
 <div class="card">
-<h3>📊 Auto Load Today</h3>
+<h3>📊 Select Date Range</h3>
 <div class="filter-row">
 <input type="date" id="dateFrom">
 <input type="date" id="dateTo">
@@ -70,85 +68,76 @@ body{background:#FFF8E1;padding:15px}
 </div>
 <div class="formula">Formula: Sales - Expenses = Net Profit</div>
 </div>
-
 <div class="card">
 <h3>📋 Sales List</h3>
-<div id="salesList" class="loading">Loading today sales...</div>
+<div id="salesList" class="loading">Loading...</div>
 </div>
-
 <div class="card">
-<h3>💸 Expenses with Receipt Proof</h3>
-<div id="expensesList" class="loading">Loading expenses...</div>
+<h3>💸 Expenses with Receipt</h3>
+<div id="expensesList" class="loading">Loading...</div>
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "./firebase-config.js";
+import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = { apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE", authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", projectId: "dhan-siomai-pos-fe1e5", storageBucket: "dhan-siomai-pos-fe1e5.appspot.com", messagingSenderId: "305932123173", appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc" };
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
+// Auto set today
 const today = new Date().toISOString().split('T')[0];
 document.getElementById('dateFrom').value = today;
 document.getElementById('dateTo').value = today;
 
 async function loadReport() {
-  const from = document.getElementById('dateFrom').value;
-  const to = document.getElementById('dateTo').value;
-  const salesList = document.getElementById('salesList');
-  const expList = document.getElementById('expensesList');
+const from = document.getElementById('dateFrom').value;
+const to = document.getElementById('dateTo').value;
+const salesList = document.getElementById('salesList');
+const expList = document.getElementById('expensesList');
 
-  salesList.innerHTML = '<div class="loading">Loading sales...</div>';
-  expList.innerHTML = '<div class="loading">Loading expenses...</div>';
-  let totalSales = 0;
-  let totalExpenses = 0;
+salesList.innerHTML = '<div class="loading">Loading sales...</div>';
+expList.innerHTML = '<div class="loading">Loading expenses...</div>';
 
-  try {
-    // Load Sales
-    const salesQ = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to), orderBy("date", "desc"));
+let totalSales = 0;
+let totalExpenses = 0;
+
+try {
+    // 1. Load Sales from dhan-sales - same sa POS mo
+    const salesQ = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to));
     const salesSnap = await getDocs(salesQ);
 
     if(salesSnap.empty) {
-      salesList.innerHTML = '<div class="loading">Wala pang sales ngayon boss</div>';
+        salesList.innerHTML = '<div class="loading">Wala pang sales boss</div>';
     } else {
-      let html = '';
-      salesSnap.forEach(doc => {
-        const sale = doc.data();
-        totalSales += sale.total || 0;
-        const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
-        const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
-        html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
-      });
-      salesList.innerHTML = html;
+        let html = '';
+        salesSnap.forEach(doc => {
+            const sale = doc.data();
+            totalSales += sale.total || 0;
+            const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
+            const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
+            html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
+        });
+        salesList.innerHTML = html;
     }
 
-    // Load Expenses with Receipt Proof - MATCH SA EXPENSES.HTML MO
-    const expQ = query(collection(db, "daily_expenses"), where("date", ">=", from), where("date", "<=", to), orderBy("date", "desc"));
+    // 2. Load Expenses from daily_expenses - tugma sa expenses.html mo
+    const expQ = query(collection(db, "daily_expenses"), where("date", ">=", from), where("date", "<=", to));
     const expSnap = await getDocs(expQ);
 
     if(expSnap.empty) {
-      expList.innerHTML = '<div class="loading">Wala pang expenses ngayon boss</div>';
+        expList.innerHTML = '<div class="loading">Wala pang expenses boss</div>';
     } else {
-      let expHtml = '';
-      expSnap.forEach(doc => {
-        const exp = doc.data();
-        totalExpenses += exp.total || 0;
-
-        expHtml += `<div class="section-title">📅 ${exp.date} - Total: ₱${(exp.total || 0).toLocaleString()}</div>`;
-
-        exp.items.forEach(item => {
-          const receiptImg = item.receipt? `<div class="exp-receipt"><img src="${item.receipt}" onclick="window.open('${item.receipt}')"></div>` : '';
-          expHtml += `<div class="exp-card">
-            <div class="exp-head">
-              <span class="exp-desc">${item.description}</span>
-              <span class="exp-amt">-₱${(item.amount || 0).toLocaleString()}</span>
-            </div>
-            ${receiptImg}
-          </div>`;
+        let expHtml = '';
+        expSnap.forEach(doc => {
+            const exp = doc.data();
+            totalExpenses += exp.amount || 0;
+            const receiptImg = exp.receipt? `<div class="exp-receipt"><img src="${exp.receipt}" onclick="window.open('${exp.receipt}')"></div>` : '';
+            expHtml += `<div class="exp-card">
+                <div class="exp-head">
+                    <span class="exp-desc">${exp.date} - ${exp.desc}</span>
+                    <span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span>
+                </div>
+                ${receiptImg}
+            </div>`;
         });
-      });
-      expList.innerHTML = expHtml;
+        expList.innerHTML = expHtml;
     }
 
     const netProfit = totalSales - totalExpenses;
@@ -156,10 +145,10 @@ async function loadReport() {
     document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString();
     document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString();
 
-  } catch(e) {
-    salesList.innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
+} catch(e) {
+    salesList.innerHTML = '<div class="loading" style="color:red">Error: ' + e.message + '</div>';
     console.error(e);
-  }
+}
 }
 
 document.getElementById('loadBtn').addEventListener('click', loadReport);
