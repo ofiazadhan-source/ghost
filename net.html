@@ -15,16 +15,18 @@ body{background:#FFF8E1;padding:15px}
 .filter-row{display:flex;gap:10px;margin-bottom:15px}
 .filter-row input{flex:1;padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:14px}
 .filter-row button{padding:10px 20px;background:#D32F2F;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:15px}
 .stat-box{padding:15px;border-radius:12px;text-align:center}
 .stat-box.green{background:#E8F5E9}
 .stat-box.red{background:#FFEBEE}
 .stat-box.blue{background:#E3F2FD}
+.stat-box.purple{background:#F3E5F5}
 .stat-box h4{font-size:12px;color:#666;margin-bottom:5px}
-.stat-box p{font-size:22px;font-weight:700}
+.stat-box p{font-size:20px;font-weight:700}
 .green p{color:#2E7D32}
 .red p{color:#C62828}
 .blue p{color:#1565C0}
+.purple p{color:#6A1B9A}
 .sale-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:10px}
 .sale-head{display:flex;justify-content:space-between;margin-bottom:8px}
 .sale-date{font-weight:700;color:#D32F2F;font-size:13px}
@@ -38,6 +40,8 @@ body{background:#FFF8E1;padding:15px}
 .exp-receipt img{width:100%;max-width:200px;border-radius:8px;border:2px solid #FFCDD2;cursor:pointer}
 .loading{text-align:center;padding:40px;color:#666}
 .formula{font-size:13px;color:#666;text-align:center;margin-top:10px}
+.btn-save-month{width:100%;padding:15px;background:#6A1B9A;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin-top:10px}
+.btn-save-month:disabled{background:#ccc}
 </style>
 </head>
 <body>
@@ -45,6 +49,7 @@ body{background:#FFF8E1;padding:15px}
 <h1>💰 Net Profit Report</h1>
 <a href="index.html" class="back-btn">← Back</a>
 </div>
+
 <div class="card">
 <h3>📊 Select Date Range</h3>
 <div class="filter-row">
@@ -52,36 +57,51 @@ body{background:#FFF8E1;padding:15px}
 <input type="date" id="dateTo">
 <button id="loadBtn">Load</button>
 </div>
+
 <div class="stats-grid">
 <div class="stat-box green">
 <h4>Total Sales</h4>
 <p id="totalSales">₱0</p>
 </div>
 <div class="stat-box red">
-<h4>Total Expenses</h4>
+<h4>Daily Expenses</h4>
 <p id="totalExpenses">₱0</p>
 </div>
 <div class="stat-box blue">
-<h4>Net Profit</h4>
+<h4>Daily Net</h4>
 <p id="netProfit">₱0</p>
 </div>
+<div class="stat-box purple">
+<h4>Monthly Expenses</h4>
+<p id="totalMonthlyExp">₱0</p>
 </div>
-<div class="formula">Formula: Sales - Expenses = Net Profit</div>
 </div>
+
+<div class="stats-grid" style="margin-top:15px">
+<div class="stat-box purple" style="grid-column:1/4">
+<h4>💵 Tunay na Net Cash</h4>
+<p id="realNetCash">₱0</p>
+</div>
+</div>
+
+<div class="formula">Formula: Daily Net - Monthly Expenses = Tunay na Net Cash</div>
+<button class="btn-save-month" id="saveMonthBtn" onclick="saveToMonthly()">💾 Save Net to Monthly</button>
+</div>
+
 <div class="card">
 <h3>📋 Sales List</h3>
-<div id="salesList" class="loading">Loading today sales...</div>
+<div id="salesList" class="loading">Loading...</div>
 </div>
+
 <div class="card">
-<h3>💸 Expenses with Receipt</h3>
-<div id="expensesList" class="loading">Loading expenses...</div>
+<h3>💸 Daily Expenses with Receipt</h3>
+<div id="expensesList" class="loading">Loading...</div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 🔥 FIREBASE CONFIG MO DITO BOSS - SAME SA POS.HTML
 const firebaseConfig = {
 apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
 authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
@@ -93,11 +113,15 @@ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Auto set today yyyy-mm-dd
+// Auto set today
 let d = new Date();
 let today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 document.getElementById('dateFrom').value = today;
 document.getElementById('dateTo').value = today;
+
+let currentNet = 0;
+let currentMonth = 0;
+let currentYear = 0;
 
 async function loadReport() {
 const from = document.getElementById('dateFrom').value;
@@ -105,7 +129,7 @@ const to = document.getElementById('dateTo').value;
 const salesList = document.getElementById('salesList');
 const expList = document.getElementById('expensesList');
 
-if(!from || !to){
+if(!from ||!to){
 alert('Pili ka muna date range boss!');
 return;
 }
@@ -115,9 +139,15 @@ expList.innerHTML = '<div class="loading">Loading expenses...</div>';
 
 let totalSales = 0;
 let totalExpenses = 0;
+let totalMonthlyExp = 0;
+
+// Kuha month/year from dateFrom
+const fromDate = new Date(from);
+currentMonth = fromDate.getMonth() + 1;
+currentYear = fromDate.getFullYear();
 
 try {
-// 1. Load Sales from dhan-sales - same sa POS mo
+// 1. Load Sales
 const salesQ = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to));
 const salesSnap = await getDocs(salesQ);
 
@@ -135,33 +165,39 @@ html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">$
 salesList.innerHTML = html;
 }
 
-// 2. Load Expenses from daily_expenses - tugma sa expenses.html
+// 2. Load Daily Expenses
 const expQ = query(collection(db, "daily_expenses"), where("date", ">=", from), where("date", "<=", to));
 const expSnap = await getDocs(expQ);
 
 if(expSnap.empty) {
-expList.innerHTML = '<div class="loading">Wala pang expenses boss</div>';
+expList.innerHTML = '<div class="loading">Wala pang daily expenses boss</div>';
 } else {
 let expHtml = '';
 expSnap.forEach(doc => {
 const exp = doc.data();
 totalExpenses += exp.amount || 0;
 const receiptImg = exp.receipt? `<div class="exp-receipt"><img src="${exp.receipt}" onclick="window.open('${exp.receipt}')"></div>` : '';
-expHtml += `<div class="exp-card">
-<div class="exp-head">
-<span class="exp-desc">${exp.date} - ${exp.desc}</span>
-<span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span>
-</div>
-${receiptImg}
-</div>`;
+expHtml += `<div class="exp-card"><div class="exp-head"><span class="exp-desc">${exp.date} - ${exp.desc}</span><span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span></div>${receiptImg}</div>`;
 });
 expList.innerHTML = expHtml;
 }
 
+// 3. Load Monthly Expenses - KARNE, ARENA, etc
+const monthExpQ = query(collection(db, "monthly_expenses"), where("month", "==", currentMonth), where("year", "==", currentYear));
+const monthExpSnap = await getDocs(monthExpQ);
+monthExpSnap.forEach(doc => {
+totalMonthlyExp += doc.data().amount || 0;
+});
+
 const netProfit = totalSales - totalExpenses;
+const realNetCash = netProfit - totalMonthlyExp;
+currentNet = netProfit;
+
 document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
 document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString();
 document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString();
+document.getElementById('totalMonthlyExp').textContent = '₱' + totalMonthlyExp.toLocaleString();
+document.getElementById('realNetCash').textContent = '₱' + realNetCash.toLocaleString();
 
 } catch(e) {
 salesList.innerHTML = '<div class="loading" style="color:red">Error: ' + e.message + '</div>';
@@ -169,8 +205,41 @@ console.error(e);
 }
 }
 
+window.saveToMonthly = async ()=>{
+if(currentNet <= 0){
+alert('Wala pang net profit boss para i-save.');
+return;
+}
+
+if(!confirm(`Save ₱${currentNet.toLocaleString()} as Net Profit for ${currentMonth}/${currentYear}?\n\nIto yung pagbawasan mo ng monthly expenses sa monthly-expenses.html`)){
+return;
+}
+
+const btn = document.getElementById('saveMonthBtn');
+btn.disabled = true;
+btn.innerText = 'Saving...';
+
+try{
+await addDoc(collection(db,"monthly_net"),{
+month: currentMonth,
+year: currentYear,
+netAmount: currentNet,
+dateSaved: new Date().toISOString().split('T')[0],
+timestamp: new Date()
+});
+
+alert(`✓ Saved! ₱${currentNet.toLocaleString()} na-save sa Monthly Net.\n\nPwede mo na bawasan ng monthly expenses sa monthly-expenses.html boss.`);
+
+}catch(e){
+alert('Error: '+e.message);
+}finally{
+btn.disabled = false;
+btn.innerText = '💾 Save Net to Monthly';
+}
+}
+
 document.getElementById('loadBtn').addEventListener('click', loadReport);
-loadReport(); // Auto load pag open
+loadReport();
 </script>
 </body>
 </html>
