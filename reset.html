@@ -28,26 +28,21 @@ h2{text-align:center;color:#C62828;margin-bottom:8px;font-size:24px}
 <button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
 <h2>⚠️ Reset Data</h2>
 <p class="subtitle">Burahin lahat ng benta at expenses</p>
-
 <div class="warning">
 <h3>⚠️ DELIKADO TO BOSS!</h3>
 <p>Pag na-reset mo, hindi na mababalik yung data. Export mo muna reports sa Net Profit bago pindot dito.</p>
 </div>
-
 <div class="count-box">
 <h4>Current Records</h4>
 <p id="countInfo">Counting...</p>
 </div>
-
 <div class="tip">
 💡 Tip: Gamitin mo lang to pag end of month/year na.
 </div>
-
-  <button class="btn-reset" id="resetSalesBtn" onclick="resetMonthlyExpenses()">🗑️ Reset All Monthly Expenses</button>
+<button class="btn-reset" id="resetMonthlyBtn" onclick="resetMonthlyExpenses()">🗑️ Reset All Monthly Expenses</button>
 <button class="btn-reset" id="resetSalesBtn" onclick="resetSales()">🗑️ Reset All Sales</button>
 <button class="btn-reset" id="resetExpensesBtn" onclick="resetExpenses()">🗑️ Reset All Expenses</button>
 <button class="btn-green" onclick="window.location='net.html'">← Back to Reports</button>
-
 </div>
 
 <script type="module">
@@ -55,117 +50,130 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, collection, getDocs, deleteDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-projectId: "dhan-siomai-pos-fe1e5",
-storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-messagingSenderId: "305932123173",
-appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Auto count records pag load
 countRecords();
+
 async function countRecords(){
-const salesSnap = await getDocs(collection(db,"dhan-sales"));
-const expSnap = await getDocs(collection(db,"daily_expenses"));
-document.getElementById('countInfo').innerText = `Sales: ${salesSnap.size} | Expenses: ${expSnap.size}`;
+  const salesSnap = await getDocs(collection(db,"dhan-sales"));
+  const expSnap = await getDocs(collection(db,"daily_expenses"));
+  const monthlySnap = await getDocs(collection(db,"monthly_expenses"));
+  document.getElementById('countInfo').innerText = `Sales: ${salesSnap.size} | Daily: ${expSnap.size} | Monthly: ${monthlySnap.size}`;
 }
 
 // 🔥 BATCH DELETE - 500 per batch para di mag-timeout
 async function deleteInBatches(querySnap){
-let count = 0;
-const docs = querySnap.docs;
-const total = docs.length;
-
-while(count < total){
-const batch = writeBatch(db);
-const batchDocs = docs.slice(count, count + 500);
-
-batchDocs.forEach(docSnap=>{
-batch.delete(docSnap.ref);
-});
-
-await batch.commit();
-count += batchDocs.length;
+  let count = 0;
+  const docs = querySnap.docs;
+  const total = docs.length;
+  while(count < total){
+    const batch = writeBatch(db);
+    const batchDocs = docs.slice(count, count + 500);
+    batchDocs.forEach(docSnap=>{
+      batch.delete(docSnap.ref);
+    });
+    await batch.commit();
+    count += batchDocs.length;
+  }
+  return total;
 }
 
-return total;
+window.resetMonthlyExpenses = async ()=>{
+  const snap = await getDocs(collection(db,"monthly_expenses"));
+  if(snap.empty){
+    alert('Wala namang monthly expenses na i-delete boss.');
+    return;
+  }
+  if(!confirm(`SURE KA BA BOSS?\n\nBuburahin lahat ng ${snap.size} monthly expense records.\nHindi na to mababalik!\n\nClick OK para magpatuloy.`)){
+    return;
+  }
+  if(!confirm('LAST CHANCE BOSS!\n\nSure ka talaga? Delete na lahat forever pag OK dito.')){
+    return;
+  }
+  const btn = document.getElementById('resetMonthlyBtn');
+  btn.disabled = true;
+  btn.innerText = 'Deleting monthly expenses... 0%';
+  try{
+    const total = await deleteInBatches(snap);
+    alert(`✓ SUCCESS!\n\nNa-reset na lahat ng monthly expenses.\nTotal deleted: ${total} records`);
+    countRecords();
+    setTimeout(()=>{window.location='net.html'}, 2000);
+  }catch(e){
+    alert('ERROR: '+e.message);
+    console.error(e);
+  }finally{
+    btn.disabled = false;
+    btn.innerText = '🗑️ Reset All Monthly Expenses';
+  }
 }
 
 window.resetSales = async ()=>{
-const snap = await getDocs(collection(db,"dhan-sales"));
-if(snap.empty){
-alert('Wala namang sales na i-delete boss.');
-return;
+  const snap = await getDocs(collection(db,"dhan-sales"));
+  if(snap.empty){
+    alert('Wala namang sales na i-delete boss.');
+    return;
+  }
+  if(!confirm(`SURE KA BA BOSS?\n\nBuburahin lahat ng ${snap.size} sales records.\nHindi na to mababalik!\n\nClick OK para magpatuloy.`)){
+    return;
+  }
+  if(!confirm('LAST CHANCE BOSS!\n\nSure ka talaga? Delete na lahat forever pag OK dito.')){
+    return;
+  }
+  const btn = document.getElementById('resetSalesBtn');
+  btn.disabled = true;
+  btn.innerText = 'Deleting sales... 0%';
+  try{
+    const total = await deleteInBatches(snap);
+    alert(`✓ SUCCESS!\n\nNa-reset na lahat ng sales.\nTotal deleted: ${total} records`);
+    countRecords();
+    setTimeout(()=>{window.location='net.html'}, 2000);
+  }catch(e){
+    alert('ERROR: '+e.message);
+    console.error(e);
+  }finally{
+    btn.disabled = false;
+    btn.innerText = '🗑️ Reset All Sales';
+  }
 }
-
-if(!confirm(`SURE KA BA BOSS?\n\nBuburahin lahat ng ${snap.size} sales records.\nHindi na to mababalik!\n\nClick OK para magpatuloy.`)){
-return;
-}
-if(!confirm('LAST CHANCE BOSS!\n\nSure ka talaga? Delete na lahat forever pag OK dito.')){
-return;
-}
-
-const btn = document.getElementById('resetSalesBtn');
-btn.disabled = true;
-btn.innerText = 'Deleting sales... 0%';
-
-try{
-const total = await deleteInBatches(snap);
-alert(`✓ SUCCESS!\n\nNa-reset na lahat ng sales.\nTotal deleted: ${total} records`);
-
-// Auto refresh count
-countRecords();
-
-// Optional: auto redirect sa net.html after 2 sec
-setTimeout(()=>{window.location='net.html'}, 2000);
-
-}catch(e){
-alert('ERROR: '+e.message);
-console.error(e);
-}finally{
-btn.disabled = false;
-btn.innerText = '🗑️ Reset All Sales';
-}
-} // CLOSE
 
 window.resetExpenses = async ()=>{
-const snap = await getDocs(collection(db,"daily_expenses"));
-if(snap.empty){
-alert('Wala namang expenses na i-delete boss.');
-return;
+  const snap = await getDocs(collection(db,"daily_expenses"));
+  if(snap.empty){
+    alert('Wala namang expenses na i-delete boss.');
+    return;
+  }
+  if(!confirm(`SURE KA BA BOSS?\n\nBuburahin lahat ng ${snap.size} expense records.\nHindi na to mababalik!\n\nClick OK para magpatuloy.`)){
+    return;
+  }
+  if(!confirm('LAST CHANCE BOSS!\n\nSure ka talaga? Delete na lahat forever pag OK dito.')){
+    return;
+  }
+  const btn = document.getElementById('resetExpensesBtn');
+  btn.disabled = true;
+  btn.innerText = 'Deleting expenses... 0%';
+  try{
+    const total = await deleteInBatches(snap);
+    alert(`✓ SUCCESS!\n\nNa-reset na lahat ng expenses.\nTotal deleted: ${total} records`);
+    countRecords();
+    setTimeout(()=>{window.location='net.html'}, 2000);
+  }catch(e){
+    alert('ERROR: '+e.message);
+    console.error(e);
+  }finally{
+    btn.disabled = false;
+    btn.innerText = '🗑️ Reset All Expenses';
+  }
 }
-
-if(!confirm(`SURE KA BA BOSS?\n\nBuburahin lahat ng ${snap.size} expense records.\nHindi na to mababalik!\n\nClick OK para magpatuloy.`)){
-return;
-}
-if(!confirm('LAST CHANCE BOSS!\n\nSure ka talaga? Delete na lahat forever pag OK dito.')){
-return;
-}
-
-const btn = document.getElementById('resetExpensesBtn');
-btn.disabled = true;
-btn.innerText = 'Deleting expenses... 0%';
-
-try{
-const total = await deleteInBatches(snap);
-alert(`✓ SUCCESS!\n\nNa-reset na lahat ng expenses.\nTotal deleted: ${total} records`);
-
-// Auto refresh count
-countRecords();
-
-setTimeout(()=>{window.location='net.html'}, 2000);
-
-}catch(e){
-alert('ERROR: '+e.message);
-console.error(e);
-}finally{
-btn.disabled = false;
-btn.innerText = '🗑️ Reset All Expenses';
-}
-} // CLOSE
 </script>
 </body>
 </html>
