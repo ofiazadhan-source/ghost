@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Net Profit Report - Siomai Factory</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:15px;min-height:100vh}
+.container{max-width:480px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
+.subtitle{text-align:center;color:#666;font-size:13px;margin-bottom:15px}
+.back-btn{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-size:13px;font-weight:600}
+.box{padding:15px;border-radius:10px;margin:10px 0;text-align:center;font-weight:bold;font-size:16px}
+.green{background:#d4edda;color:#155724}
+.blue{background:#cce5ff;color:#004085}
+.purple{background:#e2d6f3;color:#4b2e83}
+.pink{background:#f8d7da;color:#721c24}
+.lightblue{background:#d1ecf1;color:#0c5460}
+.orange{background:#fff3cd;color:#856404}
+.btn{background:#6f42c1;color:white;padding:12px;border:none;border-radius:10px;width:100%;font-size:16px;cursor:pointer;font-weight:800}
+.btn:active{transform:scale(0.95)}
+.date-row{display:flex;gap:8px;margin:15px 0}
+.date-row input{flex:1;padding:10px;border:2px solid #FFCC80;border-radius:8px;font-size:14px}
+.loading{text-align:center;padding:30px;color:#D32F2F;font-weight:700}
+.label{font-size:12px;opacity:0.8}
+</style>
+</head>
+<body>
+<div class="container">
+  <button class="back-btn" onclick="window.location='index.html'">← Back to POS</button>
+  <h2>💰 Net Profit Report</h2>
+  <p class="subtitle">Daily Net = Sales - Daily Expenses | Total Net = Daily Net + Wholesale - Monthly Expenses</p>
+
+  <div class="date-row">
+    <input type="date" id="startDate">
+    <input type="date" id="endDate">
+  </div>
+  <button class="btn" onclick="loadReport()">📊 Load Report</button>
+
+  <div id="report" style="display:none">
+    <div class="box green">
+      <div class="label">Total Sales</div>
+      <span id="totalSales">₱0</span>
+    </div>
+
+    <div class="box blue">
+      <div class="label">Wholesale Sales</div>
+      <span id="wholesaleSales">₱0</span>
+    </div>
+
+    <div class="box purple">
+      <div class="label">Retail Sales</div>
+      <span id="retailSales">₱0</span>
+    </div>
+
+    <div class="box pink">
+      <div class="label">Daily Expenses</div>
+      <span id="dailyExpenses">₱0</span>
+    </div>
+
+    <div class="box purple">
+      <div class="label">Monthly Expenses</div>
+      <input type="number" id="monthlyExpenses" value="5000" onchange="calcNet()" style="width:120px;padding:8px;border:none;border-radius:6px;font-size:18px;font-weight:800;text-align:center;margin-top:5px">
+    </div>
+
+    <div class="box lightblue">
+      <div class="label">Daily Net</div>
+      <span id="dailyNet">₱0</span>
+    </div>
+
+    <div class="box orange">
+      <div class="label">Total Unpaid Wholesale</div>
+      <span id="unpaidWholesale">₱0</span>
+    </div>
+
+    <div class="box purple" style="background:#6f42c1;color:white">
+      <div class="label">💵 Total Net</div>
+      <span id="totalNet">₱0</span>
+    </div>
+
+    <button class="btn" onclick="saveNet()">💾 Save Net to Monthly</button>
+  </div>
+
+  <div id="loading" class="loading">Select date then click Load Report</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let dailySales = 0;
+let wholesaleSales = 0;
+let retailSales = 0;
+let dailyExpenses = 0;
+let unpaidWholesale = 0;
+
+// Set today as default date
+window.onload = ()=>{
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('startDate').value = today;
+  document.getElementById('endDate').value = today;
+}
+
+function formatPeso(num){
+  return '₱' + num.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+// FORMULA 1: Daily Net = Daily Sales - Daily Expenses
+function calcDailyNet(){
+  return dailySales - dailyExpenses;
+}
+
+// FORMULA 2: Total Net = Daily Net + Wholesale - Monthly Expenses
+function calcTotalNet(){
+  let dNet = calcDailyNet();
+  let mExpenses = parseFloat(document.getElementById('monthlyExpenses').value) || 0;
+  return dNet + wholesaleSales - mExpenses;
+}
+
+window.calcNet = ()=>{
+  if(dailySales > 0){
+    document.getElementById('dailyNet').innerText = formatPeso(calcDailyNet());
+    document.getElementById('totalNet').innerText = formatPeso(calcTotalNet());
+  }
+}
+
+window.loadReport = async ()=>{
+  const start = document.getElementById('startDate').value;
+  const end = document.getElementById('endDate').value;
+
+  if(!start ||!end){
+    alert('Pili ka muna date range boss!');
+    return;
+  }
+
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('report').style.display = 'none';
+
+  try{
+    // Kunin lahat ng sales sa date range
+    const q = query(collection(db, "dhan-sales"), where("date", ">=", start), where("date", "<=", end));
+    const snap = await getDocs(q);
+
+    dailySales = 0;
+    wholesaleSales = 0;
+    retailSales = 0;
+    unpaidWholesale = 0;
+
+    snap.forEach(doc=>{
+      const sale = doc.data();
+      dailySales += sale.total || 0;
+
+      if(sale.customerType === 'wholesale'){
+        wholesaleSales += sale.total || 0;
+        unpaidWholesale += sale.balance || 0;
+      } else {
+        retailSales += sale.total || 0;
+      }
+    });
+
+    // Kunin daily expenses from localStorage o set mo manual
+    dailyExpenses = parseFloat(localStorage.getItem('dailyExpenses_' + start) || 150);
+
+    // Display values
+    document.getElementById('totalSales').innerText = formatPeso(dailySales);
+    document.getElementById('wholesaleSales').innerText = formatPeso(wholesaleSales);
+    document.getElementById('retailSales').innerText = formatPeso(retailSales);
+    document.getElementById('dailyExpenses').innerText = formatPeso(dailyExpenses);
+    document.getElementById('unpaidWholesale').innerText = formatPeso(unpaidWholesale);
+
+    // COMPUTE NETS
+    calcNet();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('report').style.display = 'block';
+
+  }catch(e){
+    alert('Error loading report: ' + e.message);
+    document.getElementById('loading').innerText = 'Error: ' + e.message;
+  }
+}
+
+window.saveNet = ()=>{
+  let totalNet = calcTotalNet();
+  // Save sa localStorage para maipon monthly
+  let monthKey = 'monthlyNet_' + new Date().toISOString().slice(0,7);
+  localStorage.setItem(monthKey, totalNet);
+  alert('Saved! Total Net: ' + formatPeso(totalNet) + '\nNaipon na sa Monthly');
+}
+</script>
+</body>
+</html>
