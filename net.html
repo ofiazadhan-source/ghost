@@ -1,245 +1,259 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Net Profit - DHAN SIOMAI</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
-body{background:#FFF8E1;padding:15px}
-.header{background:#D32F2F;color:white;padding:15px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
-.header h1{font-size:18px}
-.back-btn{color:#D32F2F;background:white;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px;font-size:13px}
-.card{background:white;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.card h3{color:#D32F2F;margin-bottom:15px;font-size:16px}
-.filter-row{display:flex;gap:10px;margin-bottom:15px}
-.filter-row input{flex:1;padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:14px}
-.filter-row button{padding:10px 20px;background:#D32F2F;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:15px}
-.stat-box{padding:15px;border-radius:12px;text-align:center}
-.stat-box.green{background:#E8F5E9}
-.stat-box.red{background:#FFEBEE}
-.stat-box.blue{background:#E3F2FD}
-.stat-box.purple{background:#F3E5F5}
-.stat-box h4{font-size:12px;color:#666;margin-bottom:5px}
-.stat-box p{font-size:20px;font-weight:700}
-.green p{color:#2E7D32}
-.red p{color:#C62828}
-.blue p{color:#1565C0}
-.purple p{color:#6A1B9A}
-.sale-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:10px}
-.sale-head{display:flex;justify-content:space-between;margin-bottom:8px}
-.sale-date{font-weight:700;color:#D32F2F;font-size:13px}
-.sale-total{font-weight:800;color:#2E7D32;font-size:16px}
-.sale-items{font-size:12px;color:#555;line-height:1.6}
-.exp-card{background:#FFF5F5;border:2px solid #FFCDD2;border-radius:12px;padding:12px;margin-bottom:10px}
-.exp-head{display:flex;justify-content:space-between;margin-bottom:8px}
-.exp-desc{font-weight:700;color:#C62828;font-size:13px}
-.exp-amt{font-weight:800;color:#C62828;font-size:16px}
-.exp-receipt{margin-top:8px}
-.exp-receipt img{width:100%;max-width:200px;border-radius:8px;border:2px solid #FFCDD2;cursor:pointer}
-.loading{text-align:center;padding:40px;color:#666}
-.formula{font-size:13px;color:#666;text-align:center;margin-top:10px}
-.btn-save-month{width:100%;padding:15px;background:#6A1B9A;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin-top:10px}
-.btn-save-month:disabled{background:#ccc}
-</style>
-</head>
-<body>
-<div class="header">
-<h1>💰 Net Profit Report</h1>
-<a href="index.html" class="back-btn">← Back</a>
-</div>
-
-<div class="card">
-<h3>📊 Select Date Range</h3>
-<div class="filter-row">
-<input type="date" id="dateFrom">
-<input type="date" id="dateTo">
-<button id="loadBtn">Load</button>
-</div>
-
-<div class="stats-grid">
-<div class="stat-box green">
-<h4>Total Sales</h4>
-<p id="totalSales">₱0</p>
-</div>
-<div class="stat-box red">
-<h4>Daily Expenses</h4>
-<p id="totalExpenses">₱0</p>
-</div>
-<div class="stat-box blue">
-<h4>Daily Net</h4>
-<p id="netProfit">₱0</p>
-</div>
-<div class="stat-box purple">
-<h4>Monthly Expenses</h4>
-<p id="totalMonthlyExp">₱0</p>
-</div>
-</div>
-
-<div class="stats-grid" style="margin-top:15px">
-<div class="stat-box purple" style="grid-column:1/4">
-<h4>💵 Tunay na Net Cash</h4>
-<p id="realNetCash">₱0</p>
-</div>
-</div>
-
-<div class="formula">Formula: Daily Net - Monthly Expenses = Tunay na Net Cash</div>
-<button class="btn-save-month" id="saveMonthBtn" onclick="saveToMonthly()">💾 Save Net to Monthly</button>
-</div>
-
-<div class="card">
-<h3>📋 Sales List</h3>
-<div id="salesList" class="loading">Loading...</div>
-</div>
-
-<div class="card">
-<h3>💸 Daily Expenses with Receipt</h3>
-<div id="expensesList" class="loading">Loading...</div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-projectId: "dhan-siomai-pos-fe1e5",
-storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-messagingSenderId: "305932123173",
-appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Auto set today
-let d = new Date();
-let today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-document.getElementById('dateFrom').value = today;
-document.getElementById('dateTo').value = today;
-
-let currentNet = 0;
-let currentMonth = 0;
-let currentYear = 0;
-
-async function loadReport() {
-const from = document.getElementById('dateFrom').value;
-const to = document.getElementById('dateTo').value;
-const salesList = document.getElementById('salesList');
-const expList = document.getElementById('expensesList');
-
-if(!from ||!to){
-alert('Pili ka muna date range boss!');
-return;
-}
-
-salesList.innerHTML = '<div class="loading">Loading sales...</div>';
-expList.innerHTML = '<div class="loading">Loading expenses...</div>';
-
-let totalSales = 0;
-let totalExpenses = 0;
-let totalMonthlyExp = 0;
-
-// Kuha month/year from dateFrom
-const fromDate = new Date(from);
-currentMonth = fromDate.getMonth() + 1;
-currentYear = fromDate.getFullYear();
-
-try {
-// 1. Load Sales
-const salesQ = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to));
-const salesSnap = await getDocs(salesQ);
-
-if(salesSnap.empty) {
-salesList.innerHTML = '<div class="loading">Wala pang sales boss</div>';
-} else {
-let html = '';
-salesSnap.forEach(doc => {
-const sale = doc.data();
-totalSales += sale.total || 0;
-const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
-const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
-html += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${sale.date} ${time}</span><span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span></div><div class="sale-items">${items}</div></div>`;
-});
-salesList.innerHTML = html;
-}
-
-// 2. Load Daily Expenses
-const expQ = query(collection(db, "daily_expenses"), where("date", ">=", from), where("date", "<=", to));
-const expSnap = await getDocs(expQ);
-
-if(expSnap.empty) {
-expList.innerHTML = '<div class="loading">Wala pang daily expenses boss</div>';
-} else {
-let expHtml = '';
-expSnap.forEach(doc => {
-const exp = doc.data();
-totalExpenses += exp.amount || 0;
-const receiptImg = exp.receipt? `<div class="exp-receipt"><img src="${exp.receipt}" onclick="window.open('${exp.receipt}')"></div>` : '';
-expHtml += `<div class="exp-card"><div class="exp-head"><span class="exp-desc">${exp.date} - ${exp.desc}</span><span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span></div>${receiptImg}</div>`;
-});
-expList.innerHTML = expHtml;
-}
-
-// 3. Load Monthly Expenses - KARNE, ARENA, etc
-const monthExpQ = query(collection(db, "monthly_expenses"), where("month", "==", currentMonth), where("year", "==", currentYear));
-const monthExpSnap = await getDocs(monthExpQ);
-monthExpSnap.forEach(doc => {
-totalMonthlyExp += doc.data().amount || 0;
-});
-
-const netProfit = totalSales - totalExpenses;
-const realNetCash = netProfit - totalMonthlyExp;
-currentNet = netProfit;
-
-document.getElementById('totalSales').textContent = '₱' + totalSales.toLocaleString();
-document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString();
-document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString();
-document.getElementById('totalMonthlyExp').textContent = '₱' + totalMonthlyExp.toLocaleString();
-document.getElementById('realNetCash').textContent = '₱' + realNetCash.toLocaleString();
-
-} catch(e) {
-salesList.innerHTML = '<div class="loading" style="color:red">Error: ' + e.message + '</div>';
-console.error(e);
-}
-}
-
-window.saveToMonthly = async ()=>{
-if(currentNet <= 0){
-alert('Wala pang net profit boss para i-save.');
-return;
-}
-
-if(!confirm(`Save ₱${currentNet.toLocaleString()} as Net Profit for ${currentMonth}/${currentYear}?\n\nIto yung pagbawasan mo ng monthly expenses sa monthly-expenses.html`)){
-return;
-}
-
-const btn = document.getElementById('saveMonthBtn');
-btn.disabled = true;
-btn.innerText = 'Saving...';
-
-try{
-await addDoc(collection(db,"monthly_net"),{
-month: currentMonth,
-year: currentYear,
-netAmount: currentNet,
-dateSaved: new Date().toISOString().split('T')[0],
-timestamp: new Date()
-});
-
-alert(`✓ Saved! ₱${currentNet.toLocaleString()} na-save sa Monthly Net.\n\nPwede mo na bawasan ng monthly expenses sa monthly-expenses.html boss.`);
-
-}catch(e){
-alert('Error: '+e.message);
-}finally{
-btn.disabled = false;
-btn.innerText = '💾 Save Net to Monthly';
-}
-}
-
-document.getElementById('loadBtn').addEventListener('click', loadReport);
-loadReport();
-</script>
-</body>
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<title>Net Profit - DHAN SIOMAI</title> 
+<style> 
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif} 
+body{background:#FFF8E1;padding:15px} 
+.header{background:#D32F2F;color:white;padding:15px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px} 
+.header h1{font-size:18px} 
+.back-btn{color:#D32F2F;background:white;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px;font-size:13px} 
+.card{background:white;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)} 
+.card h3{color:#D32F2F;margin-bottom:15px;font-size:16px} 
+.filter-row{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap}
+.filter-row input{flex:1 1 120px;min-width:0;padding:10px;border:2px solid #FFE0B2;border-radius:10px;font-size:13px}
+.filter-row button{flex:0 0 auto;padding:10px 15px;background:#D32F2F;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:15px} 
+.stat-box{padding:15px;border-radius:12px;text-align:center} 
+.stat-box.green{background:#E8F5E9} 
+.stat-box.red{background:#FFEBEE} 
+.stat-box.blue{background:#E3F2FD} 
+.stat-box.purple{background:#F3E5F5} 
+.stat-box.orange{background:#FFF3E0} 
+.stat-box h4{font-size:12px;color:#666;margin-bottom:5px} 
+.stat-box p{font-size:20px;font-weight:700} 
+.green p{color:#2E7D32} 
+.red p{color:#C62828} 
+.blue p{color:#1565C0} 
+.purple p{color:#6A1B9A} 
+.orange p{color:#E65100} 
+.sale-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:10px} 
+.sale-head{display:flex;justify-content:space-between;margin-bottom:8px} 
+.sale-date{font-weight:700;color:#D32F2F;font-size:13px} 
+.sale-total{font-weight:800;color:#2E7D32;font-size:16px} 
+.sale-items{font-size:12px;color:#555;line-height:1.6} 
+.exp-card{background:#FFF5F5;border:2px solid #FFCDD2;border-radius:12px;padding:12px;margin-bottom:10px} 
+.exp-head{display:flex;justify-content:space-between;margin-bottom:8px} 
+.exp-desc{font-weight:700;color:#C62828;font-size:13px} 
+.exp-amt{font-weight:800;color:#C62828;font-size:16px} 
+.exp-receipt{margin-top:8px} 
+.exp-receipt img{width:100%;max-width:200px;border-radius:8px;border:2px solid #FFCDD2;cursor:pointer} 
+.loading{text-align:center;padding:40px;color:#666} 
+.formula{font-size:13px;color:#666;text-align:center;margin-top:10px} 
+.btn-save-month{width:100%;padding:15px;background:#6A1B9A;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin-top:10px} 
+.btn-save-month:disabled{background:#ccc} 
+.badge{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;margin-left:4px} 
+.badge.unpaid{background:#FFEBEE;color:#C62828} 
+.badge.paid{background:#E8F5E9;color:#2E7D32} 
+</style> 
+</head> 
+<body> 
+<div class="header"> 
+<h1>💰 Net Profit Report</h1> 
+<a href="index.html" class="back-btn">← Back</a> 
+</div> 
+<div class="card"> 
+<h3>📊 Select Date Range</h3> 
+<div class="filter-row"> 
+<input type="date" id="dateFrom"> 
+<input type="date" id="dateTo"> 
+<button id="loadBtn">Load</button> 
+</div> 
+<div class="stats-grid"> 
+<div class="stat-box green"> 
+<h4>Total Sales</h4> 
+<p id="totalSales">₱0</p> 
+</div> 
+<div class="stat-box blue"> 
+<h4>Wholesale Sales</h4> 
+<p id="wholesaleSales">₱0</p> 
+</div> 
+<div class="stat-box purple"> 
+<h4>Retail Sales</h4> 
+<p id="retailSales">₱0</p> 
+</div> 
+</div> 
+<div class="stats-grid"> 
+<div class="stat-box red"> 
+<h4>Daily Expenses</h4> 
+<p id="totalExpenses">₱0</p> 
+</div> 
+<div class="stat-box purple"> 
+<h4>Monthly Expenses</h4> 
+<p id="totalMonthlyExp">₱0</p> 
+</div> 
+<div class="stat-box blue"> 
+<h4>Daily Net</h4> 
+<p id="netProfit">₱0</p> 
+</div> 
+</div> 
+<div class="stats-grid" style="margin-top:15px"> 
+<div class="stat-box orange" style="grid-column:1/4"> 
+<h4>⚠️ Total Unpaid Wholesale</h4> 
+<p id="totalUnpaid">₱0</p> 
+</div> 
+</div> 
+<div class="stats-grid" style="margin-top:15px"> 
+<div class="stat-box purple" style="grid-column:1/4"> 
+<h4>💵 Tunay na Net Cash</h4> 
+<p id="realNetCash">₱0</p> 
+</div> 
+</div> 
+<div class="formula">Formula: Daily Net = Retail - Daily Expenses | Tunay na Net = Daily Net + Wholesale - Monthly Expenses</div> 
+<button class="btn-save-month" id="saveMonthBtn" onclick="saveToMonthly()">💾 Save Net to Monthly</button> 
+</div> 
+<div class="card"> 
+<h3>📋 Sales List</h3> 
+<div id="salesList" class="loading">Loading...</div> 
+</div> 
+<div class="card"> 
+<h3>⚠️ Unpaid Wholesale Invoices</h3> 
+<div id="unpaidList" class="loading">Loading...</div> 
+</div> 
+<div class="card"> 
+<h3>💸 Daily Expenses with Receipt</h3> 
+<div id="expensesList" class="loading">Loading...</div> 
+</div> 
+<script type="module"> 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"; 
+import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; 
+const firebaseConfig = { 
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE", 
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", 
+projectId: "dhan-siomai-pos-fe1e5", 
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app", 
+messagingSenderId: "305932123173", 
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc" 
+}; 
+const app = initializeApp(firebaseConfig); 
+const db = getFirestore(app); 
+let d = new Date(); 
+let today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); 
+document.getElementById('dateFrom').value = today; 
+document.getElementById('dateTo').value = today; 
+let currentNet = 0; 
+let currentMonth = 0; 
+let currentYear = 0; 
+async function loadReport() { 
+const from = document.getElementById('dateFrom').value; 
+const to = document.getElementById('dateTo').value; 
+const salesList = document.getElementById('salesList'); 
+const expList = document.getElementById('expensesList'); 
+const unpaidList = document.getElementById('unpaidList'); 
+if(!from ||!to){ 
+alert('Pili ka muna date range boss!'); 
+return; 
+} 
+salesList.innerHTML = '<div class="loading">Loading sales...</div>'; 
+expList.innerHTML = '<div class="loading">Loading expenses...</div>'; 
+unpaidList.innerHTML = '<div class="loading">Loading unpaid...</div>'; 
+let totalSales = 0; 
+let wholesaleSales = 0; 
+let retailSales = 0; 
+let totalExpenses = 0; 
+let totalMonthlyExp = 0; 
+let unpaidSales = 0; 
+const fromDate = new Date(from); 
+currentMonth = fromDate.getMonth() + 1; 
+currentYear = fromDate.getFullYear(); 
+try { 
+const salesQ = query(collection(db, "dhan-sales"), where("date", ">=", from), where("date", "<=", to)); 
+const salesSnap = await getDocs(salesQ); 
+let html = ''; 
+let unpaidHtml = ''; 
+if(salesSnap.empty) { 
+salesList.innerHTML = '<div class="loading">Wala pang sales boss</div>'; 
+} else { 
+salesSnap.forEach(doc => { 
+const sale = doc.data(); 
+totalSales += sale.total || 0; 
+if(sale.customerType === 'wholesale') { 
+wholesaleSales += sale.total || 0; 
+} else { 
+retailSales += sale.total || 0; 
+} 
+if(sale.balance > 0) { 
+unpaidSales += sale.balance; 
+unpaidHtml += `<div class="sale-card" style="border-color:#FFCDD2;background:#FFF5F5"> <div class="sale-head"> <span class="sale-date">${sale.date} - ${sale.customerName || 'Walk-in'}<br>📅 ${sale.paymentTerms || 'COD'} <span class="badge unpaid">${sale.paymentStatus || 'Unpaid'}</span></span> <span class="sale-total" style="color:#C62828">Balance: ₱${sale.balance.toLocaleString()}</span> </div> <div class="sale-items">Total: ₱${sale.total.toLocaleString()} | Paid: ₱${sale.amountPaid.toLocaleString()}</div> </div>`; 
+} 
+const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items'; 
+const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : ''; 
+const cust = sale.customerName ? `<br>👤 ${sale.customerName}` : ''; 
+const type = sale.customerType === 'wholesale' ? '<span class="badge orange">WHSL</span>' : '<span class="badge green">RTL</span>'; 
+const terms = sale.paymentTerms ? `<br>📅 ${sale.paymentTerms}` : ''; 
+const status = sale.paymentStatus ? `<span class="badge ${sale.paymentStatus==='Paid'?'paid':'unpaid'}">${sale.paymentStatus}</span>` : ''; 
+html += `<div class="sale-card"> <div class="sale-head"> <span class="sale-date">${sale.date} ${time}${type}${cust}${terms}${status}</span> <span class="sale-total">₱${(sale.total || 0).toLocaleString()}</span> </div> <div class="sale-items">${items}</div> </div>`; 
+}); 
+salesList.innerHTML = html; 
+unpaidList.innerHTML = unpaidHtml || '<div class="loading">Wala pang unpaid boss ✅</div>'; 
+} 
+const expQ = query(collection(db, "daily_expenses"), where("date", ">=", from), where("date", "<=", to)); 
+const expSnap = await getDocs(expQ); 
+if(expSnap.empty) { 
+expList.innerHTML = '<div class="loading">Wala pang daily expenses boss</div>'; 
+} else { 
+let expHtml = ''; 
+expSnap.forEach(doc => { 
+const exp = doc.data(); 
+totalExpenses += exp.amount || 0; 
+const receiptImg = exp.receipt? `<div class="exp-receipt"><img src="${exp.receipt}" onclick="window.open('${exp.receipt}')"></div>` : ''; 
+expHtml += `<div class="exp-card"><div class="exp-head"><span class="exp-desc">${exp.date} - ${exp.desc}</span><span class="exp-amt">-₱${(exp.amount || 0).toLocaleString()}</span></div>${receiptImg}</div>`; 
+}); 
+expList.innerHTML = expHtml; 
+} 
+const monthExpQ = query(collection(db, "monthly_expenses"), where("month", "==", currentMonth), where("year", "==", currentYear)); 
+const monthExpSnap = await getDocs(monthExpQ); 
+monthExpSnap.forEach(doc => { 
+totalMonthlyExp += doc.data().amount || 0; 
+}); 
+// BINAGO: Retail lang sa Daily Net, Wholesale diretso Boss 
+const netProfit = retailSales - totalExpenses; 
+const realNetCash = netProfit + wholesaleSales - totalMonthlyExp; 
+currentNet = netProfit; 
+document.getElementById('totalSales').textContent = '₱' + (retailSales - totalExpenses).toLocaleString();
+document.getElementById('wholesaleSales').textContent = '₱' + wholesaleSales.toLocaleString(); 
+document.getElementById('retailSales').textContent = '₱' + retailSales.toLocaleString(); 
+document.getElementById('totalExpenses').textContent = '₱' + totalExpenses.toLocaleString(); 
+document.getElementById('netProfit').textContent = '₱' + netProfit.toLocaleString(); 
+document.getElementById('totalMonthlyExp').textContent = '₱' + totalMonthlyExp.toLocaleString(); 
+document.getElementById('totalUnpaid').textContent = '₱' + unpaidSales.toLocaleString(); 
+document.getElementById('realNetCash').textContent = '₱' + realNetCash.toLocaleString(); 
+} catch(e) { 
+salesList.innerHTML = '<div class="loading" style="color:red">Error: ' + e.message + '</div>'; 
+console.error(e); 
+} 
+} 
+window.saveToMonthly = async ()=>{ 
+if(currentNet <= 0){ 
+alert('Wala pang net profit boss para i-save.'); 
+return; 
+} 
+if(!confirm(`Save ₱${currentNet.toLocaleString()} as Daily Net for ${currentMonth}/${currentYear}?`)){ 
+return; 
+} 
+const btn = document.getElementById('saveMonthBtn'); 
+btn.disabled = true; 
+btn.innerText = 'Saving...'; 
+try{ 
+await addDoc(collection(db,"monthly_net"),{ 
+month: currentMonth, 
+year: currentYear, 
+netAmount: currentNet, 
+dateSaved: new Date().toISOString().split('T')[0], 
+timestamp: new Date() 
+}); 
+alert(`✓ Saved! ₱${currentNet.toLocaleString()} na-save sa Monthly Net.`); 
+}catch(e){ 
+alert('Error: '+e.message); 
+}finally{ 
+btn.disabled = false; 
+btn.innerText = '💾 Save Net to Monthly'; 
+} 
+} 
+document.getElementById('loadBtn').addEventListener('click', loadReport); 
+loadReport(); 
+</script> 
+</body> 
 </html>
