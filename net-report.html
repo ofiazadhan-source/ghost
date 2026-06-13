@@ -30,7 +30,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 <div class="container">
   <button class="back-btn" onclick="window.location='index.html'">← Back to POS</button>
   <h2>💰 Net Profit Report</h2>
-  <p class="subtitle">Daily Net = Sales - Daily Expenses | Total Net = Daily Net + Wholesale - Monthly Expenses</p>
+  <p class="subtitle">Daily Net = Retail Sales - Daily Expenses | Total Net = Daily Net + Wholesale - Monthly Expenses</p>
 
   <div class="date-row">
     <input type="date" id="startDate">
@@ -40,12 +40,12 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 
   <div id="report" style="display:none">
     <div class="box green">
-      <div class="label">Total Sales</div>
+      <div class="label">Retail Sales / Daily Sales</div>
       <span id="totalSales">₱0</span>
     </div>
 
     <div class="box blue">
-      <div class="label">Wholesale Sales</div>
+      <div class="label">Wholesale Sales - Diretso Boss</div>
       <span id="wholesaleSales">₱0</span>
     </div>
 
@@ -87,7 +87,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
@@ -101,7 +101,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let dailySales = 0;
+let dailySales = 0; // RETAIL LANG TO BOSS
 let wholesaleSales = 0;
 let retailSales = 0;
 let dailyExpenses = 0;
@@ -118,9 +118,9 @@ function formatPeso(num){
   return '₱' + num.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 
-// FORMULA 1: Daily Net = Daily Sales - Daily Expenses
+// FORMULA 1: Daily Net = Retail Sales - Daily Expenses
 function calcDailyNet(){
-  return dailySales - dailyExpenses;
+  return retailSales - dailyExpenses;
 }
 
 // FORMULA 2: Total Net = Daily Net + Wholesale - Monthly Expenses
@@ -131,10 +131,8 @@ function calcTotalNet(){
 }
 
 window.calcNet = ()=>{
-  if(dailySales > 0){
-    document.getElementById('dailyNet').innerText = formatPeso(calcDailyNet());
-    document.getElementById('totalNet').innerText = formatPeso(calcTotalNet());
-  }
+  document.getElementById('dailyNet').innerText = formatPeso(calcDailyNet());
+  document.getElementById('totalNet').innerText = formatPeso(calcTotalNet());
 }
 
 window.loadReport = async ()=>{
@@ -159,15 +157,17 @@ window.loadReport = async ()=>{
     retailSales = 0;
     unpaidWholesale = 0;
 
+    // BINAGO: Wholesale di na isasama sa dailySales
     snap.forEach(doc=>{
       const sale = doc.data();
-      dailySales += sale.total || 0;
 
       if(sale.customerType === 'wholesale'){
         wholesaleSales += sale.total || 0;
         unpaidWholesale += sale.balance || 0;
+        // WALANG dailySales += dito boss, diretso boss na
       } else {
         retailSales += sale.total || 0;
+        dailySales += sale.total || 0; // RETAIL LANG PAPASOK DITO
       }
     });
 
@@ -195,11 +195,26 @@ window.loadReport = async ()=>{
 
 window.saveNet = ()=>{
   let totalNet = calcTotalNet();
-  // Save sa localStorage para maipon monthly
-  let monthKey = 'monthlyNet_' + new Date().toISOString().slice(0,7);
-  localStorage.setItem(monthKey, totalNet);
-  alert('Saved! Total Net: ' + formatPeso(totalNet) + '\nNaipon na sa Monthly');
+  let today = document.getElementById('startDate').value;
+  let month = today.slice(0,7);
+
+  // Save daily net per date
+  localStorage.setItem('dailyNet_' + today, calcDailyNet());
+
+  // Ipunin lahat ng daily net ng buwang to
+  let totalMonthlyNet = 0;
+  for(let i = 1; i <= 31; i++){
+    let dateKey = month + '-' + String(i).padStart(2,'0');
+    let dNet = parseFloat(localStorage.getItem('dailyNet_' + dateKey) || 0);
+    totalMonthlyNet += dNet;
+  }
+
+  localStorage.setItem('monthlyNet_' + month, totalMonthlyNet);
+
+  alert('Saved! Daily Net: ' + formatPeso(calcDailyNet()) +
+        '\nTotal Net: ' + formatPeso(totalNet) +
+        '\nMonthly Net Ipon: ' + formatPeso(totalMonthlyNet));
 }
 </script>
 </body>
-</html>
+  </html>
