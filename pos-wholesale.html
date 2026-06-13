@@ -254,7 +254,7 @@ html += `<div class="cart-row">
 <span class="item-name">${item.name} @₱${item.price}</span>
 <div class="qty-box">
 <button class="qty-btn" onclick="changeQty(${i},-1)">-</button>
-<input type="number" class="qty-input" value="${item.qty}" min="1" oninput="setQty(${i},this.value)">
+<input type="number" class="qty-input" value="${item.qty}" min="1" onchange="setQty(${i},this.value)">
 <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
 </div>
 <span class="item-total">₱${subtotal.toFixed(2)}</span>
