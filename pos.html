@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Store POS - Siomai Factory</title>
 <style>
+
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
-body{background:#FFF8E1;padding:15px;min-height:100vh}
+body{background:#FFF8E1;padding:15px;min-height:100vh;padding-right:280px} /* Dagdag padding right para di matakpan ng cart */
 .container{max-width:2000px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
 h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 .subtitle{text-align:center;color:#666;font-size:13px;margin-bottom:20px}
@@ -15,31 +16,63 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 .cat-btn{padding:12px 5px;border:none;border-radius:12px;background:linear-gradient(135deg,#FFCC80,#FFB74D);color:#B71C1C;font-weight:800;font-size:12px;cursor:pointer;text-align:center}
 .cat-btn:active{transform:scale(0.95)}
 .cat-btn.active{background:#D32F2F;color:white}
-.prod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:110px}
-.prod-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:0.2s}
+.prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px} /* 2 -> 3 columns kasi maliit na cart */
+.prod-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:10px;text-align:center;cursor:pointer;transition:0.2s}
 .prod-card:active{transform:scale(0.95);background:#FFE0B2}
-.prod-img{width:100%;height:280px;object-fit:cover;border-radius:8px;margin-bottom:6px;background:#f0f0f0}
-.prod-name{font-weight:800;font-size:13px;color:#D32F2F;margin-bottom:4px;height:32px;overflow:hidden}
-.prod-price{font-size:16px;font-weight:900;color:#2E7D32;margin-bottom:2px}
-.prod-stock{font-size:10px;color:#666}
-.cart-bar{position:fixed;top:10px;right:10px;width:250px;background:white;border-top:3px solid #D32F2F;border-radius:20px 20px 0 0;padding:15px;box-shadow:0 -4px 15px rgba(0,0,0,0.2);max-width:480px;margin:auto;z-index:999}
-.cart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.cart-title{font-weight:800;color:#D32F2F;font-size:15px}
-.cart-badge{background:#D32F2F;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
-.cart-list{max-height:200px;overflow-y:auto;margin-bottom:10px}
-.cart-row{display:grid;grid-template-columns:20px 1fr 85px 65px;gap:6px;align-items:center;font-size:12px;padding:6px 0;border-bottom:1px dashed #eee}
-.del-btn{background:#C62828;color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:16px;line-height:1;cursor:pointer;font-weight:800}
-.qty-box{display:flex;gap:4px;align-items:center}
-.qty-btn{width:26px;height:26px;border:none;background:#D32F2F;color:white;border-radius:5px;font-weight:800;cursor:pointer;font-size:15px}
-.qty-input{width:45px;height:26px;text-align:center;border:1px solid #ddd;border-radius:5px;font-size:12px}
-.item-name{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.item-total{text-align:right;font-weight:700;color:#2E7D32}
-.cart-sum{font-size:22px;font-weight:900;color:#D32F2F;text-align:right;margin:10px 0}
-.checkout-btn{width:100%;padding:15px;background:#2E7D32;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer}
+.prod-img{width:100%;height:180px;object-fit:cover;border-radius:8px;margin-bottom:6px;background:#f0f0f0} /* 280px -> 180px */
+.prod-name{font-weight:800;font-size:12px;color:#D32F2F;margin-bottom:4px;height:28px;overflow:hidden} /* 13px -> 12px */
+.prod-price{font-size:14px;font-weight:900;color:#2E7D32;margin-bottom:2px} /* 16px -> 14px */
+.prod-stock{font-size:9px;color:#666}
+
+/* BINAGO: FLOATING CART SA KAN - MAS MALIIT */
+.cart-bar{
+  position:fixed;
+  top:15px;
+  right:15px;
+  width:260px;
+  max-height:90vh;
+  background:white;
+  border:3px solid #D32F2F; /* border-top lang dati, dapat buo */
+  border-radius:15px; /* 20px 20px 0 0 -> 15px lahat */
+  padding:12px;
+  box-shadow:0 4px 15px rgba(0,0,0,0.2);
+  z-index:999;
+  display:flex;
+  flex-direction:column
+}
+
+.cart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.cart-title{font-weight:800;color:#D32F2F;font-size:13px} /* 15px -> 13px */
+.cart-badge{background:#D32F2F;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800} /* 26px -> 22px */
+.cart-list{max-height:300px;overflow-y:auto;margin-bottom:8px;flex:1} /* 200px -> 300px */
+.cart-row{display:grid;grid-template-columns:18px 1fr 70px 55px;gap:4px;align-items:center;font-size:10px;padding:4px 0;border-bottom:1px dashed #eee} /* Masikip */
+.del-btn{background:#C62828;color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:14px;line-height:1;cursor:pointer;font-weight:800}
+.qty-box{display:flex;gap:3px;align-items:center}
+.qty-btn{width:22px;height:22px;border:none;background:#D32F2F;color:white;border-radius:4px;font-weight:800;cursor:pointer;font-size:12px} /* 26px -> 22px */
+.qty-input{width:36px;height:22px;text-align:center;border:1px solid #ddd;border-radius:4px;font-size:10px} /* 45px -> 36px */
+.item-name{font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} /* 11px -> 9px */
+.item-total{text-align:right;font-weight:700;color:#2E7D32;font-size:10px}
+.cart-sum{font-size:18px;font-weight:900;color:#D32F2F;text-align:right;margin:8px 0} /* 22px -> 18px */
+.checkout-btn{width:100%;padding:10px;background:#2E7D32;color:white;order:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer} /* 15px -> 10px, 16px -> 13px */
 .checkout-btn:disabled{background:#ccc;cursor:not-allowed}
 .loading{text-align:center;padding:40px;color:#D32F2F;font-weight:700}
-#receipt{display:none;font-family:monospace;font-size:14px;color:black;background:white;padding:15px;width:100%;max-width:300px;margin:20px auto 140px auto;line-height:1.6;text-align:left;border:2px dashed #D32F2F;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+#receipt{display:none;font-family:monospace;font-size:14px;color:black;background:white;padding:15px;width:100%;max-width:300px;margin:20px auto 809px auto;line-height:1.6;text-align:left;border:2px dashed #D32F2F;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
 @media print{.no-print{display:none!important}body *{visibility:hidden}#receipt,#receipt *{visibility:visible}#receipt{position:absolute;left:0;top:0;width:80mm;display:block!important;font-size:11px;margin:0!important;border:none!important;box-shadow:none!important;padding:3mm!important;line-height:1.4}@page{size:80mm auto;margin:0}}
+
+@media (max-width:768px){
+  body{padding-right:15px} /* Mobile: full width ulit */
+  .cart-bar{
+    top:auto;
+    bottom:0;
+    right:0;
+    left:0;
+    width:100%;
+    border-radius:20px 20px 0 0;
+    max-height:60vh
+  }
+  .prod-grid{grid-template-columns:repeat(2,1fr)} /* Mobile 2 cols lang */
+}
+
 </style>
 </head>
 <body>
@@ -196,7 +229,7 @@ html += `<div class="cart-row">
 <span class="item-name">${item.name}</span>
 <div class="qty-box">
 <button class="qty-btn" onclick="changeQty(${i},-1)">-</button>
-<input type="number" class="qty-input" value="${item.qty}" min="1" oninput="setQty(${i},this.value)">
+<input type="number" class="qty-input" value="${item.qty}" min="1" onchange="setQty(${i},this.value)">
 <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
 </div>
 <span class="item-total">₱${subtotal.toFixed(2)}</span>
@@ -329,7 +362,7 @@ let now = new Date();
 let date = now.toLocaleDateString('en-PH');
 let time = now.toLocaleTimeString('en-PH');
 let receiptNo = 'SIOMAI-'+now.getTime().toString().slice(-6);
-let html = `<div style="text-align:center;font-weight:900;font-size:13px">SIOMAI FACTORY</div>
+let html = `<div style="text-align:center;font-weight:900;font-size:13px">ONE SIOMAI FACTORY</div>
 <div style="text-align:center;font-size:9px;margin-bottom:3px">Store POS Receipt</div>
 <div style="border-bottom:1px dashed #000;margin:3px 0"></div>
 <div>Receipt: ${receiptNo}</div>
