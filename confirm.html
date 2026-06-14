@@ -1,0 +1,124 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<title>Orders - One Siomai Factory</title> 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style> 
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif} 
+body{background:#FFF8E1;min-height:100vh} 
+.header{background:linear-gradient(135deg,#D32F2F,#B71C1C);color:white;padding:15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10} 
+.header h1{font-size:18px;font-weight:700} 
+.header a{color:#D32F2F;background:#fff;text-decoration:none;font-weight:600;padding:8px 14px;border-radius:8px} 
+.container{padding:15px;max-width:500px;margin:0 auto} 
+.filter-bar{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap} 
+.filter-btn{padding:8px 14px;border:none;border-radius:20px;background:#fff;border:2px solid #FFE0B2;font-weight:600;cursor:pointer;font-size:13px} 
+.filter-btn.active{background:#D32F2F;color:white;border-color:#D32F2F} 
+.order-card{background:white;border-radius:16px;padding:15px;margin-bottom:15px;box-shadow:0 3px 10px rgba(0,0,0,0.08);border-left:5px solid #ccc} 
+.order-card.pending{border-left-color:#FFC107} 
+.order-card.completed{border-left-color:#4caf50} 
+.order-card.rejected{border-left-color:#f44336} 
+.order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px} 
+.order-id{font-weight:700;color:#D32F2F;font-size:14px} 
+.status-badge{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700} 
+.status-pending{background:#FFF3CD;color:#856404} 
+.status-completed{background:#D4EDDA;color:#155724} 
+.status-rejected{background:#F8D7DA;color:#721C24} 
+.info-box p{margin-bottom:6px;font-size:14px;color:#333} 
+.info-box strong{color:#000} 
+.items-list{background:#FFF8E1;padding:12px;border-radius:8px;margin:12px 0} 
+.items-list h4{font-size:14px;margin-bottom:8px;color:#D32F2F;font-weight:700} 
+.item-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px} 
+.total-row{display:flex;justify-content:space-between;font-weight:900;font-size:16px;color:#D32F2F;margin-top:10px;padding-top:10px;border-top:2px solid #D32F2F} 
+.proof-img{
+  width:100%;
+  height:auto;
+  max-height:600px;
+  object-fit:contain;
+  border-radius:10px;
+  margin-top:10px;
+  border:3px solid #D32F2F;
+  cursor:pointer;
+  background:#fff;
+  padding:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1)
+}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px} 
+.btn{padding:12px;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;color:white} 
+.btn-approve{background:#4caf50} 
+.btn-cancel{background:#f44336} 
+.btn:active{transform:scale(0.95)} 
+.loading{text-align:center;padding:40px;color:#D32F2F;font-weight:700} 
+</style> 
+</head> 
+<body> 
+<div class="header"> 
+<h1>📋 Online Orders</h1> 
+<a href="index.html">← Back</a> 
+</div> 
+<div class="container"> 
+<div class="filter-bar"> 
+<button class="filter-btn active" onclick="filterOrders('all')">All</button> 
+<button class="filter-btn" onclick="filterOrders('Pending')">Pending</button> 
+<button class="filter-btn" onclick="filterOrders('Completed')">Approved</button> 
+<button class="filter-btn" onclick="filterOrders('Rejected')">Cancelled</button> 
+</div> 
+<div id="ordersList"><div class="loading">Loading orders...</div></div> 
+</div> 
+<script type="module"> 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"; 
+import { getFirestore, collection, doc, updateDoc, onSnapshot, orderBy, query, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; 
+const firebaseConfig = { apiKey: "AIzaSyDk3Zb0Xuw3PEfJzdt8AI2ueJq5yksfekE", authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", projectId: "dhan-siomai-pos-fe1e5", storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app", messagingSenderId: "282406768467", appId: "1:282406768467:web:a749cfa596c2763e50d9be", measurementId: "G-31QJEN2MWT" }; 
+const app = initializeApp(firebaseConfig); 
+const db = getFirestore(app); 
+
+let allOrders = []; 
+let currentFilter = 'all'; 
+
+const q = query(collection(db, "dhan-sales"), orderBy("timestamp", "desc")); 
+onSnapshot(q, (snapshot) => { 
+allOrders = []; 
+snapshot.forEach(docSnap => {let order = docSnap.data(); order.id = docSnap.id; allOrders.push(order);}); 
+renderOrders(); 
+}); 
+
+function renderOrders() { 
+const container = document.getElementById('ordersList'); 
+let filtered = currentFilter === 'all' ? allOrders : allOrders.filter(o => o.status === currentFilter); 
+if(filtered.length === 0) {container.innerHTML = '<div class="loading">No orders found</div>'; return;} 
+container.innerHTML = ''; 
+filtered.forEach(order => { 
+const statusClass = order.status.toLowerCase(); 
+let itemsHtml = ''; 
+order.items.forEach(item => {itemsHtml += `<div class="item-row"><span>${item.name} x${item.qty}</span><span>₱${(item.price*item.qty).toFixed(2)}</span></div>`;}); 
+container.innerHTML += `<div class="order-card ${statusClass}"><div class="order-header"><span class="order-id">${order.receiptNo}</span><span class="status-badge status-${statusClass}">${order.status}</span></div><div class="info-box"><p><strong>Customer:</strong> ${order.customerName}</p><p><strong>Phone:</strong> ${order.customerContact}</p><p><strong>Address:</strong> ${order.customerAddress}</p><p><strong>Date:</strong> ${new Date(order.timestamp.seconds*1000).toLocaleString('en-PH')}</p><p><strong>Total:</strong> ₱${order.total.toFixed(2)}</p></div><div class="items-list"><h4>Items:</h4>${itemsHtml}<div class="total-row"><span>TOTAL:</span><span>₱${order.total.toFixed(2)}</span></div></div>${order.proofImage ? `<div><strong>Proof:</strong><img src="${order.proofImage}" class="proof-img" onclick="window.open('${order.proofImage}')"></div>` : ''}${order.status === 'Rejected' && order.rejectReason ? `<div style="margin-top:10px;padding:10px;background:#F8D7DA;border-radius:8px;font-size:13px;"><strong>Reason:</strong> ${order.rejectReason}</div>` : ''}${order.status === 'Pending' ? `<div class="btn-grid"><button class="btn btn-approve" onclick="approveOrder('${order.id}')">✅ APPROVE</button><button class="btn btn-cancel" onclick="rejectOrder('${order.id}')">❌ REJECT</button></div>` : ''}</div>`; 
+}); 
+} 
+
+window.filterOrders = function(status) { 
+currentFilter = status; 
+document.querySelectorAll('.filter-btn').forEach(btn => {btn.classList.remove('active');}); 
+event.target.classList.add('active'); 
+renderOrders(); 
+} 
+
+window.approveOrder = async function(orderId) { 
+if(confirm('Approve this order?')) { 
+await updateDoc(doc(db, "dhan-sales", orderId), {status: 'Completed', approvedAt: new Date()}); 
+alert('✅ Approved!'); 
+}} 
+
+window.rejectOrder = async function(orderId) { 
+let reason = prompt('Reason for rejection:'); 
+if(reason) { 
+let order = allOrders.find(o=>o.id===orderId); 
+let promises = []; 
+order.items.forEach(item=>{promises.push(updateDoc(doc(db, "products", item.id), {stock: increment(item.qty)}));}); 
+await Promise.all(promises); 
+await updateDoc(doc(db, "dhan-sales", orderId), {status: 'Rejected', rejectReason: reason}); 
+alert('❌ Rejected, stock returned'); 
+}} 
+</script> 
+</body> 
+</html>
