@@ -50,10 +50,9 @@ h1{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 <button onclick="setFilter('done')">Done</button>
 <button onclick="setFilter('cancelled')">Cancelled</button>
 </div>
-<div id="ordersList">
-<div class="loading">Loading orders...</div>
+<div id="ordersList"><div class="loading">Loading orders...</div></div>
 </div>
-</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -69,101 +68,101 @@ appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
 let allOrders = [];
 let currentFilter = 'all';
 const container = document.getElementById('ordersList');
 
 async function loadOrders() {
-try {
-const q = query(collection(db, "dhan-sales"), orderBy("timestamp", "desc"));
-const snap = await getDocs(q);
-allOrders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-renderOrders();
-} catch (err) {
-container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
-console.error(err);
-}
+  try {
+    const q = query(collection(db, "dhan-sales"), orderBy("timestamp", "desc"));
+    const snap = await getDocs(q);
+    allOrders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderOrders();
+  } catch (err) {
+    container.innerHTML = `<div class="loading">Error: ${err.message}</div>`;
+    console.error(err);
+  }
 }
 
 window.setFilter = (filter) => {
-currentFilter = filter;
-document.querySelectorAll('.filter-btns button').forEach(btn => btn.classList.remove('active'));
-event.target.classList.add('active');
-renderOrders();
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btns button').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  renderOrders();
 }
 
 function renderOrders() {
-const filtered = currentFilter === 'all' ? allOrders : allOrders.filter(o => (o.status || 'pending').toLowerCase() === currentFilter);
-
-if (filtered.length === 0) {
-container.innerHTML = '<div class="loading">No orders found</div>';
-return;
+  const filtered = currentFilter === 'all' ? allOrders : allOrders.filter(o => (o.status || 'pending').toLowerCase() === currentFilter);
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="loading">No orders found</div>';
+    return;
+  }
+  
+  container.innerHTML = filtered.map(order => {
+    const statusClass = (order.status || 'pending').toLowerCase();
+    const date = order.timestamp ? new Date(order.timestamp.seconds * 1000).toLocaleString('en-PH') : 'N/A';
+    const items = order.items ? order.items.map(i => `• ${i.name} x${i.qty} = ₱${(i.price*i.qty).toFixed(2)}`).join('<br>') : 'No items';
+    const proof = order.proofImage ? `<img src="${order.proofImage}" class="proof-img">` : '';
+    const reasonBox = order.reason ? `<div class="reason-box"><b>Note/Dahilan:</b> ${order.reason}</div>` : '';
+    
+    return `
+    <div class="order-card">
+      <div class="order-head">
+        <span class="order-no">${order.receiptNo || order.id.slice(0,6)}</span>
+        <span class="status ${statusClass}">${order.status || 'pending'}</span>
+      </div>
+      <div class="order-info">
+        <b>Name:</b> ${order.customerName || 'N/A'}<br>
+        <b>Contact:</b> ${order.customerContact || 'N/A'}<br>
+        <b>Address:</b> ${order.customerAddress || 'N/A'}<br>
+        <b>Payment:</b> ${order.paymentMethod || 'cash'}<br>
+        <b>Total:</b> ₱${order.total || 0}<br>
+        <small style="color:#999">Date: ${date}</small>
+        <div class="order-items"><b>Items:</b><br>${items}</div>
+        ${proof}
+        ${reasonBox}
+      </div>
+      ${(order.status || 'pending').toLowerCase() === 'pending' ? `
+      <div class="btn-group">
+        <button class="btn btn-prepare" onclick="updateStatus('${order.id}', 'preparing')">Mark as Preparing</button>
+        <button class="btn btn-approve" onclick="updateStatus('${order.id}', 'approved')">✅ Approve</button>
+        <button class="btn btn-cancel" onclick="updateStatus('${order.id}', 'cancelled')">❌ Cancel</button>
+      </div>
+      ` : ''}
+    </div>`;
+  }).join('');
 }
 
-container.innerHTML = filtered.map(order => {
-const statusClass = (order.status || 'pending').toLowerCase();
-const date = order.timestamp ? new Date(order.timestamp.seconds * 1000).toLocaleString('en-PH') : 'N/A';
-const items = order.items ? order.items.map(i => `• ${i.name} x${i.qty} = ₱${(i.price*i.qty).toFixed(2)}`).join('<br>') : 'No items';
-const proof = order.proofImage ? `<img src="${order.proofImage}" class="proof-img">` : '';
-const reasonBox = order.reason ? `<div class="reason-box"><b>Note/Dahilan:</b> ${order.reason}</div>` : '';
-
-return `
-<div class="order-card">
-<div class="order-head">
-<span class="order-no">${order.receiptNo || order.id.slice(0,6)}</span>
-<span class="status ${statusClass}">${order.status || 'pending'}</span>
-</div>
-<div class="order-info">
-<b>Name:</b> ${order.customerName || 'N/A'}<br>
-<b>Contact:</b> ${order.customerContact || 'N/A'}<br>
-<b>Address:</b> ${order.customerAddress || 'N/A'}<br>
-<b>Payment:</b> ${order.paymentMethod || 'cash'}<br>
-<b>Total:</b> ₱${order.total || 0}<br>
-<small style="color:#999">Date: ${date}</small>
-<div class="order-items">
-<b>Items:</b><br>${items}
-</div>
-${proof}
-${reasonBox}
-</div>
-${(order.status || 'pending').toLowerCase() === 'pending' ? `
-<div class="btn-group">
-<button class="btn btn-prepare" onclick="updateStatus('${order.id}', 'preparing')">Mark as Preparing</button>
-<button class="btn btn-approve" onclick="updateStatus('${order.id}', 'approved')">✅ Approve</button>
-<button class="btn btn-cancel" onclick="updateStatus('${order.id}', 'cancelled')">❌ Cancel</button>
-</div>
-` : ''}
-</div>
-`;
-}).join('');
-}
-
+// AYOS NA UPDATE STATUS - 1 SAVE LANG
 window.updateStatus = async (orderId, newStatus) => {
-let reason = '';
-
-// Hingiin reason pag approve o cancel
-if(newStatus === 'cancelled' || newStatus === 'approved'){
-reason = prompt(`Lagay mo dahilan/reason boss:\n\nEx: Approved - Ready for pickup sa store\nEx: Cancelled - Out of stock yung item`);
-if(!reason || reason.trim() === ''){
-alert('Required maglagay ng reason boss! Para malaman ni customer kung bakit');
-return;
-}
-} else if(newStatus === 'preparing' || newStatus === 'done'){
-reason = prompt('Optional: Lagay ka note para kay customer') || '';
-}
-
-if(!confirm(`Change status to ${newStatus.toUpperCase()}?\n\nReason: ${reason}`)) return;
-
-try {
-await updateDoc(doc(db, "dhan-sales", orderId), { 
-status: newStatus,
-reason: reason 
-});
-alert('Status updated! Auto-notify na si customer ✅');
-loadOrders();
-} catch(e) { 
-alert('Error: '+e.message); 
-}
+  let reason = '';
+  
+  // Hingiin reason pag approve o cancel - REQUIRED
+  if(newStatus === 'cancelled' || newStatus === 'approved'){
+    reason = prompt(`Lagay mo dahilan/reason boss:\n\nEx: Approved → "Ready for pickup sa store boss"\nEx: Cancelled → "Out of stock yung Pork 65's sorry"`);
+    if(!reason || reason.trim() === ''){
+      alert('Required maglagay ng reason boss! Para malaman ni customer kung bakit');
+      return;
+    }
+  } 
+  // Optional lang sa preparing/done
+  else if(newStatus === 'preparing' || newStatus === 'done'){
+    reason = prompt('Optional: Lagay ka note para kay customer') || '';
+  }
+  
+  // 1 BESES LANG MAG-SAVE DITO
+  try{
+    await updateDoc(doc(db,"dhan-sales",orderId),{
+      status: newStatus,
+      reason: reason
+    });
+    alert(`✅ Success!\nStatus: ${newStatus.toUpperCase()}\nMessage: ${reason}\n\nAuto-notify na si customer sa sobre 🔥`);
+    loadOrders(); // refresh list
+  }catch(e){
+    alert('Error: '+e.message);
+    console.error(e);
+  }
 }
 
 loadOrders();
