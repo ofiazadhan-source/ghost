@@ -124,11 +124,12 @@ function renderOrders() {
           ${proof}
         </div>
         ${(order.status || 'pending').toLowerCase() === 'pending' ? `
-        <div class="btn-group">
-          <button class="btn btn-done" onclick="updateStatus('${order.id}', 'done')">Mark as Done</button>
-          <button class="btn btn-cancel" onclick="updateStatus('${order.id}', 'cancelled')">Cancel</button>
-        </div>
-        ` : ''}
+<div class="btn-group">
+  <button class="btn" style="background:#2196F3;color:white" onclick="updateStatus('${order.id}', 'preparing')">Mark as Preparing</button>
+  <button class="btn btn-done" onclick="updateStatus('${order.id}', 'done')">Mark as Done</button>
+  <button class="btn btn-cancel" onclick="updateStatus('${order.id}', 'cancelled')">Cancel</button>
+</div>
+` : ''}
       </div>
     `;
   }).join('');
