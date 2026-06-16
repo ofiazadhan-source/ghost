@@ -3,51 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Confirm Orders - Dhan Siomai POS</title>
+<title>Confirm Orders - Siomai Factory</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-  h1 { text-align: center; color: #333; }
-  .filter-btns { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-  .filter-btns button { padding: 8px 16px; border: none; background: #ddd; cursor: pointer; border-radius: 5px; }
-  .filter-btns button.active { background: #ff5722; color: white; }
-  .order-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-  .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; }
-  .status.pending { background: orange; }
-  .status.preparing { background: blue; }
-  .status.done { background: green; }
-  .status.cancelled { background: red; }
-  #ordersList { max-width: 600px; margin: auto; }
-  .loading { text-align: center; padding: 20px; color: #888; }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+  body{background:#FFF8E1;padding:15px;min-height:100vh}
+  .container{max-width:600px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+  h1{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
+  .subtitle{text-align:center;color:#666;font-size:13px;margin-bottom:15px}
+  .back-btn{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-size:13px;font-weight:600}
+  .filter-btns{display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+  .filter-btns button{padding:8px 16px;border:3px solid #FFCC80;background:white;cursor:pointer;border-radius:10px;font-weight:800;font-size:13px;color:#D32F2F}
+  .filter-btns button.active{background:#D32F2F;color:white;border-color:#D32F2F}
+  .order-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:15px;margin-bottom:12px}
+  .order-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .order-no{font-weight:900;color:#D32F2F;font-size:15px}
+  .status{padding:5px 12px;border-radius:20px;font-size:11px;color:white;font-weight:800}
+  .status.pending{background:orange}
+  .status.preparing{background:#2196F3}
+  .status.done{background:#2E7D32}
+  .status.cancelled{background:#C62828}
+  .order-info{font-size:13px;color:#333;line-height:1.7}
+  .order-info b{color:#D32F2F}
+  .order-items{margin-top:8px;padding-top:8px;border-top:1px dashed #FFCC80;font-size:12px}
+  .proof-img{max-width:100%;margin-top:8px;border-radius:8px;border:2px solid #007BFF}
+  .btn-group{display:flex;gap:8px;margin-top:10px}
+  .btn{flex:1;padding:10px;border:none;border-radius:8px;font-weight:800;cursor:pointer;font-size:13px}
+  .btn-done{background:#2E7D32;color:white}
+  .btn-cancel{background:#C62828;color:white}
+  .loading{text-align:center;padding:40px;color:#D32F2F;font-weight:700}
 </style>
 </head>
 <body>
+<div class="container">
+  <button class="back-btn" onclick="window.location='online.html'">← Back to Online Store</button>
+  <h1>📋 Order Confirmations</h1>
+  <p class="subtitle">Review & Update Status</p>
 
-<h1>Order Confirmations</h1>
+  <div class="filter-btns">
+    <button onclick="setFilter('all')" class="active">All</button>
+    <button onclick="setFilter('pending')">Pending</button>
+    <button onclick="setFilter('preparing')">Preparing</button>
+    <button onclick="setFilter('done')">Done</button>
+    <button onclick="setFilter('cancelled')">Cancelled</button>
+  </div>
 
-<div class="filter-btns">
-  <button onclick="setFilter('all')" class="active">All</button>
-  <button onclick="setFilter('pending')">Pending</button>
-  <button onclick="setFilter('preparing')">Preparing</button>
-  <button onclick="setFilter('done')">Done</button>
-  <button onclick="setFilter('cancelled')">Cancelled</button>
-</div>
-
-<div id="ordersList">
-  <div class="loading">Loading orders...</div>
+  <div id="ordersList">
+    <div class="loading">Loading orders...</div>
+  </div>
 </div>
 
 <script type="module">
-import { db } from './firebase-config.js';
-import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 let allOrders = [];
 let currentFilter = 'all';
-
 const container = document.getElementById('ordersList');
 
 async function loadOrders() {
   try {
-    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "dhan-sales"), orderBy("timestamp", "desc"));
     const snap = await getDocs(q);
     allOrders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     renderOrders();
@@ -57,7 +84,7 @@ async function loadOrders() {
   }
 }
 
-function setFilter(filter) {
+window.setFilter = (filter) => {
   currentFilter = filter;
   document.querySelectorAll('.filter-btns button').forEach(btn => btn.classList.remove('active'));
   event.target.classList.add('active');
@@ -65,8 +92,7 @@ function setFilter(filter) {
 }
 
 function renderOrders() {
-  // ISANG LINE LANG TO PARA WALANG ERROR
-  const filtered = currentFilter === 'all' ? allOrders : allOrders.filter(o => (o.status || 'pending') === currentFilter);
+  const filtered = currentFilter === 'all' ? allOrders : allOrders.filter(o => (o.status || 'pending').toLowerCase() === currentFilter);
   
   if (filtered.length === 0) {
     container.innerHTML = '<div class="loading">No orders found</div>';
@@ -75,19 +101,51 @@ function renderOrders() {
   
   container.innerHTML = filtered.map(order => {
     const statusClass = (order.status || 'pending').toLowerCase();
+    const date = order.timestamp ? new Date(order.timestamp.seconds * 1000).toLocaleString('en-PH') : 'N/A';
+    const items = order.items ? order.items.map(i => `• ${i.name} x${i.qty} = ₱${(i.price*i.qty).toFixed(2)}`).join('<br>') : 'No items';
+    const proof = order.proofImage ? `<img src="${order.proofImage}" class="proof-img">` : '';
+    
     return `
       <div class="order-card">
-        <h3>Order #${order.orderNo || order.id.slice(0,6)}</h3>
-        <p>Customer: ${order.customerName || 'Walk-in'}</p>
-        <p>Total: ₱${order.total || 0}</p>
-        <span class="status ${statusClass}">${order.status || 'pending'}</span>
+        <div class="order-head">
+          <span class="order-no">${order.receiptNo || order.id.slice(0,6)}</span>
+          <span class="status ${statusClass}">${order.status || 'pending'}</span>
+        </div>
+        <div class="order-info">
+          <b>Name:</b> ${order.customerName || 'N/A'}<br>
+          <b>Contact:</b> ${order.customerContact || 'N/A'}<br>
+          <b>Address:</b> ${order.customerAddress || 'N/A'}<br>
+          <b>Payment:</b> ${order.paymentMethod || 'cash'}<br>
+          <b>Total:</b> ₱${order.total || 0}<br>
+          <small style="color:#999">Date: ${date}</small>
+          <div class="order-items">
+            <b>Items:</b><br>${items}
+          </div>
+          ${proof}
+        </div>
+        ${(order.status || 'pending').toLowerCase() === 'pending' ? `
+        <div class="btn-group">
+          <button class="btn btn-done" onclick="updateStatus('${order.id}', 'done')">Mark as Done</button>
+          <button class="btn btn-cancel" onclick="updateStatus('${order.id}', 'cancelled')">Cancel</button>
+        </div>
+        ` : ''}
       </div>
     `;
   }).join('');
 }
 
+window.updateStatus = async (orderId, newStatus) => {
+  if(!confirm(`Change status to ${newStatus.toUpperCase()}?`)) return;
+  try {
+    await updateDoc(doc(db, "dhan-sales", orderId), { status: newStatus });
+    alert('Status updated ✅');
+    loadOrders();
+  } catch(e) {
+    alert('Error: '+e.message);
+  }
+}
+
 loadOrders();
 </script>
-
 </body>
-  </html>
+</html>
