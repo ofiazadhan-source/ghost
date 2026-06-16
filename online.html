@@ -45,6 +45,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 </style>
 </head>
 <body>
+
 <div class="container">
 <button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
 <h2>🛒 One Siomai Factory Online Store</h2>
@@ -61,7 +62,6 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 </div>
 <div class="prod-grid" id="prodGrid"><div class="loading">Loading products...</div></div>
 </div>
-
 <div class="cart-bar">
 <div class="cart-head">
 <span class="cart-title">🛒 Cart</span>
@@ -71,8 +71,8 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 <div class="cart-sum" id="cartSum">Total: ₱0</div>
 <button class="checkout-btn" id="checkoutBtn" disabled onclick="openPayModal()">Checkout</button>
 </div>
+<!-- END OF PART 1B - COPY MO LAHAT HANGGANG DITO -->
 
-<!-- CHECKOUT MODAL -->
 <div id="payModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:9999;padding:20px;overflow-y:auto">
 <div style="background:white;padding:25px 25px 60px 25px;border-radius:12px;width:90%;max-width:400px;max-height:85vh;overflow-y:auto">
 <span onclick="closePayModal()" style="float:right;cursor:pointer;font-size:28px;color:#999">&times;</span>
@@ -105,7 +105,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 </div>
 <div style="text-align:right;font-size:18px;font-weight:800;color:#2E7D32;margin-top:5px" id="change">Change: ₱0.00</div>
 </div>
-<div id="bankBox" style="margin:12px 0;display:none">
+<div id="bankBox" style="display:none;margin:12px 0">
 <p style="font-size:13px;color:#007BFF;font-weight:700">🏦 BDO: 0123456789</p>
 <p style="font-size:11px;color:#999;margin:5px 0">Account Name: ONE SIOMAI FACTORY</p>
 <div style="margin:12px 0">
@@ -114,7 +114,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 <img id="bankPreview" style="max-width:100%;margin-top:8px;border-radius:8px;border:2px solid #007BFF;display:none">
 </div>
 </div>
-<div id="gcashBox" style="margin:12px 0;display:none">
+<div id="gcashBox" style="display:none;margin:12px 0">
 <p style="font-size:13px;color:#007BFF;font-weight:700">📱 Send GCash to: 09272778284</p>
 <p style="font-size:11px;color:#999;margin:5px 0">Name: Darwin H.</p>
 <div style="margin:12px 0">
@@ -130,13 +130,11 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 
 <div id="receipt"></div>
 
-<!-- SOBRE ICON + BADGE -->
 <div id="mailIcon" onclick="openPending()" style="position:fixed;bottom:180px;right:15px;width:55px;height:55px;background:#D32F2F;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000">
 <span style="font-size:26px">📧</span>
 <span id="pendingBadge" style="position:absolute;top:-5px;right:-5px;background:#FFEB3B;color:#D32F2F;font-weight:900;border-radius:50%;width:22px;height:22px;font-size:11px;display:flex;align-items:center;justify-content:center;display:none">0</span>
 </div>
 
-<!-- PENDING ORDERS MODAL -->
 <div id="pendingModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:9999;padding:20px">
 <div style="background:white;border-radius:15px;width:100%;max-width:400px;max-height:80vh;overflow-y:auto;padding:20px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
@@ -150,19 +148,9 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, getDocs, query, where, addDoc, doc, updateDoc, increment, getDoc, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-projectId: "dhan-siomai-pos-fe1e5",
-storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-messagingSenderId: "305932123173",
-appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
-};
-
+const firebaseConfig = { apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE", authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", projectId: "dhan-siomai-pos-fe1e5", storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app", messagingSenderId: "305932123173", appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc" };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 let products = [];
 let cart = [];
 let curCat = 'all';
@@ -170,350 +158,161 @@ let currentTotal = 0;
 let proofImage = '';
 let proofType = '';
 let unsubscribeOrders = null;
-
-async function loadProducts() {
-  const grid = document.getElementById('prodGrid');
-  grid.innerHTML = '<div class="loading">Loading products...</div>';
-  try {
-    let q = collection(db,"products");
-    if(curCat!='all'){q = query(collection(db,"products"),where("category","==",curCat))}
-    const snap = await getDocs(q);
-    products = [];
-    snap.forEach(d=>products.push({id:d.id,...d.data()}));
-    renderProducts(products);
-  }catch(error){
-    console.error('Load Error:',error);
-    grid.innerHTML = '<p style="grid-column:span 2;text-align:center;color:#C62828;padding:40px">Error: '+error.message+'</p>';
-  }
-}
-
-function renderProducts(list){
-  const grid = document.getElementById('prodGrid');
-  if(list.length===0){
-    grid.innerHTML = '<p style="grid-column:span 2;text-align:center;color:#999;padding:40px">No products yet. Add muna sa Products page boss!</p>';
-    return;
-  }
-  let html = '';
-  list.forEach(prod=>{
-    let stockClass = prod.stock <= 10? 'low' : '';
-    html += `<div class="prod-card" onclick="addToCart('${prod.id}')">
-      ${prod.image?`<img src="${prod.image}" class="prod-img">`:'<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">No Image</div>'}
-      <div class="prod-name">${prod.name}</div>
-      <div class="prod-price">₱${prod.price}</div>
-      <div class="prod-stock ${stockClass}">Stock: ${prod.stock}</div>
-    </div>`;
-  });
-  grid.innerHTML = html;
-}
-
-window.filterCat = function(cat, btn){
-  curCat = cat;
-  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  loadProducts();
-}
-
-window.addToCart = (prodId)=>{
-  const prod = products.find(p=>p.id===prodId);
-  if(!prod||prod.stock<=0){alert('Out of stock boss!');return}
-  const existing = cart.find(item=>item.id===prodId);
-  if(existing){
-    if(existing.qty>=prod.stock){alert('Max stock reached boss!');return}
-    existing.qty++;
-  }else{
-    cart.push({id:prodId,name:prod.name,price:prod.price,qty:1});
-  }
-  renderCart();
-}
-
-function renderCart(){
-  const cartList = document.getElementById('cartList');
-  const cartBadge = document.getElementById('cartBadge');
-  const cartSum = document.getElementById('cartSum');
-  const checkoutBtn = document.getElementById('checkoutBtn');
-  let total = 0;
-  let count = 0;
-
-  if(cart.length===0){
-    cartList.innerHTML = '<p style="text-align:center;color:#999;font-size:12px;padding:20px 0">No items yet</p>';
-    checkoutBtn.disabled = true;
-  }else{
-    let html = '';
-    cart.forEach((item,i)=>{
-      const subtotal = item.price*item.qty;
-      total += subtotal;
-      count += item.qty;
-      html += `<div class="cart-row">
-        <button class="del-btn" onclick="removeItem(${i})">×</button>
-        <span class="item-name">${item.name}</span>
-        <div class="qty-box">
-          <button class="qty-btn" onclick="changeQty(${i},-1)">-</button>
-          <input type="number" class="qty-input" value="${item.qty}" min="1" onchange="setQty(${i},this.value)">
-          <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
-        </div>
-        <span class="item-total">₱${subtotal.toFixed(2)}</span>
-      </div>`;
-    });
-    cartList.innerHTML = html;
-    checkoutBtn.disabled = false;
-  }
-  cartBadge.innerText = count;
-  cartSum.innerText = 'Total: ₱'+total.toFixed(2);
-  updateBadge();
-}
-
+async function loadProducts() { const grid = document.getElementById('prodGrid'); grid.innerHTML = '<div class="loading">Loading products...</div>'; try { let q = collection(db,"products"); if(curCat!='all'){q = query(collection(db,"products"),where("category","==",curCat))} const snap = await getDocs(q); products = []; snap.forEach(d=>products.push({id:d.id,...d.data()})); renderProducts(products); }catch(error){ console.error('Load Error:',error); grid.innerHTML = '<p style="grid-column:span 2;text-align:center;color:#C62828;padding:40px">Error: '+error.message+'</p>'; } }
+function renderProducts(list){ const grid = document.getElementById('prodGrid'); if(list.length===0){ grid.innerHTML = '<p style="grid-column:span 2;text-align:center;color:#999;padding:40px">No products yet. Add muna sa Products page boss!</p>'; return; } let html = ''; list.forEach(prod=>{ let stockClass = prod.stock <= 10? 'low' : ''; html += `<div class="prod-card" onclick="addToCart('${prod.id}')"> ${prod.image?`<img src="${prod.image}" class="prod-img">`:'<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px">No Image</div>'} <div class="prod-name">${prod.name}</div> <div class="prod-price">₱${prod.price}</div> <div class="prod-stock ${stockClass}">Stock: ${prod.stock}</div> </div>`; }); grid.innerHTML = html; }
+window.filterCat = function(cat, btn){ curCat = cat; document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); loadProducts(); }
+window.addToCart = (prodId)=>{ const prod = products.find(p=>p.id===prodId); if(!prod||prod.stock<=0){alert('Out of stock boss!');return} const existing = cart.find(item=>item.id===prodId); if(existing){ if(existing.qty>=prod.stock){alert('Max stock reached boss!');return} existing.qty++; }else{ cart.push({id:prodId,name:prod.name,price:prod.price,qty:1}); } renderCart(); }
+function renderCart(){ const cartList = document.getElementById('cartList'); const cartBadge = document.getElementById('cartBadge'); const cartSum = document.getElementById('cartSum'); const checkoutBtn = document.getElementById('checkoutBtn'); let total = 0; let count = 0; if(cart.length===0){ cartList.innerHTML = '<p style="text-align:center;color:#999;font-size:12px;padding:20px 0">No items yet</p>'; checkoutBtn.disabled = true; }else{ let html = ''; cart.forEach((item,i)=>{ const subtotal = item.price*item.qty; total += subtotal; count += item.qty; html += `<div class="cart-row"> <button class="del-btn" onclick="removeItem(${i})">×</button> <span class="item-name">${item.name}</span> <div class="qty-box"> <button class="qty-btn" onclick="changeQty(${i},-1)">-</button> <input type="number" class="qty-input" value="${item.qty}" min="1" onchange="setQty(${i},this.value)"> <button class="qty-btn" onclick="changeQty(${i},1)">+</button> </div> <span class="item-total">₱${subtotal.toFixed(2)}</span> </div>`; }); cartList.innerHTML = html; checkoutBtn.disabled = false; } cartBadge.innerText = count; cartSum.innerText = 'Total: ₱'+total.toFixed(2); updateBadge(); }
 window.removeItem = (index)=>{cart.splice(index,1);renderCart()}
-window.changeQty = (index,delta)=>{
-  cart[index].qty += delta;
-  const prod = products.find(p=>p.id===cart[index].id);
-  if(cart[index].qty<1)cart[index].qty=1;
-  if(prod&&cart[index].qty>prod.stock)cart[index].qty=prod.stock;
-  renderCart();
-}
-window.setQty = (index,value)=>{
-  let qty = parseInt(value)||1;
-  const prod = products.find(p=>p.id===cart[index].id);
-  if(qty<1)qty=1;
-  if(prod&&qty>prod.stock){qty=prod.stock;alert('Max stock: '+prod.stock+' only boss!')}
-  cart[index].qty = qty;
-  renderCart();
-}
+window.changeQty = (index,delta)=>{ cart[index].qty += delta; const prod = products.find(p=>p.id===cart[index].id); if(cart[index].qty<1)cart[index].qty=1; if(prod&&cart[index].qty>prod.stock)cart[index].qty=prod.stock; renderCart(); }
+window.setQty = (index,value)=>{ let qty = parseInt(value)||1; const prod = products.find(p=>p.id===cart[index].id); if(qty<1)qty=1; if(prod&&qty>prod.stock){qty=prod.stock;alert('Max stock: '+prod.stock+' only boss!')} cart[index].qty = qty; renderCart(); }
+window.openPayModal = ()=>{ if(cart.length===0){alert('Walang items sa cart boss!');return} currentTotal = cart.reduce((sum,item)=>sum+(item.price*item.qty),0); document.getElementById('reviewTotal').innerHTML = 'Total: ₱'+currentTotal.toFixed(2); document.getElementById('custName').value = ''; document.getElementById('custContact').value = ''; document.getElementById('custAddress').value = ''; document.getElementById('cashIn').value = ''; document.getElementById('change').innerText = 'Change: ₱0.00'; document.getElementById('change').style.color = '#2E7D32'; document.getElementById('gcashProof').value = ''; document.getElementById('bankProof').value = ''; document.getElementById('proofPreview').style.display = 'none'; document.getElementById('bankPreview').style.display = 'none'; proofImage = ''; proofType = ''; document.getElementById('payModal').style.display = 'flex'; togglePay(); }
+window.closePayModal = ()=>{ document.getElementById('payModal').style.display='none'; document.body.style.overflow = ''; }
+window.togglePay = ()=>{ let method = document.getElementById('payMethod').value; document.getElementById('cashSection').style.display = method==='Cash'?'block':'none'; document.getElementById('bankBox').style.display = method==='Bank transfer'?'block':'none'; document.getElementById('gcashBox').style.display = method==='Gcash'?'block':'none'; }
+window.computeChange = ()=>{ let cash = parseFloat(document.getElementById('cashIn').value)||0; let change = cash-currentTotal; if(change<0){ document.getElementById('change').innerText = 'Kulang: ₱'+Math.abs(change).toFixed(2); document.getElementById('change').style.color = '#C62828'; }else{ document.getElementById('change').innerText = 'Change: ₱'+change.toFixed(2); document.getElementById('change').style.color = '#2E7D32'; } }
+window.previewProof = (event, type)=>{ const file = event.target.files[0]; if(file){ const reader = new FileReader(); reader.onload = function(e){ proofImage = e.target.result; proofType = type; if(type==='gcash'){ document.getElementById('proofPreview').src = proofImage; document.getElementById('proofPreview').style.display = 'block'; }else{ document.getElementById('bankPreview').src = proofImage; document.getElementById('bankPreview').style.display = 'block'; } }; reader.readAsDataURL(file); } }
+// END OF PART 2A - COPY MO LAHAT HANGGANG DITO
 
-window.openPayModal = ()=>{
-  if(cart.length===0){alert('Walang items sa cart boss!');return}
-  currentTotal = cart.reduce((sum,item)=>sum+(item.price*item.qty),0);
-  document.getElementById('reviewTotal').innerHTML = 'Total: ₱'+currentTotal.toFixed(2);
-  document.getElementById('custName').value = '';
-  document.getElementById('custContact').value = '';
-  document.getElementById('custAddress').value = '';
-  document.getElementById('cashIn').value = '';
-  document.getElementById('change').innerText = 'Change: ₱0.00';
-  document.getElementById('change').style.color = '#2E7D32';
-  document.getElementById('gcashProof').value = '';
-  document.getElementById('bankProof').value = '';
-  document.getElementById('proofPreview').style.display = 'none';
-  document.getElementById('bankPreview').style.display = 'none';
-  proofImage = '';
-  proofType = '';
-  document.getElementById('payModal').style.display = 'flex';
-  togglePay();
+// CONFIRM ORDER + SAVE SA FIREBASE
+window.confirmPay = async () => {
+const name = document.getElementById('custName').value.trim();
+const contact = document.getElementById('custContact').value.trim();
+const address = document.getElementById('custAddress').value.trim();
+const method = document.getElementById('payMethod').value;
+
+if(!name || !contact || !address){
+alert('Complete mo muna Name, Contact, at Address boss!');
+return;
 }
 
-window.closePayModal = ()=>{
-  document.getElementById('payModal').style.display='none';
-  document.body.style.overflow = '';
+if((method==='Gcash' || method==='Bank Transfer') && !proofImage){
+alert('Upload mo muna proof of payment boss!');
+return;
 }
 
-window.togglePay = ()=>{
-  let method = document.getElementById('payMethod').value;
-  document.getElementById('cashSection').style.display = method==='Cash'?'block':'none';
-  document.getElementById('bankBox').style.display = method==='Bank transfer'?'block':'none';
-  document.getElementById('gcashBox').style.display = method==='Gcash'?'block':'none';
+if(method==='Cash'){
+const cash = parseFloat(document.getElementById('cashIn').value)||0;
+if(cash < currentTotal){
+alert('Kulang ang cash boss! Kailangan: ₱'+currentTotal.toFixed(2));
+return;
+}
 }
 
-window.computeChange = ()=>{
-  let cash = parseFloat(document.getElementById('cashIn').value)||0;
-  let change = cash-currentTotal;
-  if(change<0){
-    document.getElementById('change').innerText = 'Kulang: ₱'+Math.abs(change).toFixed(2);
-    document.getElementById('change').style.color = '#C62828';
-  }else{
-    document.getElementById('change').innerText = 'Change: ₱'+change.toFixed(2);
-    document.getElementById('change').style.color = '#2E7D32';
-  }
+try{
+// SAVE ORDER
+await addDoc(collection(db,"dhan-sales"),{
+customerName: name,
+customerContact: contact,
+customerAddress: address,
+items: cart,
+total: currentTotal,
+paymentMethod: method,
+proofImage: proofImage,
+proofType: proofType,
+status: 'pending',
+receiptNo: 'OSF-'+Date.now(),
+timestamp: new Date(),
+reason: ''
+});
+
+// SAVE SA LOCALSTORAGE PARA AUTO-FILL NEXT TIME
+localStorage.setItem('custName', name);
+localStorage.setItem('custContact', contact);
+localStorage.setItem('custAddress', address);
+
+alert('Order sent boss! Click mo yung 📧 para ma-track mo status.');
+cart = [];
+renderCart();
+closePayModal();
+}catch(e){
+alert('Error: '+e.message);
+console.error(e);
 }
+};
 
-window.previewProof = (event, type)=>{
-  const file = event.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = function(e){
-      proofImage = e.target.result;
-      proofType = type;
-      if(type==='gcash'){
-        document.getElementById('proofPreview').src = proofImage;
-        document.getElementById('proofPreview').style.display = 'block';
-      }else{
-        document.getElementById('bankPreview').src = proofImage;
-        document.getElementById('bankPreview').style.display = 'block';
-      }
-    }
-    reader.readAsDataURL(file);
-  }
-}
-
-// === CONFIRM PAY - AYOS NA TO BOSS ===
-window.confirmPay = async ()=>{
-  let name = document.getElementById('custName').value.trim();
-  let contact = document.getElementById('custContact').value.trim();
-  let address = document.getElementById('custAddress').value.trim();
-  let method = document.getElementById('payMethod').value;
-
-  if(!name ||!contact ||!address){
-    alert('Complete mo muna Name, Contact, at Address boss!');
-    return;
-  }
-
-  if((method==='Gcash' || method==='Bank transfer') &&!proofImage){
-    alert('Upload mo muna proof of payment boss!');
-    return;
-  }
-
-  if(method==='Cash'){
-    let cash = parseFloat(document.getElementById('cashIn').value)||0;
-    if(cash < currentTotal){
-      alert('Kulang yung cash boss! ₱'+currentTotal.toFixed(2)+' dapat');
-      return;
-    }
-  }
-
-  await placeOrder(name, contact, address, method);
-}
-
-// SAVE SA FIRESTORE DITO BOSS
-async function placeOrder(name, contact, address, payment){
-  let total = cart.reduce((sum,i)=>sum + i.price*i.qty, 0);
-  
-  try{
-    await addDoc(collection(db,"dhan-sales"),{
-      customerName: name, // PARA SA BADGE + TRACKING
-      customerContact: contact,
-      customerAddress: address,
-      items: cart, // DITO LALABAS LAHAT NG BINILI NI CUSTOMER
-      total: total,
-      paymentMethod: payment,
-      proofImage: proofImage,
-      proofType: proofType,
-      status: 'pending', // pending muna
-      reason: '', // lalagyan ni admin later
-      receiptNo: 'SIOMAI-' + Math.floor(100000 + Math.random()*900000),
-      timestamp: new Date()
-    });
-
-    alert('✅ Order sent boss!\n\nAntayin mo lang confirmation ni admin.\nClick mo yung 📧 sobre sa baba para ma-track order mo.');
-    cart = [];
-    renderCart();
-    closePayModal();
-  }catch(e){
-    alert('Error: '+e.message);
-    console.error(e);
-  }
-}
-
-// BADGE COUNTER SA SOBRE - LALABAS 1, 2, 3...
+// AUTO UPDATE BADGE NG ORDERS
 function updateBadge(){
-  let custName = document.getElementById('custName').value.trim();
-  let badge = document.getElementById('pendingBadge');
+const name = document.getElementById('custName').value.trim();
+const badge = document.getElementById('pendingBadge');
+if(!name || !badge){ if(badge) badge.style.display='none'; return; }
 
-  if(!custName ||!badge){
-    if(badge) badge.style.display = 'none';
-    return;
-  }
-
-  let q = query(collection(db,"dhan-sales"), where("customerName","==", custName));
-
-  onSnapshot(q, (snap)=>{
-    let count = snap.size;
-    if(count > 0){
-      badge.innerText = count;
-      badge.style.display = 'flex';
-    } else {
-      badge.style.display = 'none';
-    }
-  });
+const q = query(collection(db,"dhan-sales"), where("customerName","==",name));
+onSnapshot(q, (snap)=>{
+if(snap.size>0){
+badge.textContent = snap.size;
+badge.style.display='flex';
+}else{
+badge.style.display='none';
+}
+});
 }
 
-// PAG CLICK SA SOBRE 📧
+// OPEN PENDING ORDERS
 window.openPending = async ()=>{
-  document.getElementById('pendingModal').style.display = 'flex';
-  let list = document.getElementById('pendingList');
-  list.innerHTML = 'Loading...';
+document.getElementById('pendingModal').style.display='flex';
+const list = document.getElementById('pendingList');
+list.innerHTML='Loading...';
 
-  let custName = document.getElementById('custName').value.trim();
-  if(!custName){
-    list.innerHTML = '<p style="text-align:center;color:#999;padding:20px">Maglagay ka muna name boss sa checkout para ma-track order mo</p>';
-    return;
-  }
-
-  if(unsubscribeOrders) unsubscribeOrders();
-
-  let q = query(collection(db,"dhan-sales"), where("customerName","==", custName), orderBy("timestamp","desc"));
-
-  unsubscribeOrders = onSnapshot(q, (snap)=>{
-    if(snap.empty){
-      list.innerHTML = '<p style="text-align:center;color:#999;padding:20px">Wala ka pang order boss</p>';
-      return;
-    }
-
-    let html = '';
-    snap.forEach(doc=>{
-      let d = doc.data();
-      let status = (d.status || 'pending').toLowerCase();
-      let color = 'orange';
-      let statusText = '⏳ Pending - Inaantay i-verify ni admin';
-
-      if(status === 'approved'){
-        color = 'green';
-        statusText = '✅ Approved - Ready for pickup/delivery!';
-      } 
-      else if(status === 'cancelled'){
-        color = 'red';
-        statusText = '❌ Cancelled';
-      }
-      else if(status === 'preparing'){
-        color = '#2196F3';
-        statusText = '🔥 Preparing - Ginagawa na order mo';
-      }
-
-      // DITO LALABAS BINILI NI CUSTOMER
-      let itemsList = '';
-      if(d.items && d.items.length > 0){
-        itemsList = d.items.map(i => 
-          `<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px">
-            <span>• ${i.name} x${i.qty}</span>
-            <span>₱${(i.price * i.qty).toFixed(2)}</span>
-          </div>`
-        ).join('');
-      }
-
-      // DITO LALABAS MESSAGE NI ADMIN "Kinkarga na" / "Out of stock"
-      let reasonBox = '';
-      if(d.reason && d.reason.trim()!== ''){
-        let bg = status === 'cancelled'? '#FFEBEE' : '#E8F5E9';
-        let border = status === 'cancelled'? 'red' : 'green';
-        let label = status === 'cancelled'? 'Dahilan' : 'Update';
-        reasonBox = `<div style="margin-top:6px;padding:6px;background:${bg};border-left:3px solid ${border};border-radius:4px;font-size:11px"><b>${label} ni Admin:</b> ${d.reason}</div>`;
-      }
-
-      html += `<div style="border:2px solid ${color};border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px">
-        <div style="font-weight:900;color:${color}">${d.receiptNo}</div>
-        <div style="font-weight:700;margin-top:4px;color:${color}">${statusText}</div>
-        
-        <div style="background:#FFF8E1;padding:6px;border-radius:6px;margin-top:6px">
-          <b style="font-size:11px;color:#D32F2F">Binili mo:</b>
-          ${itemsList}
-          <div style="border-top:1px dashed #FFCC80;margin-top:4px;padding-top:4px;font-weight:800;color:#D32F2F">Total: ₱${d.total?.toFixed(2)}</div>
-        </div>
-        
-        ${reasonBox}
-      </div>`;
-    });
-    list.innerHTML = html;
-  }, (err)=>{
-    list.innerHTML = `<p style="color:red;text-align:center">Error: ${err.message}</p>`;
-  });
+const name = document.getElementById('custName').value.trim();
+if(!name){
+list.innerHTML='<p style="text-align:center;color:#999;padding:20px">Lagay ka muna name boss sa checkout para ma-track orders mo</p>';
+return;
 }
 
-// PAG CLOSE NG SOBRE
-window.closePending = ()=>{
-  document.getElementById('pendingModal').style.display = 'none';
-  if(unsubscribeOrders) unsubscribeOrders();
+if(unsubscribeOrders) unsubscribeOrders();
+const q = query(collection(db,"dhan-sales"), where("customerName","==",name), orderBy("timestamp","desc"));
+unsubscribeOrders = onSnapshot(q, (snap)=>{
+if(snap.empty){
+list.innerHTML='<p style="text-align:center;color:#999;padding:20px">Wala ka pang orders boss</p>';
+return;
+}
+let html='';
+snap.forEach(doc=>{
+const d=doc.data();
+let color='orange', statusText='⏳ Pending - Wait lang verification';
+if(d.status==='approved'){color='green'; statusText='✅ Approved - Ready na!';}
+else if(d.status==='cancelled'){color='red'; statusText='❌ Cancelled';}
+else if(d.status==='preparing'){color='#2196F3'; statusText='🔥 Preparing na orders mo';}
+
+let itemsList='';
+if(d.items){itemsList=d.items.map(i=>`<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px"><span>• ${i.name} x${i.qty}</span><span>₱${(i.price*i.qty).toFixed(2)}</span></div>`).join('');}
+
+let reasonBox='';
+if(d.reason && d.reason.trim()){
+let bg=d.status==='cancelled'?'#FFEBEE':'#E8F5E5';
+let border=d.status==='cancelled'?'red':'green';
+let label=d.status==='cancelled'?'Dahilan':'Update';
+reasonBox=`<div style="margin-top:6px;padding:6px;background:${bg};border-left:3px solid ${border};border-radius:4px;font-size:11px"><b>${label} ni Admin:</b> ${d.reason}</div>`;
 }
 
-// AUTO UPDATE BADGE PAG NAG-TYPE SI CUSTOMER NG NAME
-document.getElementById('custName').addEventListener('input', updateBadge);
+html+=`<div style="border:2px solid ${color};border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px">
+<div style="font-weight:900;color:${color}">${d.receiptNo}</div>
+<div style="font-weight:700;margin-top:4px;color:${color}">${statusText}</div>
+<div style="background:#FFF8E1;padding:6px;border-radius:6px;margin-top:6E-1">
+<b style="font-size:11px;color:#D32F2F">Orders:</b>${itemsList}
+<div style="border-top:1px dashed #FFCC80;margin-top:4px;padding-top:4px;font-weight:800;color:#D32F2F">Total: ₱${d.total?.toFixed(2)}</div>
+</div>${reasonBox}</div>`;
+});
+list.innerHTML=html;
+},(err)=>{list.innerHTML=`<p style="color:red;text-align:center">Error: ${err.message}</p>`;});
+};
+
+// CLOSE MODALS
+window.closePending=()=>{document.getElementById('pendingModal').style.display='none'; if(unsubscribeOrders) unsubscribeOrders();};
+
+// AUTO FILL PAG BALIK NI CUSTOMER
+document.getElementById('custName').addEventListener('input',updateBadge);
+window.addEventListener('load',()=>{
+const n=localStorage.getItem('custName');
+if(n){document.getElementById('custName').value=n; updateBadge();}
+const c=localStorage.getItem('custContact');
+const a=localStorage.getItem('custAddress');
+if(c)document.getElementById('custContact').value=c;
+if(a)document.getElementById('custAddress').value=a;
+});
 
 loadProducts();
 </script>
 </body>
 </html>
+<!-- END OF PART 2B - TAPOS NA LAHAT BOSS! -->
