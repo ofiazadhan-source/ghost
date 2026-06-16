@@ -359,7 +359,7 @@ window.confirmPay = async ()=>{
     }
   }
 
-  // 🔥 STOCK VALIDATION - para di mag -81
+  // 🔥 STOCK VALIDATION
   for(let item of cart){
     let prodRef = doc(db, "products", item.id);
     let prodSnap = await getDoc(prodRef);
@@ -373,7 +373,13 @@ window.confirmPay = async ()=>{
   }
 
   try{
+    // IDAGDAG: uid + status + reason para sa notification
+    const { getAuth } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+    const auth = getAuth();
+    const user = auth.currentUser;
+
     await addDoc(collection(db,"dhan-sales"),{
+      uid: user? user.uid : 'guest', // para ma-track ni customer
       date: new Date().toISOString().split('T')[0],
       timestamp: new Date(),
       customerName: name,
@@ -385,7 +391,8 @@ window.confirmPay = async ()=>{
       proofImage: proofImage,
       proofType: proofType,
       receiptNo: 'SIOMAI-'+Date.now().toString().slice(-6),
-      status: 'Pending'
+      status: 'pending', // lowercase para consistent
+      reason: '' // dito ilalagay ni admin kung cancelled/approved
     });
 
     let updatePromises = [];
@@ -402,7 +409,7 @@ window.confirmPay = async ()=>{
 
   generateReceipt(method, name, contact, address);
   closePayModal();
-  alert('Payment Success via '+method+'! Na-bawasan na stocks ✅ Salamat boss!');
+  alert('Order sent! Antayin mo lang confirmation ni admin boss ✅');
   setTimeout(()=>{window.print()},300);
   setTimeout(()=>{loadProducts()},500);
 }
@@ -416,16 +423,16 @@ function generateReceipt(method, name, contact, address){
   let change = method==='Cash'?cashTendered-currentTotal:0;
 
   let html = `
-  <div style="text-align:center;font-weight:900;font-size:13px">ONE SIOMAI FACTORY</div>
-  <div style="text-align:center;font-size:9px;margin-bottom:3px">Order Receipt</div>
-  <div style="border-bottom:1px dashed #000;margin:3px 0"></div>
-  <div style="font-size:10px">Receipt: ${receiptNo}</div>
-  <div style="font-size:10px">Date: ${date} ${time}</div>
-  <div style="font-size:10px">Name: ${name}</div>
-  <div style="font-size:10px">Contact: ${contact}</div>
-  <div style="font-size:10px">Address: ${address}</div>
-  <div style="font-size:10px">Payment: ${method}</div>
-  <div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
+    <div style="text-align:center;font-weight:900;font-size:13px">ONE SIOMAI FACTORY</div>
+    <div style="text-align:center;font-size:9px;margin-bottom:3px">Order Receipt</div>
+    <div style="border-bottom:1px dashed #000;margin:3px 0"></div>
+    <div style="font-size:10px">Receipt: ${receiptNo}</div>
+    <div style="font-size:10px">Date: ${date} ${time}</div>
+    <div style="font-size:10px">Name: ${name}</div>
+    <div style="font-size:10px">Contact: ${contact}</div>
+    <div style="font-size:10px">Address: ${address}</div>
+    <div style="font-size:10px">Payment: ${method}</div>
+    <div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
 
   cart.forEach(item=>{
     html += `<div style="font-size:10px">${item.name} x${item.qty}</div>`;
@@ -446,38 +453,99 @@ function generateReceipt(method, name, contact, address){
   }
 
   html += `<div style="border-top:1px dashed #000;margin:5px 0"></div>`;
-  html += `<div style="text-align:center;margin-top:6px;font-size:9px">Thank you boss! Balik ka ulit!</div>`;
+  html += `<div style="text-align:center;margin-top:6px;font-size:9px">Thank you boss! Check mo status sa 📧 icon</div>`;
 
   document.getElementById('receipt').innerHTML = html;
   document.getElementById('receipt').style.display = 'block';
   document.getElementById('receipt').scrollIntoView({behavior:'smooth'});
-
   cart = [];
   renderCart();
 }
 
-  // ILAGAY MO DITO BOSS, BEFORE loadProducts();
-  
-  // === PENDING ORDERS JS ===
-  onSnapshot(query(collection(db,"dhan-sales"), where("status","==","Pending")), (snap)=>{
-    let count = snap.size;
+// === CUSTOMER ORDER STATUS NOTIFICATION ===
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+const auth = getAuth();
+
+// Real-time order status + reason
+onAuthStateChanged(auth, (user)=>{
+  if(!user) return;
+
+  const q = query(collection(db,"dhan-sales"), where("uid","==",user.uid), orderBy("timestamp","desc"));
+
+  onSnapshot(q, (snap)=>{
+    let pendingCount = 0;
+    let listHtml = '';
+
+    snap.forEach(doc=>{
+      let d = doc.data();
+      let status = d.status || 'pending';
+      let statusColor = '#666';
+      let statusText = status;
+      let reasonText = '';
+
+      if(status === 'pending'){
+        statusColor = 'orange';
+        statusText = '⏳ Pending - Inaantay i-verify ni admin';
+        pendingCount++;
+      }
+      else if(status === 'approved'){
+        statusColor = 'green';
+        statusText = '✅ Approved - Ready for pickup/delivery!';
+        if(d.reason) reasonText = `<br><b>Note:</b> ${d.reason}`;
+        else if(status === 'cancelled'){
+  statusColor = 'red';
+  statusText = '❌ Cancelled';
+  reasonText = d.reason ? `<br><b>Dahilan:</b> ${d.reason}` : '<br><b>Dahilan:</b> Walang nilagay si admin';
+  pendingCount++;
+}
+      }
+      else if(status === 'cancelled'){
+        statusColor = 'red';
+        statusText = '❌ Cancelled';
+        reasonText = d.reason? `<br><b>Dahilan:</b> ${d.reason}` : '<br><b>Dahilan:</b> Walang nilagay si admin';
+        pendingCount++;
+      }
+
+      listHtml += `<div style="border:2px solid ${statusColor};border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px">
+        <div style="font-weight:900;color:${statusColor}">${d.receiptNo}</div>
+        <div>${d.customerName} - ₱${d.total.toFixed(2)}</div>
+        <div style="font-size:10px;color:#666">Payment: ${d.paymentMethod.toUpperCase()}</div>
+        <div style="font-weight:800;margin-top:5px;color:${statusColor}">${statusText}</div>
+        ${reasonText}
+        <div style="font-size:9px;color:#999;margin-top:5px">${d.timestamp?.toDate().toLocaleString() || ''}</div>
+      </div>`;
+    });
+
+    // Update badge
     let badge = document.getElementById('pendingBadge');
     if(badge){
-      if(count > 0){
-        badge.innerText = count;
+      if(pendingCount > 0){
+        badge.innerText = pendingCount;
         badge.style.display = 'flex';
       } else {
         badge.style.display = 'none';
       }
     }
-  });
 
- window.openPending = async ()=>{
+    // Update list
+    let list = document.getElementById('pendingList');
+    if(list){
+      if(snap.empty){
+        list.innerHTML = '<p style="text-align:center;color:#999;padding:20px">Wala ka pang order boss</p>';
+      } else {
+        list.innerHTML = listHtml;
+      }
+    }
+  });
+});
+
+window.openPending = async ()=>{
   document.getElementById('pendingModal').style.display = 'flex';
   let list = document.getElementById('pendingList');
   list.innerHTML = 'Loading...';
   
-  let q = query(collection(db,"dhan-sales"), where("status","==","Pending"));
+  // Kunin lahat ng pending orders
+  let q = query(collection(db,"dhan-sales"), where("status","==","pending"));
   let snap = await getDocs(q);
   
   if(snap.empty){
@@ -496,13 +564,13 @@ function generateReceipt(method, name, contact, address){
     </div>`;
   });
   list.innerHTML = html;
-} 
+}
 
-  window.closePending = ()=>{
-    document.getElementById('pendingModal').style.display = 'none';
-  }
-  // === END ===
+window.closePending = ()=>{
+  document.getElementById('pendingModal').style.display = 'none';
+}
 
+// === END ===
 loadProducts();
 </script>
 </body>
