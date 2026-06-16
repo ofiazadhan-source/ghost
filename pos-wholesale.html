@@ -54,7 +54,7 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 .balance-box h4{font-size:12px;color:#E65100;margin-bottom:3px}
 .balance-box p{font-size:18px;font-weight:800;color:#E65100}
 
-#receipt{display:none;font-family:monospace;font-size:14px;color:black;background:white;padding:15px;width:100%;max-width:300px;margin:20px auto 140px auto;line-height:1.6;text-align:left;border:2px dashed #D32F2F;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+#receipt{display:none;font-family:monospace;font-size:14px;color:black;background:white;padding:15px;width:100%;max-width:300px;margin:20px auto 220px auto;line-height:1.6;text-align:left;border:2px dashed #D32F2F;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
 @media print{.no-print{display:none!important}body *{visibility:hidden}#receipt,#receipt *{visibility:visible}#receipt{position:absolute;left:0;top:0;width:80mm;display:block!important;font-size:11px;margin:0!important;border:none!important;box-shadow:none!important;padding:3mm!important;line-height:1.4}@page{size:80mm auto;margin:0}}
 </style>
 </head>
@@ -117,7 +117,17 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 <option value="Gcash">Gcash</option>
 </select>
 </div>
+<!-- DAGDAG: Customer Details -->
+<div style="margin:15px 0;border-top:2px dashed #FFCC80;padding-top:15px">
+  <label style="font-size:13px;color:#666;font-weight:700;display:block;margin-bottom:5px">Name: *</label>
+  <input type="text" id="custName" placeholder="Company Name / Juan Dela Cruz" required style="width:100%;padding:12px;font-size:16px;border:2px solid #FFCC80;border-radius:8px;font-weight:600;margin-bottom:10px">
 
+  <label style="font-size:13px;color:#666;font-weight:700;display:block;margin-bottom:5px">Contact #: *</label>
+  <input type="tel" id="custContact" placeholder="0917XXXXXXX" required style="width:100%;padding:12px;font-size:16px;border:2px solid #FFCC80;border-radius:8px;font-weight:600;margin-bottom:10px">
+
+  <label style="font-size:13px;color:#666;font-weight:700;display:block;margin-bottom:5px">Address: *</label>
+  <textarea id="custAddress" placeholder="Warehouse/Store Address" required rows="2" style="width:100%;padding:12px;font-size:16px;border:2px solid #FFCC80;border-radius:8px;font-weight:600;resize:none"></textarea>
+</div>
 <div id="gcashBox" style="margin:12px 0;display:none">
 <p style="font-size:13px;color:#007BFF;font-weight:700">📱 Send to Gcash: 09XX XXXX</p>
 <div style="margin:12px 0">
@@ -335,7 +345,15 @@ window.confirmPay = async ()=>{
 let method = document.getElementById('payMethod').value;
 let amountPaid = parseFloat(document.getElementById('cashIn').value)||0;
 let balance = currentTotal - amountPaid;
+// DAGDAG: Kunin customer details values
+let name = document.getElementById('custName').value.trim();
+let contact = document.getElementById('custContact').value.trim();
+let address = document.getElementById('custAddress').value.trim();
 
+if(!name ||!contact ||!address){
+  alert('Fill up mo muna Name, Contact #, at Address boss! Required sa wholesale');
+  return;
+}
 if(method==='Gcash' &&!proofImage){
 alert('Upload mo muna proof of payment boss!');
 return;
@@ -375,34 +393,54 @@ setTimeout(()=>{loadProducts()},500);
 }
 
 function generateReceipt(method, amountPaid, balance){
-let now = new Date();
-let date = now.toLocaleDateString('en-PH');
-let time = now.toLocaleTimeString('en-PH');
-let receiptNo = 'SIOMAI-'+now.getTime().toString().slice(-6);
-let html = `<div style="text-align:center;font-weight:900;font-size:13px">SIOMAI FACTORY</div>
-<div style="text-align:center;font-size:9px;margin-bottom:3px">Store POS Receipt</div>
-<div style="border-bottom:1px dashed #000;margin:3px 0"></div>
-<div>Receipt: ${receiptNo}</div>
-<div>Date: ${date} ${time}</div>
-<div>Type: ${customerType.toUpperCase()}</div>
-<div>Payment: ${method}</div>
-<div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
-cart.forEach(item=>{
-html += `<div>${item.name} x${item.qty} @₱${item.price}</div>`;
-html += `<div style="text-align:right">₱${(item.price*item.qty).toFixed(2)}</div>`;
-});
-html += `<div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
-html += `<div style="display:flex;justify-content:space-between;font-weight:900"><span>TOTAL:</span><span>₱${currentTotal.toFixed(2)}</span></div>`;
-html += `<div style="display:flex;justify-content:space-between"><span>PAID:</span><span>₱${amountPaid.toFixed(2)}</span></div>`;
-html += `<div style="display:flex;justify-content:space-between;font-weight:900"><span>BALANCE:</span><span>₱${balance.toFixed(2)}</span></div>`;
-html += `<div style="text-align:center;margin-top:6px;font-size:9px">Thank you boss! Balik ka ulit!</div>`;
-document.getElementById('receipt').innerHTML = html;
-document.getElementById('receipt').style.display = 'block';
-document.getElementById('receipt').scrollIntoView({behavior:'smooth'});
-cart = [];
-renderCart();
-}
+  let now = new Date();
+  let date = now.toLocaleDateString('en-PH');
+  let time = now.toLocaleTimeString('en-PH');
+  let receiptNo = 'WS-'+now.getTime().toString().slice(-6);
 
+  // DAGDAG: Kunin customer details para sa resibo
+  let name = document.getElementById('custName').value.trim();
+  let contact = document.getElementById('custContact').value.trim();
+  let address = document.getElementById('custAddress').value.trim();
+
+  let html = `<div style="text-align:center;font-weight:900;font-size:13px">SIOMAI FACTORY</div>
+  <div style="text-align:center;font-size:9px;margin-bottom:3px">Store POS Receipt</div>
+  <div style="border-bottom:1px dashed #000;margin:3px 0"></div>
+  <div>Receipt: ${receiptNo}</div>
+  <div>Date: ${date} ${time}</div>
+  <div>Type: ${customerType.toUpperCase()}</div>
+  <div>Payment: ${method}</div>
+  
+  <div style="border-bottom:1px dashed #000;margin:3px 0"></div>
+  <div style="font-weight:700">CUSTOMER:</div>
+  <div>Name: ${name}</div>
+  <div>Contact: ${contact}</div>
+  <div>Address: ${address}</div>
+  
+  <div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
+
+  cart.forEach(item=>{
+    html += `<div>${item.name} x${item.qty} @₱${item.price}</div>`;
+    html += `<div style="text-align:right">₱${(item.price*item.qty).toFixed(2)}</div>`;
+  });
+
+  html += `<div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-weight:900"><span>TOTAL:</span><span>₱${currentTotal.toFixed(2)}</span></div>`;
+  html += `<div style="display:flex;justify-content:space-between"><span>PAID:</span><span>₱${amountPaid.toFixed(2)}</span></div>`;
+  html += `<div style="display:flex;justify-content:space-between;font-weight:900"><span>BALANCE:</span><span>₱${balance.toFixed(2)}</span></div>`;
+  
+  // DAGDAG: Space + Print Button
+  html += `<div style="height:40px"></div>`;
+  html += `<button onclick="window.print()" style="width:100%;padding:10px;background:#D32F2F;color:white;border:none;border-radius:8px;font-weight:800;font-size:14px;margin-top:10px" class="no-print">🖨️ PRINT RECEIPT</button>`;
+  html += `<div style="text-align:center;margin-top:6px;font-size:9px">Thank you boss! Balik ka ulit!</div>`;
+
+  document.getElementById('receipt').innerHTML = html;
+  document.getElementById('receipt').style.display = 'block';
+  document.getElementById('receipt').scrollIntoView({behavior:'smooth'});
+  
+  cart = [];
+  renderCart();
+}
 loadProducts();
 </script>
 </body>
