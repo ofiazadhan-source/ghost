@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOSS PRODUCTION - DHAN SIOMAI</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:#FFF8E1;padding:15px}
+.header{background:#D32F2F;color:white;text-align:center;padding:20px;border-radius:12px;margin-bottom:15px}
+.card{background:white;padding:15px;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.card h2{font-size:16px;color:#D32F2F;margin-bottom:12px;border-bottom:2px solid #FFEBEE;padding-bottom:8px}
+.prod-row{padding:10px;border-bottom:1px solid #eee;font-size:13px}
+.prod-top{display:flex;justify-content:space-between;font-weight:700;color:#D32F2F;margin-bottom:4px}
+.prod-detail{font-size:12px;color:#666}
+.loading{text-align:center;padding:20px;color:#999}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>📦 BOSS PRODUCTION VIEW</h1>
+<p id="today-date">Loading...</p>
+<p style="font-size:10px">READ ONLY</p>
+</div>
+
+<div class="card">
+<h2>Today's Production</h2>
+<div id="prod-list"><div class="loading">Loading...</div></div>
+</div>
+
+<script type="module">
+import { db } from './firebase-config.js';
+import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('today-date').textContent = 'Date: ' + new Date().toLocaleDateString('en-PH', {weekday:'long', month:'long', day:'numeric'});
+
+async function loadProd() {
+const list = document.getElementById('prod-list');
+try {
+const q = query(collection(db, "production"), where("date", "==", today));
+const snap = await getDocs(q);
+if(snap.empty) {
+list.innerHTML = '<div class="loading">Wala pang production today</div>';
+return;
+}
+let html = '';
+snap.forEach(doc => {
+const p = doc.data();
+p.items.forEach(item => {
+html += `<div class="prod-row">
+<div class="prod-top">${item.productName} <span>${item.good} pcs</span></div>
+<div class="prod-detail">Produced: ${item.produced} | Damaged: ${item.damaged} | Good: ${item.good}</div>
+</div>`;
+});
+html += `<div style="margin-top:10px;font-weight:800;color:#2E7D32">TOTAL GOOD: ${p.totalGood} pcs</div>`;
+});
+list.innerHTML = html;
+} catch(e) {
+list.innerHTML = '<div class="loading">Error: '+e.message+'</div>';
+}
+loadProd();
+</script>
+</body>
+</html>
