@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOSS VIEW - DHAN SIOMAI</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:#f5f5f5;padding:15px}
+.header{background:#2E7D32;color:white;text-align:center;padding:20px;border-radius:12px;margin-bottom:15px}
+.header h1{font-size:20px;margin-bottom:5px}
+.header p{font-size:12px;opacity:0.9}
+.card{background:white;padding:15px;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.card h2{font-size:16px;color:#2E7D32;margin-bottom:12px;border-bottom:2px solid #E8F5E9;padding-bottom:8px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.stat-box{background:#E8F5E9;padding:12px;border-radius:8px;text-align:center}
+.stat-box h4{font-size:11px;color:#555;margin-bottom:4px}
+.stat-box p{font-size:18px;font-weight:700;color:#2E7D32}
+.stat-box.red{background:#FFEBEE}
+.stat-box.red p{color:#C62828}
+.stat-box.blue{background:#E3F2FD}
+.stat-box.blue p{color:#1565C0}
+.item-list{max-height:400px;overflow-y:auto}
+.item-row{padding:10px;border-bottom:1px solid #eee;font-size:13px}
+.item-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.item-date{font-weight:700;color:#2E7D32}
+.item-amount{font-weight:700;color:#C62828}
+.item-detail{font-size:12px;color:#666}
+.badge{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px}
+.badge-green{background:#E8F5E9;color:#2E7D32}
+.badge-orange{background:#FFF3E0;color:#E65100}
+.loading{text-align:center;padding:20px;color:#999;font-size:13px}
+img.receipt{max-width:100px;border-radius:6px;margin-top:5px;cursor:pointer;border:2px solid #FFCDD2}
+.note{font-size:11px;color:#999;text-align:center;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>💰 BOSS DASHBOARD</h1>
+<p id="today-date">Loading...</p>
+<p style="margin-top:5px;font-size:10px">READ ONLY - Auto refresh 30s</p>
+</div>
+
+<div class="card">
+<h2>📊 Today's Summary</h2>
+<div class="stats-grid">
+<div class="stat-box"><h4>Total Sales</h4><p id="total-sales">₱0</p></div>
+<div class="stat-box red"><h4>Expenses</h4><p id="total-expenses">₱0</p></div>
+<div class="stat-box blue"><h4>Net Profit</h4><p id="net-profit">₱0</p></div>
+</div>
+<div class="stats-grid">
+<div class="stat-box"><h4>Wholesale</h4><p id="wholesale-sales">₱0</p></div>
+<div class="stat-box"><h4>Retail</h4><p id="retail-sales">₱0</p></div>
+<div class="stat-box red"><h4>Unpaid</h4><p id="unpaid-total">₱0</p></div>
+</div>
+<p class="note">Formula: Net = Retail - Expenses</p>
+</div>
+
+<div class="card">
+<h2>🧾 Sales Breakdown</h2>
+<div id="sales-list" class="item-list"><div class="loading">Loading...</div></div>
+</div>
+
+<div class="card">
+<h2>💸 Expense Breakdown + Resibo</h2>
+<div id="expense-list" class="item-list"><div class="loading">Loading...</div></div>
+</div>
+
+<div class="card">
+<h2>⚠️ Unpaid Wholesale</h2>
+<div id="unpaid-list" class="item-list"><div class="loading">Wala naman boss ✓</div></div>
+</div>
+
+<script type="module">
+import { db } from './firebase-config.js';
+import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('today-date').textContent = 'Date: ' + new Date().toLocaleDateString('en-PH', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+async function loadData() {
+let totalSales = 0, wholesaleSales = 0, retailSales = 0, totalExpenses = 0, unpaidTotal = 0;
+let salesHtml = '', expenseHtml = '', unpaidHtml = '';
+
+try {
+// SALES - dhan-sales collection
+const salesQ = query(collection(db, "dhan-sales"), where("date", "==", today));
+const salesSnap = await getDocs(salesQ);
+if(salesSnap.empty) salesHtml = '<div class="loading">Wala pang sales today</div>';
+else {
+salesSnap.forEach(doc => {
+const d = doc.data();
+totalSales += d.total || 0;
+if(d.customerType === 'wholesale') {
+wholesaleSales += d.total || 0;
+if((d.balance || 0) > 0) {
+unpaidTotal += d.balance;
+unpaidHtml += `<div class="item-row"><div class="item-top"><span class="item-date">${d.customerName || 'Walk-in'} <span class="badge badge-orange">WHSL</span></span><span class="item-amount">₱${d.balance.toLocaleString()}</span></div><div class="item-detail">Total: ₱${d.total.toLocaleString()} | Paid: ₱${(d.amountPaid || 0).toLocaleString()}</div></div>`;
+}
+} else retailSales += d.total || 0;
+const items = d.items? d.items.map(i => `${i.name} x${i.qty} = ₱${(i.price * i.qty).toLocaleString()}`).join('<br>') : 'No items';
+const time = d.timestamp? new Date(d.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
+const typeBadge = d.customerType === 'wholesale'? '<span class="badge badge-orange">WHSL</span>' : '<span class="badge badge-green">RTL</span>';
+salesHtml += `<div class="item-row"><div class="item-top"><span class="item-date">${time} ${typeBadge} ${d.customerName || 'Walk-in'}</span><span class="item-amount">₱${(d.total || 0).toLocaleString()}</span></div><div class="item-detail">${items}</div></div>`;
+});
+}
+document.getElementById('sales-list').innerHTML = salesHtml;
+document.getElementById('unpaid-list').innerHTML = unpaidHtml || '<div class="loading">Wala naman unpaid boss ✓</div>';
+
+// EXPENSES - daily_expenses collection
+const expQ = query(collection(db, "daily_expenses"), where("date", "==", today));
+const expSnap = await getDocs(expQ);
+if(expSnap.empty) expenseHtml = '<div class="loading">Wala pang expenses today</div>';
+else {
+expSnap.forEach(doc => {
+const e = doc.data();
+totalExpenses += e.amount || 0;
+const receiptImg = e.receipt? `<br><img class="receipt" src="${e.receipt}" onclick="window.open('${e.receipt}')">` : '';
+expenseHtml += `<div class="item-row"><div class="item-top"><span class="item-date">${e.desc}</span><span class="item-amount">-₱${(e.amount || 0).toLocaleString()}</span></div><div class="item-detail">${receiptImg}</div></div>`;
+});
+}
+document.getElementById('expense-list').innerHTML = expenseHtml;
+
+const netProfit = retailSales - totalExpenses;
+document.getElementById('total-sales').textContent = '₱' + totalSales.toLocaleString();
+document.getElementById('wholesale-sales').textContent = '₱' + wholesaleSales.toLocaleString();
+document.getElementById('retail-sales').textContent = '₱' + retailSales.toLocaleString();
+document.getElementById('total-expenses').textContent = '₱' + totalExpenses.toLocaleString();
+document.getElementById('net-profit').textContent = '₱' + netProfit.toLocaleString();
+document.getElementById('unpaid-total').textContent = '₱' + unpaidTotal.toLocaleString();
+
+} catch(err) {
+console.error(err);
+document.getElementById('sales-list').innerHTML = '<div class="loading">Error: ' + err.message + '</div>';
+}
+loadData();
+setInterval(loadData, 30000);
+</script>
+</body>
+</html>
