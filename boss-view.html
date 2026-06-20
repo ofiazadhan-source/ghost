@@ -25,7 +25,7 @@ body{background:#f5f5f5;padding:15px}
 .item-top{display:flex;justify-content:space-between;margin-bottom:4px}
 .item-date{font-weight:700;color:#2E7D32}
 .item-amount{font-weight:700;color:#C62828}
-.item-detail{font-size:12px;color:#666}
+.item-detail{font-size:12px;color:#666;line-height:1.5}
 .badge{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px}
 .badge-green{background:#E8F5E9;color:#2E7D32}
 .badge-orange{background:#FFF3E0;color:#E65100}
@@ -72,8 +72,20 @@ img.receipt{max-width:100px;border-radius:6px;margin-top:5px;cursor:pointer;bord
 </div>
 
 <script type="module">
-import { db } from './firebase-config.js';
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 const today = new Date().toISOString().split('T')[0];
 document.getElementById('today-date').textContent = 'Date: ' + new Date().toLocaleDateString('en-PH', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
@@ -83,40 +95,44 @@ let totalSales = 0, wholesaleSales = 0, retailSales = 0, totalExpenses = 0, unpa
 let salesHtml = '', expenseHtml = '', unpaidHtml = '';
 
 try {
-// SALES - dhan-sales collection
+// SALES
 const salesQ = query(collection(db, "dhan-sales"), where("date", "==", today));
 const salesSnap = await getDocs(salesQ);
-if(salesSnap.empty) salesHtml = '<div class="loading">Wala pang sales today</div>';
-else {
+if(salesSnap.empty) {
+salesHtml = '<div class="loading">Wala pang sales today</div>';
+} else {
 salesSnap.forEach(doc => {
-const d = doc.data();
-totalSales += d.total || 0;
-if(d.customerType === 'wholesale') {
-wholesaleSales += d.total || 0;
-if((d.balance || 0) > 0) {
-unpaidTotal += d.balance;
-unpaidHtml += `<div class="item-row"><div class="item-top"><span class="item-date">${d.customerName || 'Walk-in'} <span class="badge badge-orange">WHSL</span></span><span class="item-amount">₱${d.balance.toLocaleString()}</span></div><div class="item-detail">Total: ₱${d.total.toLocaleString()} | Paid: ₱${(d.amountPaid || 0).toLocaleString()}</div></div>`;
+const sale = doc.data();
+totalSales += sale.total || 0;
+if(sale.customerType === 'wholesale') {
+wholesaleSales += sale.total || 0;
+if((sale.balance || 0) > 0) {
+unpaidTotal += sale.balance;
+unpaidHtml += `<div class="item-row"><div class="item-top"><span class="item-date">${sale.date} - ${sale.customerName || 'Walk-in'} <span class="badge badge-orange">WHSL</span></span><span class="item-amount">₱${sale.balance.toLocaleString()}</span></div><div class="item-detail">Total: ₱${sale.total.toLocaleString()} | Paid: ₱${(sale.amountPaid || 0).toLocaleString()}</div></div>`;
 }
-} else retailSales += d.total || 0;
-const items = d.items? d.items.map(i => `${i.name} x${i.qty} = ₱${(i.price * i.qty).toLocaleString()}`).join('<br>') : 'No items';
-const time = d.timestamp? new Date(d.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
-const typeBadge = d.customerType === 'wholesale'? '<span class="badge badge-orange">WHSL</span>' : '<span class="badge badge-green">RTL</span>';
-salesHtml += `<div class="item-row"><div class="item-top"><span class="item-date">${time} ${typeBadge} ${d.customerName || 'Walk-in'}</span><span class="item-amount">₱${(d.total || 0).toLocaleString()}</span></div><div class="item-detail">${items}</div></div>`;
+} else {
+retailSales += sale.total || 0;
+}
+const items = sale.items? sale.items.map(i => `${i.name} x${i.qty} = ₱${(i.price*i.qty).toLocaleString()}`).join('<br>') : 'No items';
+const time = sale.timestamp? new Date(sale.timestamp.seconds * 1000).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '';
+const typeBadge = sale.customerType === 'wholesale'? '<span class="badge badge-orange">WHSL</span>' : '<span class="badge badge-green">RTL</span>';
+salesHtml += `<div class="item-row"><div class="item-top"><span class="item-date">${sale.date} ${time}${typeBadge} ${sale.customerName || 'Walk-in'}</span><span class="item-amount">₱${(sale.total || 0).toLocaleString()}</span></div><div class="item-detail">${items}</div></div>`;
 });
 }
 document.getElementById('sales-list').innerHTML = salesHtml;
 document.getElementById('unpaid-list').innerHTML = unpaidHtml || '<div class="loading">Wala naman unpaid boss ✓</div>';
 
-// EXPENSES - daily_expenses collection
+// EXPENSES
 const expQ = query(collection(db, "daily_expenses"), where("date", "==", today));
 const expSnap = await getDocs(expQ);
-if(expSnap.empty) expenseHtml = '<div class="loading">Wala pang expenses today</div>';
-else {
+if(expSnap.empty) {
+expenseHtml = '<div class="loading">Wala pang expenses today</div>';
+} else {
 expSnap.forEach(doc => {
-const e = doc.data();
-totalExpenses += e.amount || 0;
-const receiptImg = e.receipt? `<br><img class="receipt" src="${e.receipt}" onclick="window.open('${e.receipt}')">` : '';
-expenseHtml += `<div class="item-row"><div class="item-top"><span class="item-date">${e.desc}</span><span class="item-amount">-₱${(e.amount || 0).toLocaleString()}</span></div><div class="item-detail">${receiptImg}</div></div>`;
+const exp = doc.data();
+totalExpenses += exp.amount || 0;
+const receiptImg = exp.receipt? `<br><img class="receipt" src="${exp.receipt}" onclick="window.open('${exp.receipt}')">` : '';
+expenseHtml += `<div class="item-row"><div class="item-top"><span class="item-date">${exp.date} - ${exp.desc}</span><span class="item-amount">-₱${(exp.amount || 0).toLocaleString()}</span></div><div class="item-detail">${receiptImg}</div></div>`;
 });
 }
 document.getElementById('expense-list').innerHTML = expenseHtml;
@@ -129,10 +145,12 @@ document.getElementById('total-expenses').textContent = '₱' + totalExpenses.to
 document.getElementById('net-profit').textContent = '₱' + netProfit.toLocaleString();
 document.getElementById('unpaid-total').textContent = '₱' + unpaidTotal.toLocaleString();
 
-} catch(err) {
-console.error(err);
-document.getElementById('sales-list').innerHTML = '<div class="loading">Error: ' + err.message + '</div>';
+} catch(e) {
+console.error(e);
+document.getElementById('sales-list').innerHTML = '<div class="loading" style="color:red">Error: ' + e.message + '</div>';
 }
+}
+
 loadData();
 setInterval(loadData, 30000);
 </script>
