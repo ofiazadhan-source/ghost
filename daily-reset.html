@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Reset - DHAN SIOMAI</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:#FFEBEE;padding:20px;min-height:100vh}
+.container{max-width:400px;margin:auto;background:white;border-radius:20px;padding:25px;box-shadow:0 6px 20px rgba(0,0,0,0.15);border-top:6px solid #C62828}
+h2{color:#C62828;text-align:center;margin-bottom:15px;font-size:22px}
+.warning{background:#FFEBEE;border:2px solid #EF9A9A;border-radius:12px;padding:15px;margin-bottom:20px}
+.warning h4{color:#C62828;margin-bottom:8px;font-size:14px}
+.warning p{font-size:12px;color:#666;line-height:1.5}
+.info-box{background:#E3F2FD;border-left:4px solid #1976D2;padding:12px;margin-bottom:15px;border-radius:6px}
+.info-box p{font-size:13px;color:#1565C0}
+.btn-reset{width:100%;padding:18px;background:#C62828;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin-top:10px}
+.btn-reset:disabled{background:#ccc;cursor:not-allowed}
+.btn-back{width:100%;padding:12px;background:#757575;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;margin-top:8px}
+.result{margin-top:15px;padding:12px;border-radius:8px;text-align:center;font-weight:700;font-size:13px;display:none}
+.result.success{background:#E8F5E9;color:#2E7D32;border:2px solid #A5D6A7}
+.result.error{background:#FFEBEE;color:#C62828;border:2px solid #EF9A9A}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>⚠️ ADMIN RESET</h2>
+<button class="btn-back" onclick="window.location='index.html'">← Back to Menu</button>
+
+<div class="warning">
+<h4>⚠️ DANGER ZONE</h4>
+<p>Button na to ay mag-DELETE ng LAHAT ng production records for TODAY lang. Ginagamit to pag start ng new day o kung may mali sa encoding.</p>
+</div>
+
+<div class="info-box">
+<p><b>Today:</b> <span id="today-date"></span></p>
+<p><b>Records to delete:</b> <span id="record-count">Checking...</span></p>
+</div>
+
+<button class="btn-reset" id="resetBtn" onclick="resetProduction()">🗑️ RESET TODAY'S PRODUCTION</button>
+
+<div id="result" class="result"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+projectId: "dhan-siomai-pos-fe1e5",
+storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+messagingSenderId: "305932123173",
+appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-PH', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+
+// Check ilang records for today
+async function checkRecords() {
+try {
+const q = query(collection(db, "production"), where("date", "==", today));
+const snap = await getDocs(q);
+document.getElementById('record-count').textContent = snap.size + ' record(s)';
+if(snap.size === 0) {
+document.getElementById('resetBtn').disabled = true;
+document.getElementById('resetBtn').innerText = '✓ No records to reset';
+}
+} catch(e) {
+document.getElementById('record-count').textContent = 'Error';
+}
+checkRecords();
+
+window.resetProduction = async () => {
+const btn = document.getElementById('resetBtn');
+const result = document.getElementById('result');
+
+if(!confirm(`DELETE lahat ng production records for ${today}?\n\nAction na to ay HINDI maibabalik boss!`)) {
+return;
+}
+
+btn.disabled = true;
+btn.innerText = 'Deleting...';
+result.style.display = 'none';
+
+try {
+const q = query(collection(db, "production"), where("date", "==", today));
+const snap = await getDocs(q);
+
+if(snap.empty) {
+showResult('Wala namang records to delete boss', 'success');
+btn.disabled = true;
+btn.innerText = '✓ Already reset';
+return;
+}
+
+let deleted = 0;
+for(const docSnap of snap.docs) {
+await deleteDoc(doc(db, "production", docSnap.id));
+deleted++;
+}
+
+showResult(`✓ Success! ${deleted} record(s) na-delete for today.`, 'success');
+btn.innerText = '✓ Reset Complete';
+btn.style.background = '#2E7D32';
+
+} catch(e) {
+console.error(e);
+showResult('Error: ' + e.message, 'error');
+btn.disabled = false;
+btn.innerText = '🗑️ RESET TODAY\'S PRODUCTION';
+}
+}
+
+function showResult(msg, type) {
+const result = document.getElementById('result');
+result.textContent = msg;
+result.className = 'result ' + type;
+result.style.display = 'block';
+}
+</script>
+</body>
+</html>
