@@ -37,7 +37,7 @@ h2{color:#C62828;text-align:center;margin-bottom:15px;font-size:22px}
 <p><b>Records to delete:</b> <span id="record-count">Checking...</span></p>
 </div>
 
-<button class="btn-reset" id="resetBtn" onclick="resetProduction()">🗑️ RESET TODAY'S PRODUCTION</button>
+<button class="btn-reset" id="resetBtn">🗑️ RESET TODAY'S PRODUCTION</button>
 
 <div id="result" class="result"></div>
 </div>
@@ -74,9 +74,18 @@ document.getElementById('resetBtn').innerText = '✓ No records to reset';
 } catch(e) {
 document.getElementById('record-count').textContent = 'Error';
 }
+}
+
 checkRecords();
 
-window.resetProduction = async () => {
+function showResult(msg, type) {
+const result = document.getElementById('result');
+result.textContent = msg;
+result.className = 'result ' + type;
+result.style.display = 'block';
+}
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
 const btn = document.getElementById('resetBtn');
 const result = document.getElementById('result');
 
@@ -115,14 +124,7 @@ showResult('Error: ' + e.message, 'error');
 btn.disabled = false;
 btn.innerText = '🗑️ RESET TODAY\'S PRODUCTION';
 }
-}
-
-function showResult(msg, type) {
-const result = document.getElementById('result');
-result.textContent = msg;
-result.className = 'result ' + type;
-result.style.display = 'block';
-}
+});
 </script>
 </body>
 </html>
