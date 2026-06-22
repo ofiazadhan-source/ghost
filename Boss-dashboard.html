@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boss View - Sales</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:#f5f5f5;padding:15px}
+.card{background:white;border-radius:12px;padding:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.card h3{color:#2E7D32;margin-bottom:12px;font-size:16px}
+.sale-item{padding:12px 0;border-bottom:1px dashed #ddd}
+.sale-item:last-child{border-bottom:none}
+.sale-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:10px}
+.sale-left{flex:1}
+.sale-date{font-weight:700;color:#2E7D32;font-size:13px;display:block}
+.sale-total{font-weight:900;color:#D32F2F;font-size:18px;white-space:nowrap}
+.badge{padding:3px 8px;border-radius:12px;font-size:10px;font-weight:800;margin:0 2px;display:inline-block}
+.badge-rtl{background:#E8F5E9;color:#2E7D32}
+.badge-cash{background:#28a745;color:white}
+.badge-gcash{background:#007BFF;color:white}
+.sale-items{font-size:12px;color:#555;line-height:1.6;margin-top:6px}
+.proof-btn{padding:4px 10px;background:#007BFF;color:white;border:none;border-radius:6px;font-size:11px;cursor:pointer;margin-left:5px;font-weight:700}
+.proof-btn:hover{background:#0056b3}
+.no-data{text-align:center;color:#999;padding:40px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="card">
+<h3>📋 Sales Breakdown - Sorted by Time</h3>
+<div id="salesList" class="no-data">Loading sales...</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyD2jvPbdtjD1McmfQOGmxd8Vxwj0ktA_xE",
+authDomain: "dhan-siomai.firebaseapp.com",
+projectId: "dhan-siomai",
+storageBucket: "dhan-siomai.firebasestorage.app",
+messagingSenderId: "730978788505",
+appId: "1:730978788505:web:40c1b8a046b5e4e7cf5951"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const salesList = document.getElementById('salesList');
+
+const q = query(collection(db, "dhan-sales"), orderBy("timestamp", "desc"));
+onSnapshot(q, (snapshot) => {
+console.log('Sales loaded:', snapshot.size); // debug
+if(snapshot.empty){
+salesList.innerHTML = '<div class="no-data">Wala pang sales today</div>';
+return;
+}
+
+let html = '';
+snapshot.forEach(doc => {
+const sale = doc.data();
+const date = sale.date || 'N/A';
+const time = sale.timestamp ? new Date(sale.timestamp.toDate()).toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'}) : '00:00';
+const total = sale.total || 0;
+const paymentMethod = sale.paymentMethod || 'cash';
+const proofImage = sale.proofImage || '';
+
+const payBadge = paymentMethod === 'gcash' 
+? `<span class="badge badge-gcash">GCASH</span>` 
+: `<span class="badge badge-cash">CASH</span>`;
+
+const proofBtn = paymentMethod === 'gcash' && proofImage 
+? `<button class="proof-btn" onclick="showProof('${proofImage}')">📱 Proof</button>` 
+: '';
+
+let itemsHtml = '';
+if(sale.items && sale.items.length){
+sale.items.forEach(item => {
+const price = item.price || 0;
+const qty = item.qty || 0;
+itemsHtml += `${item.name} x${qty} = ₱${(price * qty).toFixed(0)}<br>`;
+});
+}
+
+html += `
+<div class="sale-item">
+<div class="sale-header">
+<div class="sale-left">
+<span class="sale-date">${date} ${time}</span>
+<span class="badge badge-rtl">RTL</span>
+<span style="font-size:12px;color:#666">Walk-in</span>
+${payBadge}${proofBtn}
+<div class="sale-items">${itemsHtml}</div>
+</div>
+<div class="sale-total">₱${total.toLocaleString()}</div>
+</div>
+</div>
+`;
+});
+salesList.innerHTML = html;
+});
+
+// Show proof image popup
+window.showProof = (imgData)=>{
+if(imgData && imgData.startsWith('data:image')){
+let w = window.open('', '_blank', 'width=600,height=900');
+w.document.write(`
+<html><head><title>GCASH Proof</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head><body style="margin:0;padding:20px;text-align:center;background:#111">
+<img src="${imgData}" style="max-width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+<p style="color:white;margin-top:15px;font-size:14px;font-family:Segoe UI">GCASH Payment Proof</p>
+</body></html>
+`);
+} else {
+alert('Walang proof image na-save. Make sure nag-upload ka ng screenshot sa POS bago Confirm.');
+}
+};
+</script>
+</body>
+</html>
