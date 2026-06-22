@@ -76,6 +76,11 @@ h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:24px; }
 <input type="number" id="prodPrice" placeholder="8.00" value="8" step="0.01" min="0.01">
 </div>
 <div class="input-group">
+<label>VIP PRICE - Para sa suki</label>
+<input type="number" id="prodVipPrice" placeholder="7.50" step="0.01" min="0">
+<small style="font-size:10px;color:#E65100;font-weight:600">Iwan mo blanko kung walang discount</small>
+</div>
+<div class="input-group">
 <label>📷 Product Image - Auto Compress</label>
 <input type="file" id="prodImage" accept="image/*">
 <img id="imgPreview" class="img-preview">
@@ -232,7 +237,8 @@ function renderProducts() {
 
         <label>PRICE</label>
         <input type="number" id="price${prod.id}" value="${prod.price || 0}" step="0.01" min="0">
-
+<label style="color:#E65100; font-size:9px;">VIP PRICE</label>
+<input type="number" id="vip${prod.id}" value="${prod.vipPrice || ''}" step="0.01" min="0" placeholder="7.50">
         <button class="save-btn" onclick="saveProduct('${prod.id}')">Save</button>
       </div>
     `;
@@ -244,6 +250,7 @@ window.addProduct = async () => {
   const name = document.getElementById('prodName').value.trim();
   const stock = parseInt(document.getElementById('prodStocks').value) || 0;
   const price = parseFloat(document.getElementById('prodPrice').value) || 0;
+  const vipPrice = parseFloat(document.getElementById('prodVipPrice').value) || null;
   const btn = document.getElementById('addBtn');
 
   if(!name || price <= 0) {
@@ -256,7 +263,7 @@ window.addProduct = async () => {
 
   try {
     await addDoc(collection(db, "products"), {
-      name, stock, price, image: base64Image,
+      name, stock, price, vipPrice, image: base64Image,
       category: currentCat === 'all'? '65s' : currentCat,
       createdAt: serverTimestamp()
     });
@@ -282,12 +289,13 @@ window.addProduct = async () => {
 }
 
 window.saveProduct = async (prodId) => {
-  const stock = parseInt(document.getElementById('stocks' + prodId).value) || 0;
-  const price = parseFloat(document.getElementById('price' + prodId).value) || 0;
-  const btn = event.target;
+const stock = parseInt(document.getElementById('stocks' + prodId).value) || 0;
+const price = parseFloat(document.getElementById('price' + prodId).value) || 0;
+const vipPrice = parseFloat(document.getElementById('vip' + prodId).value) || null;  // <-- ITO DAGDAG MO
+const btn = event.target;
 
   try {
-    await updateDoc(doc(db, "products", prodId), {stock, price});
+    await updateDoc(doc(db, "products", prodId), {stock, price, vipPrice});
     btn.innerText = '✓ Saved';
     btn.style.background = '#4CAF50';
     setTimeout(() => {
