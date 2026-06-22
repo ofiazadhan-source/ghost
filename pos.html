@@ -100,6 +100,12 @@ h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
 <span class="cart-badge" id="cartBadge">0</span>
 </div>
 <div class="cart-list" id="cartList"><p style="text-align:center;color:#999;font-size:12px;padding:20px 0">No items yet</p></div>
+  <div style="margin:8px 0; padding:10px; background:#FFF3E0; border-radius:8px; border:2px solid #FFB74D;">
+<label style="font-weight:800; color:#E65100; font-size:12px; display:flex; align-items:center; gap:6px;">
+<input type="checkbox" id="vipCheck" onchange="renderCart()" style="width:18px; height:18px;">
+VIP Customer - Suki Price
+</label>
+</div>
 <div class="cart-sum" id="cartSum">Total: ₱0</div>
 <button class="checkout-btn" id="checkoutBtn" disabled onclick="openPayModal()">Checkout</button>
 </div>
@@ -205,7 +211,7 @@ if(existing){
 if(existing.qty>=prod.stock){alert('Max stock reached boss!');return}
 existing.qty++;
 }else{
-cart.push({id:prodId,name:prod.name,price:prod.price,qty:1});
+cart.push({id:prodId,name:prod.name,price:prod.price,vipPrice:prod.vipPrice,qty:1});
 }
 renderCart();
 }
@@ -223,7 +229,9 @@ checkoutBtn.disabled = true;
 }else{
 let html = '';
 cart.forEach((item,i)=>{
-const subtotal = item.price*item.qty;
+const vipCheck = document.getElementById('vipCheck');
+let price = vipCheck && vipCheck.checked && item.vipPrice ? item.vipPrice : item.price;
+const subtotal = price * item.qty;
 total += subtotal;
 count += item.qty;
 html += `<div class="cart-row">
@@ -262,7 +270,11 @@ renderCart();
 }
 window.openPayModal = ()=>{
 if(cart.length===0){alert('Walang items sa cart boss!');return}
-currentTotal = cart.reduce((sum,item)=>sum+(item.price*item.qty),0);
+const vipCheck = document.getElementById('vipCheck');
+currentTotal = cart.reduce((sum,item)=>{
+let price = vipCheck && vipCheck.checked && item.vipPrice ? item.vipPrice : item.price;
+return sum + (price*item.qty)
+},0);
 document.getElementById('reviewTotal').innerHTML = 'Total: ₱'+currentTotal.toFixed(2);
 document.getElementById('cashIn').value = '';
 document.getElementById('change').innerText = 'Change: ₱0.00';
@@ -371,9 +383,12 @@ let html = `<div style="text-align:center;font-weight:900;font-size:13px">ONE SI
 <div>Date: ${date} ${time}</div>
 <div>Payment: ${method}</div>
 <div style="border-bottom:1px dashed #000;margin:3px 0"></div>`;
+const vipCheck = document.getElementById('vipCheck');
 cart.forEach(item=>{
+let price = vipCheck && vipCheck.checked && item.vipPrice ? item.vipPrice : item.price;
 html += `<div>${item.name} x${item.qty}</div>`;
-html += `<div style="text-align:right">₱${(item.price*item.qty).toFixed(2)}</div>`;
+html += `<div style="text-align:right">₱${(price*item.qty).toFixed(2)}</div>`;
+
 });
 let cashTendered = method==='Cash'?parseFloat(document.getElementById('cashIn').value):0;
 let change = method==='Cash'?cashTendered-currentTotal:0;
