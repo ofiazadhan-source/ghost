@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products - Siomai Factory POS</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:15px;min-height:100vh}
+.container{max-width:480px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
+.back-btn{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-size:13px;font-weight:600}
+.menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+.menu-grid.hide{display:none}
+.menu-btn{padding:35px 10px;border:none;border-radius:15px;background:linear-gradient(135deg,#FFCC80,#FFB74D);color:#B71C1C;font-weight:800;font-size:15px;cursor:pointer;text-align:center;line-height:1.4}
+.menu-btn:active{transform:scale(0.97)}
+.product-section{display:none}
+.product-section.show{display:block}
+.product-form{background:#FFF8E1;border:2px dashed #FFCC80;border-radius:12px;padding:15px;margin-bottom:18px}
+.product-form h4{color:#D32F2F;margin-bottom:10px;font-size:14px}
+.input-group{margin-bottom:12px}
+.input-group label{font-size:12px;font-weight:700;color:#D32F2F;margin-bottom:4px;display:block}
+.input-group input,.input-group select{width:100%;padding:12px;border:2px solid #FFE0B2;border-radius:8px;font-size:14px;background:white}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.add-prod-btn{width:100%;padding:14px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:800;cursor:pointer;margin-top:8px;font-size:15px}
+.add-prod-btn:disabled{background:#ccc;cursor:not-allowed}
+.prod-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.prod-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;text-align:center;position:relative}
+.prod-img{width:100%;height:70px;object-fit:cover;border-radius:8px;margin-bottom:6px;background:#f0f0f0}
+.prod-name{font-weight:800;font-size:13px;color:#D32F2F;margin-bottom:4px}
+.prod-card p{font-size:11px;color:#666;margin:2px 0}
+.del-btn{position:absolute;top:6px;right:6px;background:#C62828;color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:16px;cursor:pointer;line-height:1;font-weight:bold}
+.loading{text-align:center;padding:30px;color:#D32F2F;font-weight:700}
+.bulk-info{color:#2E7D32;font-size:10px;font-weight:800}
+.img-preview{width:100%;height:100px;object-fit:cover;border-radius:8px;margin-top:8px;border:2px solid #FFCC80}
+.upload-status{font-size:11px;color:#2E7D32;margin-top:4px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="container">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+
+<h2>📦 Products</h2>
+<p style="text-align:center;font-size:12px;color:#666;margin-bottom:15px" id="subTitle">Select category</p>
+
+<!-- CATEGORY BUTTONS - LALABAS LANG SA UNA -->
+<div class="menu-grid" id="catGrid">
+<button class="menu-btn" onclick="openCategory('65s')">65's</button>
+<button class="menu-btn" onclick="openCategory('30s')">30's</button>
+<button class="menu-btn" onclick="openCategory('big')">Big SIOMAI</button>
+<button class="menu-btn" onclick="openCategory('dumplings')">Dumplings</button>
+<button class="menu-btn" onclick="openCategory('siopao')">SIOPAO</button>
+<button class="menu-btn" onclick="openCategory('sauce')">Sauce</button>
+<button class="menu-btn" onclick="openCategory('others')">Others</button>
+<button class="menu-btn" onclick="openCategory('all')">All Products</button>
+</div>
+
+<!-- PRODUCT SECTION - TAGO MUNA, LALABAS PAG TAP CATEGORY -->
+<div class="product-section" id="prodSection">
+<button class="back-btn" onclick="backToCategories()">← Back to Categories</button>
+<div id="formArea" class="product-form"></div>
+<div id="prodList" class="prod-list"><div class="loading">Loading...</div></div>
+</div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+let currentCat = '';
+let editId = null;
+let uploadedImageUrl = '';
+
+function openCategory(cat){
+  currentCat = cat;
+  editId = null;
+  uploadedImageUrl = '';
+  
+  // TAGO categories
+  document.getElementById('catGrid').classList.add('hide');
+  
+  // SHOW product section
+  document.getElementById('prodSection').classList.add('show');
+  document.getElementById('subTitle').textContent = cat.toUpperCase() + ' Products';
+  
+  // Build form
+  if(cat==='all'){
+    document.getElementById('formArea').innerHTML = '';
+  }else{
+    document.getElementById('formArea').innerHTML = `
+      <h4>Add Product - ${cat.toUpperCase()}</h4>
+      <div class="input-group">
+        <label>Product Name</label>
+        <input type="text" id="prodName" placeholder="Pork65's">
+      </div>
+      <div class="input-group">
+        <label>Product Image - Choose File or Camera</label>
+        <input type="file" id="prodImgFile" accept="image/*" capture="environment" onchange="uploadImage(this)">
+        <img id="imgPreview" class="img-preview" style="display:none">
+        <p id="uploadStatus" class="upload-status"></p>
+      </div>
+      <div class="row-2">
+        <div class="input-group">
+          <label>Stock</label>
+          <input type="number" id="prodStock" value="100">
+        </div>
+        <div class="input-group">
+          <label>Regular Price</label>
+          <input type="number" id="prodPrice" step="0.01" placeholder="150">
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="input-group">
+          <label>VIP Price</label>
+          <input type="number" id="prodVip" step="0.01" placeholder="125">
+        </div>
+        <div class="input-group">
+          <label>Bulk Price</label>
+          <input type="number" id="prodBulk" step="0.01" placeholder="140">
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Min Qty for Bulk</label>
+        <input type="number" id="prodBulkMin" placeholder="50">
+      </div>
+      <button class="add-prod-btn" id="saveBtn" onclick="saveProduct()">Save Product</button>
+    `;
+  }
+  loadProducts();
+}
+
+function backToCategories(){
+  // SHOW categories ulit
+  document.getElementById('catGrid').classList.remove('hide');
+  
+  // TAGO product section
+  document.getElementById('prodSection').classList.remove('show');
+  document.getElementById('subTitle').textContent = 'Select category';
+  currentCat = '';
+}
+
+function uploadImage(input){
+  const file = input.files[0];
+  if(!file) return;
+  
+  const saveBtn = document.getElementById('saveBtn');
+  const status = document.getElementById('uploadStatus');
+  const preview = document.getElementById('imgPreview');
+  
+  saveBtn.disabled = true;
+  status.textContent = 'Uploading image...';
+  
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = 'block';
+  
+  const fileName = 'products/' + Date.now() + '_' + file.name;
+  const storageRef = storage.ref().child(fileName);
+  
+  storageRef.put(file).then(snapshot=>{
+    return snapshot.ref.getDownloadURL();
+  }).then(url=>{
+    uploadedImageUrl = url;
+    status.textContent = '✓ Image uploaded!';
+    saveBtn.disabled = false;
+  }).catch(err=>{
+    status.textContent = 'Upload failed: ' + err.message;
+    saveBtn.disabled = false;
+  });
+}
+
+function saveProduct(){
+  const name = document.getElementById('prodName').value.trim();
+  const stock = Number(document.getElementById('prodStock').value) || 0;
+  const price = Number(document.getElementById('prodPrice').value) || 0;
+  const vipPrice = Number(document.getElementById('prodVip').value) || null;
+  const bulkPrice = Number(document.getElementById('prodBulk').value) || null;
+  const bulkMinQty = Number(document.getElementById('prodBulkMin').value) || null;
+
+  if(!name || price<=0){
+    alert('Lagay ka name at price boss!');
+    return;
+  }
+
+  const data = {
+    name,
+    image: uploadedImageUrl,
+    stock,
+    price,
+    vipPrice,
+    bulkPrice,
+    bulkMinQty,
+    category: currentCat
+  };
+
+  if(editId){
+    db.collection('products').doc(editId).update(data).then(()=>{
+      alert('Updated!');
+      editId = null;
+      openCategory(currentCat);
+    });
+  }else{
+    db.collection('products').add(data).then(()=>{
+      alert('Saved!');
+      openCategory(currentCat);
+    });
+  }
+}
+
+function loadProducts(){
+  if(currentCat==='' || currentCat==='all'){
+    db.collection('products').onSnapshot(renderList);
+  }else{
+    db.collection('products').where('category','==',currentCat).onSnapshot(renderList);
+  }
+}
+
+function renderList(snap){
+  const list = document.getElementById('prodList');
+  if(snap.empty){
+    list.innerHTML = '<p style="text-align:center;color:#999;padding:40px 0">No products yet boss</p>';
+    return;
+  }
+
+  list.innerHTML = '';
+  snap.forEach(doc=>{
+    let p = doc.data();
+    let bulkTxt = p.bulkPrice && p.bulkMinQty ? `<p class="bulk-info">Bulk ${p.bulkMinQty}+: ₱${Number(p.bulkPrice).toFixed(2)}</p>` : '';
+    let vipTxt = p.vipPrice ? `<p style="color:#E65100;font-size:10px">VIP: ₱${Number(p.vipPrice).toFixed(2)}</p>` : '';
+
+    list.innerHTML += `
+      <div class="prod-card">
+        <button class="del-btn" onclick="delProd('${doc.id}')">×</button>
+        ${p.image? `<img src="${p.image}" class="prod-img">` : '<div class="prod-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;font-size:10px">No Image</div>'}
+        <div class="prod-name">${p.name}</div>
+        <p>Stock: ${p.stock || 0}</p>
+        <p>₱${Number(p.price || 0).toFixed(2)}</p>
+        ${vipTxt}
+        ${bulkTxt}
+        <button style="margin-top:6px;padding:6px 12px;background:#1976D2;color:white;border:none;border-radius:6px;font-size:11px;cursor:pointer" onclick="editProd('${doc.id}')">Edit</button>
+      </div>
+    `;
+  });
+}
+
+function editProd(id){
+  db.collection('products').doc(id).get().then(doc=>{
+    let p = doc.data();
+    editId = id;
+    uploadedImageUrl = p.image || '';
+    openCategory(p.category);
+    setTimeout(()=>{
+      document.getElementById('prodName').value = p.name;
+      document.getElementById('prodStock').value = p.stock || 0;
+      document.getElementById('prodPrice').value = p.price || 0;
+      document.getElementById('prodVip').value = p.vipPrice || '';
+      document.getElementById('prodBulk').value = p.bulkPrice || '';
+      document.getElementById('prodBulkMin').value = p.bulkMinQty || '';
+      if(p.image){
+        document.getElementById('imgPreview').src = p.image;
+        document.getElementById('imgPreview').style.display = 'block';
+        document.getElementById('uploadStatus').textContent = '✓ Current image';
+      }
+      document.querySelector('.add-prod-btn').textContent = 'Update Product';
+    },100);
+  });
+}
+
+function delProd(id){
+  if(confirm('Delete this product boss?')){
+    db.collection('products').doc(id).delete();
+  }
+}
+</script>
+</body>
+</html>
