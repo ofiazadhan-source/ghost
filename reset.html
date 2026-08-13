@@ -1,0 +1,170 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<title>Reset Data - DHAN SIOMAI</title> 
+<style> 
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif} 
+body{background:#FFF8E1;padding:15px;min-height:100vh} 
+.container{max-width:480px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12)} 
+.back-btn{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-size:13px;font-weight:600} 
+h2{text-align:center;color:#C62828;margin-bottom:8px;font-size:24px} 
+.subtitle{text-align:center;color:#666;font-size:13px;margin-bottom:20px} 
+.warning{background:#FFEBEE;border:3px solid #C62828;border-radius:12px;padding:15px;margin-bottom:20px} 
+.warning h3{color:#C62828;margin-bottom:8px;font-size:15px} 
+.warning p{color:#666;font-size:12px;line-height:1.6} 
+.tip{background:#E3F2FD;border:2px solid #1976D2;border-radius:12px;padding:12px;margin-bottom:20px;font-size:12px;color:#1565C0} 
+.btn-reset{width:100%;padding:16px;background:#C62828;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin-bottom:12px} 
+.btn-reset:disabled{background:#ccc;cursor:not-allowed} 
+.btn-green{width:100%;padding:16px;background:#2E7D32;color:white;border:none;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer;margin-top:8px} 
+.count-box{background:#FFF3E0;border:2px solid #FF9800;border-radius:12px;padding:12px;margin-bottom:15px;text-align:center} 
+.count-box h4{color:#E65100;font-size:12px;margin-bottom:5px} 
+.count-box p{font-size:20px;font-weight:800;color:#E65100} 
+</style> 
+</head> 
+<body> 
+<div class="container"> 
+    <button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button> 
+    
+    <!-- PASSWORD BOX -->
+    <div id="passwordBox" style="background:#E8F5E9;border:3px solid #2E7D32;border-radius:12px;padding:20px;margin-bottom:20px;text-align:center">
+        <h3 style="color:#2E7D32;margin-bottom:10px">🔐 BOSS ONLY</h3>
+        <p style="font-size:12px;color:#666;margin-bottom:15px">Enter password to access Reset Page</p>
+        <input type="password" id="bossPassword" placeholder="Enter Boss Password" style="width:100%;padding:12px;border:2px solid #FFCC80;border-radius:8px;font-size:16px;margin-bottom:10px;text-align:center">
+        <button onclick="window.checkPassword()" style="width:100%;padding:14px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:800;font-size:16px;cursor:pointer">UNLOCK</button>
+        <p id="errorMsg" style="color:#C62828;font-size:12px;margin-top:10px;display:none">❌ Wrong Password!</p>
+    </div>
+
+    <!-- RESET CONTENT - NAKATAGO MUNA -->
+    <div id="resetContent" style="display:none">
+        <h2>⚠️ Reset Data</h2> 
+        <p class="subtitle">Burahin lahat ng benta at expenses</p> 
+        <div class="warning"> 
+            <h3>⚠️ DELIKADO TO BOSS!</h3> 
+            <p>Pag na-reset mo, hindi na mababalik yung data. Export mo muna reports sa Net Profit bago pindot dito.</p> 
+        </div> 
+        <div class="count-box"> 
+            <h4>Current Records</h4> 
+            <p id="countInfo">Counting...</p> 
+        </div> 
+        <div class="tip"> 💡 Tip: Gamitin mo lang to pag end of month/year na. </div> 
+        <button class="btn-reset" id="resetMonthlyBtn" onclick="window.resetMonthlyExpenses()">🗑️ Reset All Monthly Expenses</button> 
+        <button class="btn-reset" id="resetSalesBtn" onclick="window.resetSales()">🗑️ Reset All Sales</button> 
+        <button class="btn-reset" id="resetExpensesBtn" onclick="window.resetExpenses()">🗑️ Reset All Expenses</button> 
+        <button class="btn-green" onclick="window.location='net.html'">← Back to Reports</button> 
+    </div>
+</div> 
+
+<script type="module"> 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"; 
+import { getFirestore, collection, getDocs, deleteDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; 
+
+const firebaseConfig = { 
+    apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE", 
+    authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", 
+    projectId: "dhan-siomai-pos-fe1e5", 
+    storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app", 
+    messagingSenderId: "305932123173", 
+    appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc" 
+}; 
+const app = initializeApp(firebaseConfig); 
+const db = getFirestore(app); 
+
+// PALITAN MO PASSWORD DITO BOSS
+const BOSS_PASSWORD = "dhanboss2026"; 
+
+window.checkPassword = function(){
+    const input = document.getElementById('bossPassword').value;
+    const errorMsg = document.getElementById('errorMsg');
+    
+    if(input === BOSS_PASSWORD){
+        document.getElementById('passwordBox').style.display = 'none';
+        document.getElementById('resetContent').style.display = 'block';
+        countRecords(); 
+    } else {
+        errorMsg.style.display = 'block';
+        document.getElementById('bossPassword').value = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('bossPassword').addEventListener('keypress', function(e){
+        if(e.key === 'Enter') window.checkPassword();
+    });
+});
+
+async function countRecords(){ 
+    const salesSnap = await getDocs(collection(db,"sales")); 
+    const expSnap = await getDocs(collection(db,"daily_expenses")); 
+    const monthlySnap = await getDocs(collection(db,"monthly_expenses")); 
+    document.getElementById('countInfo').innerText = `Sales: ${salesSnap.size} | Daily: ${expSnap.size} | Monthly: ${monthlySnap.size}`; 
+} 
+
+async function deleteInBatches(querySnap){ 
+    let count = 0; 
+    const docs = querySnap.docs; 
+    const total = docs.length; 
+    while(count < total){ 
+        const batch = writeBatch(db); 
+        const batchDocs = docs.slice(count, count + 500); 
+        batchDocs.forEach(docSnap=>{ batch.delete(docSnap.ref); }); 
+        await batch.commit(); 
+        count += batchDocs.length; 
+    } 
+    return total; 
+} 
+
+window.resetMonthlyExpenses = async ()=>{ 
+    const snap = await getDocs(collection(db,"monthly_expenses")); 
+    if(snap.empty){ alert('Wala namang monthly expenses na i-delete boss.'); return; } 
+    if(!confirm(`SURE KA BA BOSS?\n\nBuburahin lahat ng ${snap.size} monthly expense records.\nHindi na to mababalik!`)){ return; } 
+    if(!confirm('LAST CHANCE BOSS!\n\nSure ka talaga? Delete na lahat forever pag OK dito.')){ return; } 
+    const btn = document.getElementById('resetMonthlyBtn'); 
+    btn.disabled = true; 
+    btn.innerText = 'Deleting monthly expenses...'; 
+    try{ 
+        const total = await deleteInBatches(snap); 
+        alert(`✓ SUCCESS!\n\nNa-reset na lahat ng monthly expenses.\nTotal deleted: ${total} records`); 
+        countRecords(); 
+        setTimeout(()=>{window.location='net.html'}, 2000); 
+    }catch(e){ alert('ERROR: '+e.message); }
+    finally{ btn.disabled = false; btn.innerText = '🗑️ Reset All Monthly Expenses'; } 
+} 
+
+window.resetSales = async ()=>{ 
+    const snap = await getDocs(collection(db,"sales")); 
+    if(snap.empty){ alert('Wala namang sales na i-delete boss.'); return; } 
+    if(!confirm(`SURE KA BA BOSS?\n\nBuburahin lahat ng ${snap.size} sales records.\nHindi na to mababalik!`)){ return; } 
+    if(!confirm('LAST CHANCE BOSS!\n\nSure ka talaga? Delete na lahat forever pag OK dito.')){ return; } 
+    const btn = document.getElementById('resetSalesBtn'); 
+    btn.disabled = true; 
+    btn.innerText = 'Deleting sales...'; 
+    try{ 
+        const total = await deleteInBatches(snap); 
+        alert(`✓ SUCCESS!\n\nNa-reset na lahat ng sales.\nTotal deleted: ${total} records`); 
+        countRecords(); 
+        setTimeout(()=>{window.location='net.html'}, 2000); 
+    }catch(e){ alert('ERROR: '+e.message); }
+    finally{ btn.disabled = false; btn.innerText = '🗑️ Reset All Sales'; } 
+} 
+
+window.resetExpenses = async ()=>{ 
+    const snap = await getDocs(collection(db,"daily_expenses")); 
+    if(snap.empty){ alert('Wala namang expenses na i-delete boss.'); return; } 
+    if(!confirm(`SURE KA BA BOSS?\n\nBuburahin lahat ng ${snap.size} expense records.\nHindi na to mababalik!`)){ return; } 
+    if(!confirm('LAST CHANCE BOSS!\n\nSure ka talaga? Delete na lahat forever pag OK dito.')){ return; } 
+    const btn = document.getElementById('resetExpensesBtn'); 
+    btn.disabled = true; 
+    btn.innerText = 'Deleting expenses...'; 
+    try{ 
+        const total = await deleteInBatches(snap); 
+        alert(`✓ SUCCESS!\n\nNa-reset na lahat ng expenses.\nTotal deleted: ${total} records`); 
+        countRecords(); 
+        setTimeout(()=>{window.location='net.html'}, 2000); 
+    }catch(e){ alert('ERROR: '+e.message); }
+    finally{ btn.disabled = false; btn.innerText = '🗑️ Reset All Expenses'; } 
+} 
+</script> 
+</body> 
+</html>
