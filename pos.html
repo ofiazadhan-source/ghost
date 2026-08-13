@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store POS - Siomai Factory</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:15px;min-height:100vh;padding-right:280px}
+.container{max-width:2000px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:8px;font-size:24px}
+.back-btn{background:#757575;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;margin-bottom:15px;font-size:13px;font-weight:600}
+.type-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:15px}
+.type-btn{padding:14px 5px;border:none;border-radius:12px;background:linear-gradient(135deg,#FFCC80,#FFB74D);color:#B71C1C;font-weight:800;font-size:12px;cursor:pointer;text-align:center}
+.type-btn.active{background:#D32F2F;color:white}
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:15px}
+.cat-btn{padding:12px 5px;border:none;border-radius:12px;background:#FFE0B2;color:#B71C1C;font-weight:700;font-size:11px;cursor:pointer}
+.cat-btn.active{background:#D32F2F;color:white}
+.prod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.prod-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:10px;text-align:center;cursor:pointer;position:relative}
+.prod-card.out{opacity:0.5;pointer-events:none}
+.prod-img{width:100%;height:80px;object-fit:cover;border-radius:10px;margin-bottom:8px;background:#f5f5f5}
+.prod-name{font-weight:800;font-size:12px;color:#D32F2F;margin-bottom:4px;height:28px}
+.prod-price{font-size:14px;font-weight:900;color:#2E7D32}
+.price-tags{font-size:8px;color:#666}
+.stock-label{font-size:10px;font-weight:800;color:#2E7D32;margin-top:4px}
+.stock-label.low{color:#FF6F00}
+.stock-label.out{color:white;background:#D32F2F;padding:2px 6px;border-radius:4px;display:inline-block}
+.cart-bar{position:fixed;top:15px;right:0;width:280px;max-height:95vh;background:white;border:3px solid #D32F2F;border-left:0;border-radius:15px 0 0 15px;padding:12px}
+.cart-list{max-height:300px;overflow-y:auto}
+.cart-row{display:grid;grid-template-columns:18px 1fr 70px;gap:4px;align-items:center;font-size:10px;padding:6px 0;border-bottom:1px dashed #eee}
+.del-btn{background:#C62828;color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:14px;line-height:1;cursor:pointer}
+.qty-box{display:flex;gap:3px;align-items:center}
+.qty-btn{width:20px;height:20px;border:none;background:#D32F2F;color:white;border-radius:4px;font-weight:800;cursor:pointer;font-size:11px}
+.qty-input{width:40px;height:20px;text-align:center;border:1px solid #ddd;border-radius:4px;font-size:10px}
+.cart-sum{font-size:18px;font-weight:900;color:#D32F2F;text-align:right;margin:8px 0}
+.checkout-btn{width:100%;padding:10px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer}
+.checkout-btn:disabled{background:#ccc}
+.loading{text-align:center;padding:40px;color:#D32F2F;font-weight:700}
+.cash-box{background:#E8F5E9;padding:12px;border-radius:8px;margin-bottom:10px}
+.cash-box input{width:100%;padding:10px;font-size:16px;border:2px solid #2E7D32;border-radius:6px;font-weight:700}
+.change{font-size:18px;font-weight:900;color:#D32F2F;text-align:center;margin-top:5px}
+@media (max-width:768px) {body{padding-right:15px;padding-bottom:280px}.cart-bar{top:auto;bottom:0;right:0;left:0;width:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+<h2>🛒 One Siomai</h2>
+<div class="type-grid">
+<button class="type-btn active" onclick="window.setSaleType('Retail',this)">👤 Retail</button>
+<button class="type-btn" onclick="window.setSaleType('Wilbert',this)">🏢 Wilbert</button>
+<button class="type-btn" onclick="window.setSaleType('VIP',this)">💎 VIP</button>
+</div>
+<div class="cat-grid">
+<button class="cat-btn active" onclick="window.filterCat('all',this)">All</button>
+<button class="cat-btn" onclick="window.filterCat('65s',this)">65's</button>
+<button class="cat-btn" onclick="window.filterCat('30s',this)">30's</button>
+<button class="cat-btn" onclick="window.filterCat('big',this)">Big SIOMAI</button>
+<button class="cat-btn" onclick="window.filterCat('dumplings',this)">Dumplings</button>
+<button class="cat-btn" onclick="window.filterCat('siopao',this)">SIOPAO</button>
+<button class="cat-btn" onclick="window.filterCat('sauce',this)">Sauce</button>
+<button class="cat-btn" onclick="window.filterCat('others',this)">Others</button>
+</div>
+<div class="prod-grid" id="prodGrid"><div class="loading">Loading products...</div></div>
+</div>
+<div class="cart-bar">
+<div class="cart-list" id="cartList">No items yet</div>
+<div class="cart-sum" id="cartSum">Total: ₱0</div>
+<button class="checkout-btn" id="checkoutBtn" disabled onclick="window.openPayModal()">Checkout</button>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div id="payModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:9999">
+<div style="background:white;padding:25px;border-radius:12px;width:90%;max-width:400px">
+<span onclick="window.closePayModal()" style="float:right;cursor:pointer;font-size:28px;color:#999">&times;</span>
+<h2 style="margin-top:0;color:#D32F2F">Payment</h2>
+<p id="reviewTotal" style="font-size:20px;font-weight:bold;margin:15px 0">Total: ₱0.00</p>
+<label style="font-size:13px;font-weight:700">Payment Method:</label>
+<select id="payMethod" onchange="window.toggleProof()" style="width:100%;padding:12px;font-size:16px;border:2px solid #FFCC80;border-radius:8px;margin-bottom:10px">
+<option value="Cash">Cash</option>
+<option value="Gcash">Gcash</option>
+<option value="Bank Transfer">Bank Transfer</option>
+</select>
+<div id="cashDiv" class="cash-box">
+<label style="font-size:13px;font-weight:700">Amount Tendered:</label>
+<input type="number" id="cashAmount" placeholder="0.00" onkeyup="window.calcChange()">
+<div class="change" id="changeText">Change: ₱0.00</div>
+</div>
+<div id="bankDiv" style="display:none;margin-bottom:10px">
+<label style="font-size:13px;font-weight:700">Select Bank:</label>
+<select id="bankName" style="width:100%;padding:12px;font-size:16px;border:2px solid #FFCC80;border-radius:8px">
+<option value="METRO BANK">METRO BANK</option>
+<option value="BDO">BDO</option>
+</select>
+</div>
+<div id="proofDiv" style="display:none;margin-bottom:10px">
+<label style="font-size:13px;font-weight:700">Upload Proof of Payment:</label>
+<input type="file" id="proofFile" accept="image/*" style="width:100%;padding:8px;border:2px dashed #FFCC80;border-radius:8px;background:#FFFDF7">
+<img id="proofPreview" style="max-width:100%;max-height:150px;margin-top:8px;border-radius:8px;display:none">
+<small id="proofSize" style="color:#2E7D32;font-size:10px"></small>
+</div>
+<button id="confirmBtn" onclick="window.confirmPay(event)" style="width:100%;padding:14px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:700">Confirm Payment</button>
+</div>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div id="receiptModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:9999">
+<div style="background:white;padding:20px;border-radius:12px;width:90%;max-width:320px">
+<div id="receipt" style="font-family:'Courier New',monospace;font-size:11px;line-height:1.3">
+<div style="text-align:center"><b style="font-size:14px">ONE SIOMAI FACTORY</b><br><span style="font-size:10px">Quezon City, Philippines</span></div>
+<hr style="border:none;border-top:1px dashed #000;margin:4px 0">
+<div id="rHeader" style="font-size:10px"></div>
+<hr style="border:none;border-top:1px dashed #000;margin:4px 0">
+<table style="width:100%;font-size:10px">
+<thead><tr><td colspan="3">--------------------------------</td></tr>
+<tr><td><b>ITEM</b></td><td align="center"><b>QTY</b></td><td align="right"><b>AMT</b></td></tr>
+<tr><td colspan="3">--------------------------------</td></tr></thead>
+<tbody id="rItems"></tbody>
+<tr><td colspan="3">--------------------------------</td></tr>
+</table>
+<div style="text-align:right;font-weight:900;font-size:13px" id="rTotal"></div>
+<div id="rCash" style="font-size:10px"></div>
+<hr style="border:none;border-top:1px dashed #000;margin:4px 0">
+<div style="text-align:center;font-size:10px">Thank you! Please come again.</div>
+</div>
+<button onclick="window.printReceipt()" style="width:100%;padding:12px;background:#D32F2F;color:white;border:none;border-radius:8px;font-weight:700;margin-top:10px">🖨️ Print Receipt</button>
+<button onclick="window.closeReceipt()" style="width:100%;padding:10px;background:#757575;color:white;border:none;border-radius:8px;font-weight:700;margin-top:5px">Close</button>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where, addDoc, doc, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",projectId: "dhan-siomai-pos-fe1e5"};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let products = [];
+let cart = [];
+let curCat = 'all';
+let currentTotal = 0;
+let currentSaleType = 'Retail';
+let base64Proof = '';
+let lastSaleData = {};
+let cashTendered = 0;
+let cashChange = 0;
+
+async function compressProof(file) {
+return new Promise((resolve) => {
+const reader = new FileReader();
+reader.readAsDataURL(file);
+reader.onload = (event) => {
+const img = new Image();
+img.src = event.target.result;
+img.onload = () => {
+let quality = 0.6; let maxWidth = 800;
+let canvas = document.createElement('canvas');
+let ctx = canvas.getContext('2d');
+function tryCompress() {
+let width = img.width; let height = img.height;
+if(width > maxWidth) { height = (maxWidth / width) * height; width = maxWidth; }
+canvas.width = width; canvas.height = height;
+ctx.drawImage(img, 0, 0, width, height);
+let base64 = canvas.toDataURL('image/jpeg', quality);
+let sizeKB = Math.round(base64.length / 1024);
+if(sizeKB > 500 && quality > 0.2) { quality -= 0.1; tryCompress(); }
+else if(sizeKB > 500 && maxWidth > 400) { maxWidth -= 100; quality = 0.6; tryCompress(); }
+else { resolve({base64:base64, size:sizeKB}); }
+}
+tryCompress();
+}
+}
+});
+}
+
+function getKgPerPack(cat){ if(cat==='65s')return 1; if(cat==='30s')return 0.5; if(cat==='big')return 0.7; return 1 }
+function getTotalCartKg(){return cart.reduce((sum,item)=>sum+Number(item.qty)*getKgPerPack(item.category),0)}
+function getPrice(p){ 
+const totalKg=getTotalCartKg(); 
+if(currentSaleType === 'Wilbert' && Number(p.wilbertPrice)>0) return Number(p.wilbertPrice);
+if(currentSaleType === 'VIP' && Number(p.vipPrice)>0) return Number(p.vipPrice);
+if(Number(p.bulkPrice)>0 && Number(p.bulkMinQty)>0 && totalKg>=Number(p.bulkMinQty)) return Number(p.bulkPrice);
+return Number(p.price)||0; 
+}
+
+window.setSaleType = (type, btn) => {
+currentSaleType = type;
+document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+renderCart();
+}
+
+async function loadProducts(){
+const grid=document.getElementById('prodGrid');
+grid.innerHTML='<div class="loading">Loading products...</div>';
+let q=collection(db,"products");
+if(curCat!='all')q=query(collection(db,"products"),where("category","==",curCat));
+const snap=await getDocs(q);
+products=[];
+snap.forEach(d=>products.push({id:d.id,...d.data()}));
+renderProducts();
+}
+
+function renderProducts(){
+const grid=document.getElementById('prodGrid');
+if(products.length===0){ grid.innerHTML='<p style="grid-column:span 2;text-align:center;color:#999;padding:40px">No products yet</p>'; return; }
+let html='';
+products.forEach(prod=>{
+const stock = Number(prod.stock) || 0;
+let stockClass = '';
+let stockText = `Stock: ${stock}`;
+let cardClass = '';
+if(stock <= 0){ stockClass = 'out'; stockText = 'OUT OF STOCK'; cardClass = 'out'; }
+else if(stock <= 5){ stockClass = 'low'; }
+html+=`<div class="prod-card ${cardClass}" onclick="window.addToCart('${prod.id}')">`+
+(prod.image?`<img src="${prod.image}" class="prod-img">`:'<div class="prod-img">No Image</div>')+
+`<div class="prod-name">${prod.name}</div>`+
+`<div class="prod-price">₱${prod.price}</div>`+
+`<div class="price-tags">Bulk:₱${prod.bulkPrice||'-'} Wilbert:₱${prod.wilbertPrice||'-'} VIP:₱${prod.vipPrice||'-'}</div>`+
+`<div class="stock-label ${stockClass}">${stockText}</div>`+
+`</div>`;
+});
+grid.innerHTML=html;
+}
+
+window.filterCat=(cat,btn)=>{ curCat=cat; document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); loadProducts(); }
+
+window.addToCart=(prodId)=>{
+const prod=products.find(p=>p.id===prodId);
+if(!prod || (Number(prod.stock)||0) <= 0){ alert('Out of stock na boss!'); return; }
+const existing=cart.find(item=>item.id===prodId);
+if(existing){
+if(existing.qty >= (Number(prod.stock)||0)){ alert('Wala nang stock boss!'); return; }
+existing.qty++;
+}else{ cart.push({...prod,qty:1}); }
+renderCart();
+}
+
+function renderCart(){
+let total=0; let html='';
+cart.forEach((item,i)=>{
+let price=getPrice(item);
+total+=price*item.qty;
+html+=`<div class="cart-row">`+
+`<button class="del-btn" onclick="window.removeItem(${i})">×</button>`+
+`<span>${item.name} @₱${price}</span>`+
+`<div class="qty-box"><button class="qty-btn" onclick="window.changeQty(${i},-1)">-</button><input type="number" class="qty-input" value="${item.qty}" onchange="window.setQty(${i},this.value)"><button class="qty-btn" onclick="window.changeQty(${i},1)">+</button></div>`+
+`</div>`;
+});
+document.getElementById('cartList').innerHTML=html||'No items yet';
+document.getElementById('cartSum').innerText=`Total: ₱${total.toFixed(2)}`;
+currentTotal=total;
+document.getElementById('checkoutBtn').disabled=cart.length===0;
+}
+
+window.removeItem=(i)=>{cart.splice(i,1);renderCart()}
+window.changeQty=(i,d)=>{const prod=products.find(p=>p.id===cart[i].id); cart[i].qty+=d; if(cart[i].qty<1)cart[i].qty=1; if(cart[i].qty > (Number(prod.stock)||0))cart[i].qty=Number(prod.stock)||0; renderCart();}
+window.setQty=(i,val)=>{ val=parseInt(val)||1; const prod=products.find(p=>p.id===cart[i].id); if(val > (Number(prod.stock)||0))val=Number(prod.stock)||0; cart[i].qty=val; renderCart(); }
+
+window.openPayModal=()=>{ document.getElementById('reviewTotal').textContent=`Total: ₱${currentTotal.toFixed(2)}`; document.getElementById('payModal').style.display='flex'; window.toggleProof(); }
+window.closePayModal=()=>{ document.getElementById('payModal').style.display='none'; document.getElementById('proofFile').value=''; document.getElementById('proofPreview').style.display='none'; document.getElementById('proofSize').innerText=''; document.getElementById('cashAmount').value=''; document.getElementById('changeText').innerText='Change: ₱0.00'; base64Proof=''; cashTendered=0; cashChange=0; }
+
+window.toggleProof=()=>{
+const method=document.getElementById('payMethod').value;
+const proofDiv=document.getElementById('proofDiv');
+const bankDiv=document.getElementById('bankDiv');
+const cashDiv=document.getElementById('cashDiv');
+cashDiv.style.display = method==='Cash'? 'block' : 'none';
+if(method==='Gcash' || method==='Bank Transfer'){ proofDiv.style.display='block'; bankDiv.style.display= method==='Bank Transfer'? 'block' : 'none'; }
+else{ proofDiv.style.display='none'; bankDiv.style.display='none'; }
+}
+
+window.calcChange=()=>{
+cashTendered = parseFloat(document.getElementById('cashAmount').value) || 0;
+cashChange = cashTendered - currentTotal;
+document.getElementById('changeText').innerText = `Change: ₱${cashChange.toFixed(2)}`;
+if(cashChange < 0) document.getElementById('changeText').style.color = '#C62828';
+else document.getElementById('changeText').style.color = '#2E7D32';
+}
+
+document.getElementById('proofFile').addEventListener('change',async function(e){
+const file=e.target.files[0];
+if(file){
+document.getElementById('confirmBtn').innerText='Compressing proof...';
+document.getElementById('confirmBtn').disabled=true;
+const result=await compressProof(file);
+base64Proof=result.base64;
+document.getElementById('proofPreview').src=base64Proof;
+document.getElementById('proofPreview').style.display='block';
+document.getElementById('proofSize').innerText=`Size: ${result.size}KB - Compressed`;
+document.getElementById('confirmBtn').innerText='Confirm Payment';
+document.getElementById('confirmBtn').disabled=false;
+}
+});
+
+window.confirmPay=async(event)=>{
+const method=document.getElementById('payMethod').value;
+const bank=document.getElementById('bankName').value;
+const btn=event.target;
+if((method==='Gcash' || method==='Bank Transfer') &&!base64Proof){ alert('Boss, upload mo muna proof of payment!'); return; }
+if(method==='Cash' && cashTendered < currentTotal){ alert(`Kulang yung binayad boss! Total: ₱${currentTotal.toFixed(2)}`); return; }
+btn.disabled=true; btn.textContent='Saving...';
+try{
+const itemsForDB = cart.map(i=>{ const price=getPrice(i); return{id:i.id,name:i.name,qty:i.qty,price:price,total:price*i.qty} });
+for(const item of cart){ const prodRef=doc(db,'products',item.id); await updateDoc(prodRef,{stock:increment(-item.qty)}); }
+const saleData={ items:itemsForDB, total:currentTotal, paymentMethod:method, bankName: method==='Bank Transfer'? bank : '', proofOfPayment: base64Proof, saleType: currentSaleType, cashTendered: method==='Cash'? cashTendered : 0, cashChange: method==='Cash'? cashChange : 0, timestamp:serverTimestamp(), isPaid:true };
+await addDoc(collection(db,'sales'),saleData);
+lastSaleData = saleData;
+closePayModal(); showReceipt();
+}catch(err){ alert('Error: '+err.message); }
+finally{ btn.disabled=false; btn.textContent='Confirm Payment'; }
+}
+
+function showReceipt(){
+const now = new Date().toLocaleString();
+document.getElementById('rHeader').innerHTML = `Date: ${now}<br>Type: ${lastSaleData.saleType}<br>Pay: ${lastSaleData.paymentMethod}${lastSaleData.bankName? ' - ' + lastSaleData.bankName : ''}`;
+let itemsHTML = '';
+lastSaleData.items.forEach(item=>{ itemsHTML += `<tr><td>${item.name}</td><td align="center">${item.qty}</td><td align="right">₱${item.total.toFixed(2)}</td></tr>`; });
+document.getElementById('rItems').innerHTML = itemsHTML;
+document.getElementById('rTotal').innerText = `TOTAL: ₱${lastSaleData.total.toFixed(2)}`;
+let cashInfo = '';
+if(lastSaleData.paymentMethod === 'Cash'){ cashInfo = `Cash: ₱${lastSaleData.cashTendered.toFixed(2)}<br>Change: ₱${lastSaleData.cashChange.toFixed(2)}`; }
+document.getElementById('rCash').innerHTML = cashInfo;
+document.getElementById('receiptModal').style.display='flex';
+}
+
+window.closeReceipt=()=>{ document.getElementById('receiptModal').style.display='none'; cart=[]; renderCart(); loadProducts(); }
+window.printReceipt=()=>{ window.print(); }
+
+loadProducts();
+</script>
+</body>
+</html>
