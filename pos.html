@@ -336,3 +336,157 @@ loadProducts();
 </script>
 </body>
 </html>
+ <!-- CHATBOT BUTTON -->
+<div id="chatBtn" style="position:fixed;bottom:20px;right:20px;background:#D32F2F;color:white;border:none;border-radius:50%;width:60px;height:60px;font-size:30px;cursor:pointer;z-index:10000;box-shadow:0 4px 12px rgba(0,0,0,0.3)">💬</div>
+
+<!-- CHATBOX -->
+<div id="chatBox" style="display:none;position:fixed;bottom:90px;right:20px;width:340px;height:500px;background:white;border:3px solid #D32F2F;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:10000;flex-direction:column">
+    <div style="background:#D32F2F;color:white;padding:12px;font-weight:800;border-radius:9px 9px 0 0;display:flex;justify-content:space-between">
+        <span>One Siomai AI Assistant 🤖</span>
+        <span onclick="chatBox.style.display='none'" style="cursor:pointer">✕</span>
+    </div>
+    <div id="chatMessages" style="flex:1;padding:10px;overflow-y:auto;font-size:12px;background:#FFF8E1"></div>
+
+    <div style="display:flex;gap:5px;padding:5px 8px;border-top:1px solid #ddd;flex-wrap:wrap">
+        <button onclick="quickAsk('Listahan ng products')" style="font-size:10px;padding:4px 6px;background:#FFCC80;border:none;border-radius:5px">Products</button>
+        <button onclick="quickAsk('Magkano bulk price')" style="font-size:10px;padding:4px 6px;background:#FFCC80;border:none;border-radius:5px">Bulk Price</button>
+        <button onclick="quickAsk('May delivery ba')" style="font-size:10px;padding:4px 6px;background:#FFCC80;border:none;border-radius:5px">Delivery</button>
+    </div>
+
+    <div style="display:flex;padding:8px;border-top:1px solid #ddd">
+        <input id="chatInput" placeholder="Magtanong ka..." style="flex:1;border:1px solid #ddd;border-radius:6px;padding:8px;font-size:12px">
+        <button onclick="sendChat()" style="margin-left:5px;background:#2E7D32;color:white;border:none;border-radius:6px;padding:8px 12px;font-weight:700">Send</button>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+    authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", 
+    projectId: "dhan-siomai-pos-fe1e5",
+    storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+    messagingSenderId: "305932123173",
+    appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+
+const app = initializeApp(firebaseConfig, "chatbotApp"); // iba pangalan para di mag-clash
+const db = getFirestore(app);
+
+let chatbotProducts = [];
+
+async function loadProductsForChat(){
+    const snap = await getDocs(collection(db,"products"));
+    chatbotProducts = [];
+    snap.forEach(d=>chatbotProducts.push({id:d.id,...d.data()}));
+}
+
+const chatBtn = document.getElementById('chatBtn');
+const chatBox = document.getElementById('chatBox');
+const chatMessages = document.getElementById('chatMessages');
+
+chatBtn.onclick = async () => {
+    chatBox.style.display = chatBox.style.display === 'flex'? 'none' : 'flex';
+    chatBox.style.display = 'flex';
+    if(chatMessages.innerHTML === '') {
+        addBotMsg("Naglo-load ng products... wait lang boss");
+        await loadProductsForChat();
+        addBotMsg(`Hi! Ako si SiomaiBot 🤖 Kabisado ko na lahat ng ${chatbotProducts.length} products mo!`);
+    }
+}
+
+function addBotMsg(text){
+    chatMessages.innerHTML += `<div style="background:#FFE0B2;padding:8px;border-radius:8px;margin-bottom:8px">${text}</div>`;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+function addUserMsg(text){
+    chatMessages.innerHTML += `<div style="background:#D32F2F;color:white;padding:8px;border-radius:8px;margin-bottom:8px;margin-left:20px">${text}</div>`;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function quickAsk(q){
+    document.getElementById('chatInput').value = q;
+    sendChat();
+}
+
+function findProduct(keyword){
+    keyword = keyword.toLowerCase().replace(/magkano|price|how much|ilan|stock|ng|pcs|piraso|'|"/g,'').trim();
+    keyword = keyword.replace(/\s+/g,'');
+
+    for(let p of chatbotProducts){
+        let name = p.name.toLowerCase().replace(/\s+/g,'');
+        let name2 = p.name.toLowerCase();
+        if(name.includes(keyword) || name2.includes(keyword) || keyword.includes(name)) return p;
+    }
+    return null;
+}
+
+function listAllProducts(){
+    let msg = `<b>📋 LAHAT NG ${chatbotProducts.length} PRODUCTS:</b><br>`;
+    chatbotProducts.forEach(p=>{
+        msg += `• ${p.name} - ₱${p.price} - Stock:${p.stock}<br>`;
+    });
+    return msg;
+}
+
+function getBulkAnswer(){
+    const bulkItems = chatbotProducts.filter(p => Number(p.bulkPrice) > 0);
+    if(bulkItems.length === 0) return "Wala pang naka-set na bulk price boss.";
+    let answer = "📦 <b>BULK PRICE - Pag naka 50KG total:</b><br>";
+    bulkItems.forEach(p=>{
+        answer += `• ${p.name}: ₱${p.price} → <b>₱${p.bulkPrice}</b><br>`;
+    });
+    return answer;
+}
+
+async function sendChat(){
+    const input = document.getElementById('chatInput');
+    const msg = input.value;
+    if(!msg) return;
+    addUserMsg(msg);
+    input.value = '';
+
+    if(chatbotProducts.length === 0) await loadProductsForChat();
+
+    const lowerMsg = msg.toLowerCase();
+
+    setTimeout(() => {
+        if(lowerMsg.includes('listahan') || lowerMsg.includes('products')){
+            addBotMsg(listAllProducts());
+        }
+        else if(lowerMsg.includes('magkano') || lowerMsg.includes('price')){
+            const prod = findProduct(lowerMsg);
+            if(prod){
+                const wilbert = prod.wilbertPrice? ` Wilbert: ₱${prod.wilbertPrice}` : '';
+                const vip = prod.vipPrice? ` VIP: ₱${prod.vipPrice}` : '';
+                const bulk = prod.bulkPrice? ` Bulk: ₱${prod.bulkPrice}` : '';
+                addBotMsg(`<b>${prod.name}</b><br>Retail: ₱${prod.price}${bulk}${wilbert}${vip}<br>Stock: ${prod.stock}`);
+            } else if(lowerMsg.includes('50kg') || lowerMsg.includes('bulk')){
+                addBotMsg(getBulkAnswer());
+            } else {
+                addBotMsg("Anong product boss? Type 'Listahan ng products'");
+            }
+        }
+        else if(lowerMsg.includes('stock') || lowerMsg.includes('ilan')){
+            const prod = findProduct(lowerMsg);
+            if(prod){
+                addBotMsg(`${prod.name}: <b>${prod.stock} packs</b> available`);
+            } else {
+                addBotMsg("Di ko mahanap boss 😅 Type 'Listahan ng products'");
+            }
+        }
+        else if(lowerMsg.includes('delivery')){
+            addBotMsg("Yes boss! 🚚 Free delivery within QC for 10 packs and up.");
+        }
+        else{
+            addBotMsg("Try mo: 'Magkano Pork 20s', 'Stock ng Chicken 65s'");
+        }
+    }, 300);
+}
+
+document.getElementById('chatInput').addEventListener('keypress', e => {
+    if(e.key === 'Enter') sendChat();
+})
+</script>
