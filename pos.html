@@ -336,7 +336,7 @@ loadProducts();
 </script>
 </body>
 </html>
- <!-- CHATBOT BUTTON -->
+<!-- CHATBOT BUTTON -->
 <div id="chatBtn" style="position:fixed;bottom:20px;right:20px;background:#D32F2F;color:white;border:none;border-radius:50%;width:60px;height:60px;font-size:30px;cursor:pointer;z-index:10000;box-shadow:0 4px 12px rgba(0,0,0,0.3)">💬</div>
 
 <!-- CHATBOX -->
@@ -348,14 +348,15 @@ loadProducts();
     <div id="chatMessages" style="flex:1;padding:10px;overflow-y:auto;font-size:12px;background:#FFF8E1"></div>
 
     <div style="display:flex;gap:5px;padding:5px 8px;border-top:1px solid #ddd;flex-wrap:wrap">
-        <button onclick="quickAsk('Listahan ng products')" style="font-size:10px;padding:4px 6px;background:#FFCC80;border:none;border-radius:5px">Products</button>
-        <button onclick="quickAsk('Magkano bulk price')" style="font-size:10px;padding:4px 6px;background:#FFCC80;border:none;border-radius:5px">Bulk Price</button>
-        <button onclick="quickAsk('May delivery ba')" style="font-size:10px;padding:4px 6px;background:#FFCC80;border:none;border-radius:5px">Delivery</button>
+        <button id="btnProducts" style="font-size:10px;padding:4px 6px;background:#FFCC80;border:none;border-radius:5px">Products</button>
+        <button id="btnBulk" style="font-size:10px;padding:4px 6px;background:#FFCC80;border:none;border-radius:5px">Bulk Price</button>
+        <button id="btnDelivery" style="font-size:10px;padding:4px 6px;background:#FFCC80;border:none;border-radius:5px">Delivery</button>
     </div>
 
-    <div style="display:flex;padding:8px;border-top:1px solid #ddd">
-        <input id="chatInput" placeholder="Magtanong ka..." style="flex:1;border:1px solid #ddd;border-radius:6px;padding:8px;font-size:12px">
-        <button onclick="sendChat()" style="margin-left:5px;background:#2E7D32;color:white;border:none;border-radius:6px;padding:8px 12px;font-weight:700">Send</button>
+    <div style="display:flex;padding:8px;border-top:1px solid #ddd;gap:5px">
+        <input id="chatInput" placeholder="Magtanong ka o mag voice..." style="flex:1;border:1px solid #ddd;border-radius:6px;padding:8px;font-size:12px">
+        <button id="micBtn" style="background:#FF5722;color:white;border:none;border-radius:6px;padding:8px 15px;font-size:22px;min-width:50px">🎤</button>
+        <button id="sendBtn" style="background:#2E7D32;color:white;border:none;border-radius:6px;padding:8px 12px;font-weight:700">Send</button>
     </div>
 </div>
 
@@ -372,10 +373,47 @@ const firebaseConfig = {
     appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
 };
 
-const app = initializeApp(firebaseConfig, "chatbotApp"); // iba pangalan para di mag-clash
+const app = initializeApp(firebaseConfig, "chatbotApp8");
 const db = getFirestore(app);
 
 let chatbotProducts = [];
+let lastProduct = null;
+let recognition = null;
+let isListening = false;
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'fil-PH';
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+        isListening = true;
+        document.getElementById('micBtn').style.background = '#4CAF50';
+        document.getElementById('micBtn').innerHTML = '⏹️';
+        addBotMsg("🎤 Nakikinig ako boss... sabihin mo na");
+    };
+
+    recognition.onresult = (event) => {
+        const speech = event.results[0][0].transcript;
+        document.getElementById('chatInput').value = speech;
+        addBotMsg(`👂 Narinig ko: "${speech}"`);
+        sendChat();
+    };
+
+    recognition.onerror = (event) => {
+        addBotMsg(`⚠️ Error: ${event.error}. I-allow mo mic boss sa settings ng browser`);
+        document.getElementById('micBtn').style.background = '#FF5722';
+        document.getElementById('micBtn').innerHTML = '🎤';
+    };
+
+    recognition.onend = () => {
+        isListening = false;
+        document.getElementById('micBtn').style.background = '#FF5722';
+        document.getElementById('micBtn').innerHTML = '🎤';
+    };
+}
 
 async function loadProductsForChat(){
     const snap = await getDocs(collection(db,"products"));
@@ -393,7 +431,7 @@ chatBtn.onclick = async () => {
     if(chatMessages.innerHTML === '') {
         addBotMsg("Naglo-load ng products... wait lang boss");
         await loadProductsForChat();
-        addBotMsg(`Hi! Ako si SiomaiBot 🤖 Kabisado ko na lahat ng ${chatbotProducts.length} products mo!`);
+        addBotMsg(`Hi! Ako si SiomaiBot 🤖 Pindot mo 🎤 tapos sabihin mo "Pabili ng 2 Pork30"`);
     }
 }
 
@@ -406,28 +444,76 @@ function addUserMsg(text){
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
+document.getElementById('btnProducts').onclick = () => quickAsk('Listahan ng products');
+document.getElementById('btnBulk').onclick = () => quickAsk('Magkano bulk price');
+document.getElementById('btnDelivery').onclick = () => quickAsk('May delivery ba');
+document.getElementById('sendBtn').onclick = () => sendChat();
+
+document.getElementById('micBtn').onclick = () => {
+    if(!recognition){
+        addBotMsg("Hindi supported yung voice boss. Gamit ka Chrome Android");
+        return;
+    }
+    if(isListening){ recognition.stop(); } 
+    else { recognition.start(); }
+}
+
 function quickAsk(q){
     document.getElementById('chatInput').value = q;
     sendChat();
 }
 
-function findProduct(keyword){
-    keyword = keyword.toLowerCase().replace(/magkano|price|how much|ilan|stock|ng|pcs|piraso|'|"/g,'').trim();
-    keyword = keyword.replace(/\s+/g,'');
+function similarity(s1, s2) {
+    let longer = s1;
+    let shorter = s2;
+    if (s1.length < s2.length) { longer = s2; shorter = s1; }
+    let longerLength = longer.length;
+    if (longerLength === 0) return 1.0;
+    return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
+}
 
-    for(let p of chatbotProducts){
-        let name = p.name.toLowerCase().replace(/\s+/g,'');
-        let name2 = p.name.toLowerCase();
-        if(name.includes(keyword) || name2.includes(keyword) || keyword.includes(name)) return p;
+function editDistance(s1, s2) {
+    s1 = s1.toLowerCase(); s2 = s2.toLowerCase();
+    let costs = [];
+    for (let i = 0; i <= s1.length; i++) {
+        let lastValue = i;
+        for (let j = 0; j <= s2.length; j++) {
+            if (i === 0) costs[j] = j;
+            else {
+                if (j > 0) {
+                    let newValue = costs[j - 1];
+                    if (s1.charAt(i - 1)!== s2.charAt(j - 1))
+                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                    costs[j - 1] = lastValue;
+                    lastValue = newValue;
+                }
+            }
+        }
+        if (i > 0) costs[s2.length] = lastValue;
     }
+    return costs[s2.length];
+}
+
+function findProduct(keyword){
+    keyword = keyword.toLowerCase().replace(/magkano|price|how much|ilan|stock|ang|ng|pabili|pabibili|pcs|piraso|'|"|s/g,'').trim();
+    keyword = keyword.replace(/\s+/g,'');
+    let bestMatch = null;
+    let bestScore = 0;
+    for(let p of chatbotProducts){
+        let name = p.name.toLowerCase().replace(/\s+/g,'').replace(/'s/g,'');
+        let score = similarity(keyword, name);
+        if(keyword.match(/\d+/) && name.includes(keyword.match(/\d+/)[0])) score += 0.3;
+        if(keyword.includes('pork') && name.includes('pork')) score += 0.2;
+        if(keyword.includes('chicken') && name.includes('chicken')) score += 0.2;
+        if(score > bestScore) { bestScore = score; bestMatch = p; }
+    }
+    if(bestScore > 0.4){ lastProduct = bestMatch; return bestMatch; } 
     return null;
 }
 
 function listAllProducts(){
     let msg = `<b>📋 LAHAT NG ${chatbotProducts.length} PRODUCTS:</b><br>`;
-    chatbotProducts.forEach(p=>{
-        msg += `• ${p.name} - ₱${p.price} - Stock:${p.stock}<br>`;
-    });
+    chatbotProducts.forEach(p=>{ msg += `• ${p.name} - ₱${p.price} - Stock:${p.stock}<br>`; });
     return msg;
 }
 
@@ -435,10 +521,28 @@ function getBulkAnswer(){
     const bulkItems = chatbotProducts.filter(p => Number(p.bulkPrice) > 0);
     if(bulkItems.length === 0) return "Wala pang naka-set na bulk price boss.";
     let answer = "📦 <b>BULK PRICE - Pag naka 50KG total:</b><br>";
-    bulkItems.forEach(p=>{
-        answer += `• ${p.name}: ₱${p.price} → <b>₱${p.bulkPrice}</b><br>`;
-    });
+    bulkItems.forEach(p=>{ answer += `• ${p.name}: ₱${p.price} → <b>₱${p.bulkPrice}</b><br>`; });
     return answer;
+}
+
+function showProduct(prod){
+    const wilbert = prod.wilbertPrice? ` Wilbert: ₱${prod.wilbertPrice}` : '';
+    const vip = prod.vipPrice? ` VIP: ₱${prod.vipPrice}` : '';
+    const bulk = prod.bulkPrice? ` Bulk: ₱${prod.bulkPrice}` : '';
+    return `<b>${prod.name}</b><br>Retail: ₱${prod.price}${bulk}${wilbert}${vip}<br>Stock: ${prod.stock}`;
+}
+
+function addToCartFromChat(productId, qty){
+    if(typeof window.addToCart === 'function'){ window.addToCart(productId, qty); return true; }
+    const prod = chatbotProducts.find(p=>p.id === productId);
+    if(prod && typeof window.cart!== 'undefined'){
+        const existing = window.cart.find(i=>i.id === productId);
+        if(existing){ existing.qty += qty; } 
+        else { window.cart.push({ id: prod.id, name: prod.name, price: prod.price, qty: qty, image: prod.image }); }
+        if(typeof window.renderCart === 'function') window.renderCart();
+        return true;
+    }
+    return false;
 }
 
 async function sendChat(){
@@ -447,41 +551,44 @@ async function sendChat(){
     if(!msg) return;
     addUserMsg(msg);
     input.value = '';
-
     if(chatbotProducts.length === 0) await loadProductsForChat();
-
     const lowerMsg = msg.toLowerCase();
-
     setTimeout(() => {
-        if(lowerMsg.includes('listahan') || lowerMsg.includes('products')){
-            addBotMsg(listAllProducts());
-        }
-        else if(lowerMsg.includes('magkano') || lowerMsg.includes('price')){
-            const prod = findProduct(lowerMsg);
+        const orderMatch = lowerMsg.match(/pabili|order|add|kuha/g);
+        const qtyMatch = lowerMsg.match(/\d+/);
+        if(orderMatch){
+            let qty = qtyMatch? parseInt(qtyMatch[0]) : 1;
+            let prod = findProduct(lowerMsg);
+            if(!prod && lastProduct) prod = lastProduct;
             if(prod){
-                const wilbert = prod.wilbertPrice? ` Wilbert: ₱${prod.wilbertPrice}` : '';
-                const vip = prod.vipPrice? ` VIP: ₱${prod.vipPrice}` : '';
-                const bulk = prod.bulkPrice? ` Bulk: ₱${prod.bulkPrice}` : '';
-                addBotMsg(`<b>${prod.name}</b><br>Retail: ₱${prod.price}${bulk}${wilbert}${vip}<br>Stock: ${prod.stock}`);
-            } else if(lowerMsg.includes('50kg') || lowerMsg.includes('bulk')){
-                addBotMsg(getBulkAnswer());
-            } else {
-                addBotMsg("Anong product boss? Type 'Listahan ng products'");
+                const success = addToCartFromChat(prod.id, qty);
+                if(success){ addBotMsg(`✅ Na-add ko na sa cart boss! <b>${qty}x ${prod.name}</b>`); } 
+                else { addBotMsg("Di ko ma-add sa cart boss. Refresh mo muna page."); }
+            } else { addBotMsg("Anong product bibilhin boss? 😅"); }
+        }
+        else if(lowerMsg.includes('listahan') || lowerMsg.includes('products')){ addBotMsg(listAllProducts()); }
+        else if(lowerMsg.includes('magkano') || lowerMsg.includes('price') || lowerMsg.includes('isa')){
+            if(lowerMsg.includes('isa') && lastProduct){ addBotMsg(showProduct(lastProduct)); } 
+            else {
+                const prod = findProduct(lowerMsg);
+                if(prod){ addBotMsg(showProduct(prod)); } 
+                else if(lowerMsg.includes('50kg') || lowerMsg.includes('bulk')){ addBotMsg(getBulkAnswer()); } 
+                else { addBotMsg("Anong product boss? 😅"); }
             }
         }
-        else if(lowerMsg.includes('stock') || lowerMsg.includes('ilan')){
-            const prod = findProduct(lowerMsg);
-            if(prod){
-                addBotMsg(`${prod.name}: <b>${prod.stock} packs</b> available`);
-            } else {
-                addBotMsg("Di ko mahanap boss 😅 Type 'Listahan ng products'");
+        else if(lowerMsg.includes('stock') || lowerMsg.includes('ilan') || lowerMsg.includes('meron')){
+            if(lowerMsg.includes('isa') && lastProduct){ addBotMsg(`${lastProduct.name}: <b>${lastProduct.stock} packs</b> available`); } 
+            else {
+                const prod = findProduct(lowerMsg);
+                if(prod){ addBotMsg(`${prod.name}: <b>${prod.stock} packs</b> available`); } 
+                else { addBotMsg("Anong product boss? 😅"); }
             }
         }
-        else if(lowerMsg.includes('delivery')){
-            addBotMsg("Yes boss! 🚚 Free delivery within QC for 10 packs and up.");
-        }
+        else if(lowerMsg.includes('delivery') || lowerMsg.includes('deliver')){ addBotMsg("Yes boss! 🚚 Free delivery within QC for 10 packs and up."); }
         else{
-            addBotMsg("Try mo: 'Magkano Pork 20s', 'Stock ng Chicken 65s'");
+            const prod = findProduct(lowerMsg);
+            if(prod){ addBotMsg(showProduct(prod)); } 
+            else { addBotMsg("Try mo boss: 'Magkano Pork30', 'Pabili 2 Chicken65'"); }
         }
     }, 300);
 }
