@@ -1,1 +1,96 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SiomaiBot - One Siomai</title>
+<style>
+ body { font-family: Arial; background: #fff7e6; }
+ #chatbox { width: 350px; height: 450px; border: 3px solid #d32f2f; border-radius: 10px; background: white; position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+ #header { background: #d32f2f; color: white; padding: 10px; font-weight: bold; border-radius: 7px 7px 0 0; }
+ #messages { flex: 1; overflow-y: auto; padding: 10px; }
+.bot { color: #d32f2f; margin: 8px 0; }
+.user { color: #1976d2; margin: 8px 0; text-align: right; }
+ #input-area { display: flex; padding: 10px; border-top: 1px solid #ccc; }
+ #input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
+ #send { background: #d32f2f; color: white; border: none; padding: 8px 15px; border-radius: 5px; margin-left: 5px; cursor: pointer; }
+ #send:hover { background: #b71c1c; }
+</style>
+</head>
+<body>
 
+<div id="chatbox">
+  <div id="header">🤖 SiomaiBot - One Siomai</div>
+  <div id="messages">
+    <div class="bot"><b>SiomaiBot:</b> Magandang araw boss! Ako si SiomaiBot ng One Siomai 🥟<br>Magtanong ka lang about sa presyo o order mo!</div>
+  </div>
+  <div id="input-area">
+    <input type="text" id="input" placeholder="Magtanong ka... ex: Magkano Pork 65s?">
+    <button id="send">Send</button>
+  </div>
+</div>
+
+<script>
+const messagesDiv = document.getElementById('messages');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+
+// ETO YUNG BUONG MENU NYO BOSS
+const MENU = `
+ONE SIOMAI MENU - RETAIL PRICE:
+1. Pork 20's = ₱120 | Bulk ₱110 | Wilbert ₱90 | VIP ₱100
+2. Chicken 65's = ₱150 | Bulk ₱140 | Wilbert ₱115 | VIP ₱125
+3. Pork 65's = ₱150 | Bulk ₱140 | Wilbert ₱115 | VIP ₱125
+4. Mini Asado = ₱200 | Bulk ₱190 | Wilbert ₱150 | VIP ₱160
+5. Big Siomai = ₱180 | Bulk ₱170 | Wilbert ₱140 | VIP ₱150
+6. Dumplings = ₱130 | Bulk ₱120 | Wilbert ₱100 | VIP ₱110
+7. Siopao = ₱25 each
+8. Sauce = ₱50 per bottle
+
+Note: Wilbert at VIP price pang-reseller lang yan boss.`;
+
+async function sendMessage() {
+  const userMessage = input.value.trim();
+  if (!userMessage) return;
+  
+  messagesDiv.innerHTML += `<div class="user"><b>Ikaw:</b> ${userMessage}</div>`;
+  input.value = '';
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  
+  messagesDiv.innerHTML += `<div class="bot"><b>SiomaiBot:</b> Nag-iisip...</div>`;
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+  try {
+    const response = await fetch('https://openrouter-proxy-tumy.onrender.com/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        "model": "openai/gpt-4o-mini",
+        "messages": [
+          { 
+            "role": "system", 
+            "content": `Ikaw si SiomaiBot ng One Siomai. Friendly ka, maikli sumagot, at Tagalog. Gamitin mo lang tong menu para sumagot: ${MENU}. Pag nagtanong about presyo, sabihin mo agad. Pag wala sa menu, sabihin mo "Wala po tayo nyan boss, pero meron tayong..."` 
+          },
+          { "role": "user", "content": userMessage }
+        ]
+      })
+    });
+    
+    const data = await response.json();
+    const botReply = data.choices[0].message.content;
+    
+    messagesDiv.lastChild.remove(); // burahin "Nag-iisip..."
+    messagesDiv.innerHTML += `<div class="bot"><b>SiomaiBot:</b> ${botReply}</div>`;
+  } catch (error) {
+    messagesDiv.lastChild.remove();
+    messagesDiv.innerHTML += `<div class="bot"><b>SiomaiBot:</b> Ay boss offline pa yata server 😅 Try mo ulit mamaya.`;
+  }
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+</script>
+
+</body>
+</html>
