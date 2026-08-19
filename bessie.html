@@ -1,123 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Bessie AI - One Siomai</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: Arial; background: #1a1a2e; color: white; padding: 20px; margin: 0; }
-   .container { max-width: 600px; margin: auto; }
-    h2 { text-align: center; font-size: 28px; }
-    #chat { background: #16213e; height: 500px; overflow-y: auto; padding: 15px; border-radius: 15px; margin-bottom: 15px; font-size: 18px; }
-   .ai { color: #00d4ff; margin: 10px 0; }
-   .user { color: #00ff88; margin: 10px 0; text-align: right; }
-   .input-area { display: flex; gap: 10px; }
-    input { flex: 1; padding: 15px; font-size: 18px; border-radius: 10px; border: none; }
-    button { padding: 15px 25px; font-size: 18px; border-radius: 10px; border: none; cursor: pointer; background: #00d4ff; color: black; font-weight: bold; }
-    #micBtn { background: #ff006e; }
-    #micBtn.listening { background: #00ff88; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bessie AI - One Siomai</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#1a1a2e;padding:15px;color:white}
+.container{max-width:600px;margin:auto}
+h2{text-align:center;color:#00d4ff;margin-bottom:15px;font-size:26px}
+#chat{background:#16213e;height:450px;overflow-y:auto;padding:15px;border-radius:15px;margin-bottom:15px;font-size:16px}
+.ai{color:#00d4ff;margin:8px 0}
+.user{color:#00ff88;margin:8px 0;text-align:right}
+.input-area{display:flex;gap:8px}
+input{flex:1;padding:14px;font-size:16px;border-radius:10px;border:none}
+button{padding:14px 20px;font-size:16px;border-radius:10px;border:none;cursor:pointer;background:#00d4ff;color:black;font-weight:800}
+#micBtn{background:#ff006e;color:white}
+#micBtn.listening{background:#00ff88}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h2>🤖 BESSIE AI - ONE SIOMAI</h2>
-    <div id="chat"></div>
-    <div class="input-area">
-      <input id="msg" placeholder="Type mo dito o click Mic...">
-      <button id="micBtn" onclick="startListening()">🎤 MIC</button>
-      <button onclick="send()">SEND</button>
-    </div>
+<div class="container">
+  <h2>🤖 BESSIE AI - ONE SIOMAI</h2>
+  <div id="chat"></div>
+  <div class="input-area">
+    <input id="msg" placeholder="Type mo dito o click Mic...">
+    <button id="micBtn" onclick="startListening()">🎤 MIC</button>
+    <button onclick="send()">SEND</button>
   </div>
+</div>
 
-  <script type="module">
-    // FIREBASE CONNECT
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; 
-    
-    const firebaseConfig = {
-      apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
-      authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
-      projectId: "dhan-siomai-pos-fe1e6",
-      storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
-      messagingSenderId: "305932123173",
-      appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
-    };
-    
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    let products = []; // dito natin ilalagay lahat ng products galing firebase
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // KUNIN LAHAT NG PRODUCTS SA FIREBASE PAG OPEN
-    async function loadProducts() {
-      const querySnapshot = await getDocs(collection(db, "products")); // palitan mo "products" kung iba name ng collection mo
-      products = [];
-      querySnapshot.forEach((doc) => {
-        products.push(doc.data());
-      });
-      console.log("Products loaded:", products);
+const firebaseConfig = {
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let products = [];
+
+// KUNIN PRODUCTS GALING SA PAREHONG DB NG POS MO
+async function loadProducts(){
+  const snap = await getDocs(collection(db,"products"));
+  products = [];
+  snap.forEach(d=>products.push({id:d.id,...d.data()}));
+  speak("Hello boss! Naka-connect na ko sa POS mo. May "+products.length+" products tayo.");
+}
+loadProducts();
+
+function speak(text){
+  let chat = document.getElementById("chat");
+  chat.innerHTML += `<div class="ai">Bessie: ${text}</div>`;
+  chat.scrollTop = chat.scrollHeight;
+  let speech = new SpeechSynthesisUtterance(text);
+  speech.lang = 'fil-PH';
+  speech.rate = 1;
+  speechSynthesis.speak(speech);
+}
+
+window.startListening = function() {
+  let btn = document.getElementById("micBtn");
+  btn.classList.add("listening");
+  btn.innerText = "🔴 NAKIKINIG...";
+  let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = 'fil-PH';
+  recognition.onresult = function(event) {
+    let speech = event.results[0][0].transcript;
+    document.getElementById("msg").value = speech;
+    send();
+  }
+  recognition.onend = function() {
+    btn.classList.remove("listening");
+    btn.innerText = "🎤 MIC";
+  }
+  recognition.start();
+}
+
+window.send = async function() {
+  let input = document.getElementById("msg");
+  let user = input.value.toLowerCase();
+  if(user === "") return;
+  document.getElementById("chat").innerHTML += `<div class="user">Ikaw: ${user}</div>`;
+  
+  // UTOS NI BESSIE + HAHANAP SA POS PRODUCTS
+  if(user.includes("tigil") || user.includes("bye")) speak("Bye boss!");
+  
+  else if(user.includes("payment") || user.includes("bayad")) 
+    speak("Tanggap natin Cash, Gcash, at Bank Transfer");
+  
+  else if(user.includes("ano meron") || user.includes("product")) {
+    let list = products.map(p => p.name).join(", ");
+    speak("Meron tayo ngayon: " + list);
+  }
+  
+  else if(user.includes("stock") || user.includes("ilang")) {
+    // Hanapin kung may specific product
+    let found = products.find(p => user.includes(p.name.toLowerCase()));
+    if(found) {
+      let stock = Number(found.stock) || 0;
+      if(stock <= 0) speak(`Out of stock na yung ${found.name} boss`);
+      else if(stock <= 5) speak(`Low stock na yung ${found.name}. May ${stock} na lang`);
+      else speak(`May ${stock} pa tayong ${found.name}`);
+    } else {
+      // List lahat ng low stock
+      let low = products.filter(p => Number(p.stock) <= 5);
+      if(low.length > 0){
+        let txt = low.map(p => `${p.name}: ${p.stock}`).join(", ");
+        speak("Mga low stock natin: " + txt);
+      } else speak("Puno pa lahat ng stock natin boss");
     }
-    loadProducts();
+  }
+  
+  else if(user.includes("magkano") || user.includes("price")) {
+    let found = products.find(p => user.includes(p.name.toLowerCase()));
+    if(found) {
+      speak(`${found.name} ay Retail ₱${found.price}. Wilbert ₱${found.wilbertPrice || '-'}. VIP ₱${found.vipPrice || '-'}`);
+    } else speak("Anong product boss? Sabihin mo 65s, 30s, Big Siomai");
+  }
+  
+  else speak("Hindi ko gets boss. Try mo: magkano 65s, ilang stock, ano meron");
+  
+  input.value = "";
+}
 
-    // PARA MAG SALITA SI BESSIE
-    function speak(text) {
-      let chat = document.getElementById("chat");
-      chat.innerHTML += `<div class="ai">Bessie: ${text}</div>`;
-      chat.scrollTop = chat.scrollHeight;
-      let speech = new SpeechSynthesisUtterance(text);
-      speech.lang = 'fil-PH';
-      speechSynthesis.speak(speech);
-    }
-
-    // PARA SA MIC
-    window.startListening = function() {
-      let btn = document.getElementById("micBtn");
-      btn.classList.add("listening");
-      btn.innerText = "🔴 NAKIKINIG...";
-      let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = 'fil-PH';
-      recognition.onresult = function(event) {
-        let speech = event.results[0][0].transcript;
-        document.getElementById("msg").value = speech;
-        send();
-      }
-      recognition.onend = function() {
-        btn.classList.remove("listening");
-        btn.innerText = "🎤 MIC";
-      }
-      recognition.start();
-    }
-
-    // UTOS NI BESSIE + HAHANAP SA FIREBASE
-    window.send = async function() {
-      let input = document.getElementById("msg");
-      let user = input.value.toLowerCase();
-      if(user === "") return;
-      document.getElementById("chat").innerHTML += `<div class="user">Ikaw: ${user}</div>`;
-      
-      if(user.includes("tigil") || user.includes("bye")) speak("Bye boss!");
-      else if(user.includes("payment") || user.includes("bayad")) speak("Tanggap natin Cash, Gcash, at Bank Transfer");
-      else if(user.includes("magkano") || user.includes("price")) {
-        // HANAPIN SA FIREBASE
-        let found = products.find(p => user.includes(p.name.toLowerCase()));
-        if(found) {
-          speak(`${found.name} ay ${found.price} pesos. Stock: ${found.stock}`);
-        } else {
-          speak("Di ko mahanap yan boss. Try mo sabihin 65s, 30s, Big Siomai");
-        }
-      }
-      else if(user.includes("product") || user.includes("ano meron")) {
-        let list = products.map(p => p.name).join(", ");
-        speak(`Meron tayo: ${list}`);
-      }
-      else speak("Narinig ko: " + user);
-      
-      input.value = "";
-    }
-
-    document.getElementById("msg").addEventListener("keypress", function(e){
-      if(e.key === "Enter") send();
-    });
-
-    speak("Hello boss! Naka-connect na ko sa Firebase mo. Tanong mo presyo o stock");
-  </script>
+document.getElementById("msg").addEventListener("keypress", function(e){
+  if(e.key === "Enter") send();
+});
+</script>
 </body>
 </html>
