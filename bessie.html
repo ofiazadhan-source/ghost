@@ -28,39 +28,52 @@
     </div>
   </div>
 
-  <script>
-    // Para magsalita si Bessie
+  <script type="module">
+    // FIREBASE CONNECT
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"; 
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+      authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+      projectId: "dhan-siomai-pos-fe1e6",
+      storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+      messagingSenderId: "305932123173",
+      appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let products = []; // dito natin ilalagay lahat ng products galing firebase
+
+    // KUNIN LAHAT NG PRODUCTS SA FIREBASE PAG OPEN
+    async function loadProducts() {
+      const querySnapshot = await getDocs(collection(db, "products")); // palitan mo "products" kung iba name ng collection mo
+      products = [];
+      querySnapshot.forEach((doc) => {
+        products.push(doc.data());
+      });
+      console.log("Products loaded:", products);
+    }
+    loadProducts();
+
+    // PARA MAG SALITA SI BESSIE
     function speak(text) {
       let chat = document.getElementById("chat");
       chat.innerHTML += `<div class="ai">Bessie: ${text}</div>`;
       chat.scrollTop = chat.scrollHeight;
-      
-      // Magsasalita na si Bessie
       let speech = new SpeechSynthesisUtterance(text);
-      speech.lang = 'fil-PH'; // Tagalog
-      speech.rate = 1;
+      speech.lang = 'fil-PH';
       speechSynthesis.speak(speech);
     }
 
-    // Para magtype
-    function send() {
-      let input = document.getElementById("msg");
-      let user = input.value.toLowerCase();
-      if(user === "") return;
-      
-      document.getElementById("chat").innerHTML += `<div class="user">Ikaw: ${user}</div>`;
-      reply(user);
-      input.value = "";
-    }
-
-    // Para sa MIC
-    function startListening() {
+    // PARA SA MIC
+    window.startListening = function() {
       let btn = document.getElementById("micBtn");
       btn.classList.add("listening");
       btn.innerText = "🔴 NAKIKINIG...";
-      
-      let recognition = new webkitSpeechRecognition() || new SpeechRecognition();
-      recognition.lang = 'fil-PH'; // Tagalog
+      let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'fil-PH';
       recognition.onresult = function(event) {
         let speech = event.results[0][0].transcript;
         document.getElementById("msg").value = speech;
@@ -73,22 +86,38 @@
       recognition.start();
     }
 
-    // Utak ni Bessie
-    function reply(user) {
-      if(user.includes("tigil") || user.includes("bye")) speak("Bye boss! Ingat ka");
-      else if(user.includes("payment") || user.includes("bayad")) speak("Tanggap natin Cash, Gcash, at Bank Transfer boss");
-      else if(user.includes("price") || user.includes("presyo")) speak("May Retail, Wilbert, at VIP pricing tayo");
-      else if(user.includes("product") || user.includes("produkto")) speak("May 65s, 30s, Big Siomai, Dumplings, at Siopao tayo");
-      else if(user.includes("65s")) speak("Ang 65s Retail ay 12 pesos each");
+    // UTOS NI BESSIE + HAHANAP SA FIREBASE
+    window.send = async function() {
+      let input = document.getElementById("msg");
+      let user = input.value.toLowerCase();
+      if(user === "") return;
+      document.getElementById("chat").innerHTML += `<div class="user">Ikaw: ${user}</div>`;
+      
+      if(user.includes("tigil") || user.includes("bye")) speak("Bye boss!");
+      else if(user.includes("payment") || user.includes("bayad")) speak("Tanggap natin Cash, Gcash, at Bank Transfer");
+      else if(user.includes("magkano") || user.includes("price")) {
+        // HANAPIN SA FIREBASE
+        let found = products.find(p => user.includes(p.name.toLowerCase()));
+        if(found) {
+          speak(`${found.name} ay ${found.price} pesos. Stock: ${found.stock}`);
+        } else {
+          speak("Di ko mahanap yan boss. Try mo sabihin 65s, 30s, Big Siomai");
+        }
+      }
+      else if(user.includes("product") || user.includes("ano meron")) {
+        let list = products.map(p => p.name).join(", ");
+        speak(`Meron tayo: ${list}`);
+      }
       else speak("Narinig ko: " + user);
+      
+      input.value = "";
     }
 
-    // Enter to send
     document.getElementById("msg").addEventListener("keypress", function(e){
       if(e.key === "Enter") send();
     });
 
-    speak("Hello boss! Ako si Bessie ng One Siomai. Click mo yung MIC o type ka lang");
+    speak("Hello boss! Naka-connect na ko sa Firebase mo. Tanong mo presyo o stock");
   </script>
 </body>
 </html>
