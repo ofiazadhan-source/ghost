@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bessie AI - One Siomai</title>
+  <style>
+    body { font-family: Arial; background: #f2f2f2; padding: 20px; }
+    #chat { background: white; height: 400px; overflow-y: scroll; padding: 10px; border-radius: 10px; }
+    .ai { color: blue; margin: 5px 0; }
+    .user { color: green; margin: 5px 0; text-align: right; }
+    input { width: 80%; padding: 10px; }
+    button { padding: 10px 20px; }
+  </style>
+</head>
+<body>
+  <h2>🤖 Bessie AI - One Siomai</h2>
+  <div id="chat"></div>
+  <input id="msg" placeholder="Type mo dito...">
+  <button onclick="send()">Send</button>
+
+  <script>
+    function speak(text) {
+      let chat = document.getElementById("chat");
+      chat.innerHTML += `<div class="ai">Bessie: ${text}</div>`;
+    }
+    function send() {
+      let input = document.getElementById("msg");
+      let user = input.value.toLowerCase();
+      document.getElementById("chat").innerHTML += `<div class="user">Ikaw: ${user}</div>`;
+      
+      if(user.includes("tigil")) speak("Bye boss!");
+      else if(user.includes("payment") || user.includes("bayad")) speak("Tanggap natin Cash, Gcash, at Bank Transfer");
+      else if(user.includes("price") || user.includes("presyo")) speak("May Retail, Wilbert, at VIP pricing tayo");
+      else if(user.includes("product") || user.includes("produkto")) speak("May 65s, 30s, Big Siomai, Dumplings, at Siopao");
+      else speak("Narinig ko: " + user);
+      
+      input.value = "";
+    }
+    speak("Hello boss! Ako si Bessie ng One Siomai. Type mo lang");
+  </script>
+</body>
+</html>
