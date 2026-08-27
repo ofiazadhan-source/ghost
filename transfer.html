@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transfer / Libre</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:15px}
+.container{max-width:480px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:15px;font-size:22px;display:flex;justify-content:space-between;align-items:center}
+.back-btn{background:#757575;color:white;border:none;padding:8px 15px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+.section{background:#FFF8E1;border:2px dashed #FFCC80;border-radius:12px;padding:15px;margin-bottom:15px}
+.section h4{color:#D32F2F;margin-bottom:10px;font-size:14px}
+.input-group{margin-bottom:12px}
+.input-group label{font-size:12px;font-weight:700;color:#D32F2F;margin-bottom:4px;display:block}
+.input-group input,.input-group textarea,.input-group select{width:100%;padding:12px;border:2px solid #FFE0B2;border-radius:8px;font-size:14px;background:white}
+.input-group textarea{resize:vertical;min-height:60px}
+.input-group input[type="file"]{padding:8px;border:2px dashed #FFCC80;background:#FFFDF7}
+.img-preview{max-width:100%;max-height:200px;margin-top:8px;border-radius:8px;border:2px solid #FFCC80;display:none}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row select{flex:2}
+.add-row input{flex:1;text-align:center;font-weight:700}
+.add-btn{padding:12px 20px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:800;cursor:pointer}
+.stock-info{font-size:11px;color:#2E7D32;font-weight:700;margin-top:4px}
+.save-btn{width:100%;padding:16px;background:#D32F2F;color:white;border:none;border-radius:12px;font-weight:900;font-size:16px;cursor:pointer;margin-top:15px}
+.cart-item{background:#FFFDF7;border:1.5px solid #FFCC80;border-radius:10px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.cart-name{font-weight:700;color:#D32F2F;font-size:13px}
+.cart-qty{font-size:12px;color:#555}
+.remove-btn{background:#C62828;color:white;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer}
+.total-kg{background:#2E7D32;color:white;padding:12px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px}
+.loading{text-align:center;color:#D32F2F;font-weight:700;padding:20px}
+small{font-size:10px;color:#2E7D32;font-weight:600}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>🎁 Transfer / Libre <button class="back-btn" onclick="window.location='index.html'">← Back</button></h2>
+
+  <div class="section">
+    <h4>👤 Kanino Ibibigay</h4>
+    <div class="input-group"><label>Name *</label><input type="text" id="recName" placeholder="ex: Juan Dela Cruz"></div>
+    <div class="input-group"><label>Address *</label><textarea id="recAddress" placeholder="ex: Blk 5 Lot 12, Taguig City"></textarea></div>
+    <div class="input-group"><label>Reason / Note</label><input type="text" id="recNote" placeholder="ex: Free sample, Promo"></div>
+  </div>
+
+  <div class="section">
+    <h4>🛒 Select Products</h4>
+    <div class="input-group">
+      <label>Product</label>
+      <select id="prodDropdown" onchange="updateStockInfo()">
+        <option value="">-- Pili ka product --</option>
+      </select>
+      <div class="stock-info" id="stockInfo"></div>
+    </div>
+    <div class="add-row">
+      <input type="number" id="prodQty" value="1" min="1">
+      <button class="add-btn" onclick="addToCart()">+ Add</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h4>📦 Cart</h4>
+    <div id="totalKg" class="total-kg" style="display:none">TOTAL: 0 KG</div>
+    <div id="cartList"><div style="text-align:center;color:#999">Wala pang items</div></div>
+  </div>
+
+  <div class="section">
+    <h4>📷 Proof na Pinadala *</h4>
+    <div class="input-group">
+      <label>Upload Picture - Resibo / Delivery</label>
+      <input type="file" id="proofImage" accept="image/*">
+      <img id="imgPreview" class="img-preview">
+      <small>Kailangan to para may record boss</small>
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="saveTransfer()">✓ SAVE TRANSFER</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",projectId: "dhan-siomai-pos-fe1e5"};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let products = [];
+let cart = [];
+let base64Proof = '';
+
+async function loadProducts(){
+  const snap = await getDocs(collection(db,"products"));
+  products = [];
+  snap.forEach(d=>products.push({id:d.id,...d.data()}));
+  
+  const dropdown = document.getElementById('prodDropdown');
+  products.forEach(p=>{
+    dropdown.innerHTML += `<option value="${p.id}">${p.name} - Stock: ${p.stock || 0}</option>`;
+  });
+}
+
+window.updateStockInfo = () => {
+  const id = document.getElementById('prodDropdown').value;
+  const prod = products.find(p=>p.id===id);
+  document.getElementById('stockInfo').innerText = prod ? `Available Stock: ${prod.stock}` : '';
+  document.getElementById('prodQty').max = prod ? prod.stock : 1;
+}
+
+window.addToCart = () => {
+  const prodId = document.getElementById('prodDropdown').value;
+  const qty = parseInt(document.getElementById('prodQty').value);
+  const prod = products.find(p=>p.id===prodId);
+  
+  if(!prodId) { alert('Pili ka muna product!'); return; }
+  if(qty < 1) { alert('Qty dapat 1 pataas'); return; }
+  if(qty > prod.stock) { alert('Kulang stock boss!'); return; }
+
+  const existing = cart.find(c=>c.id===prodId);
+  if(existing) existing.qty += qty;
+  else cart.push({id:prodId, name:prod.name, qty:qty, grams:prod.gramsPerPack || 1000});
+
+  document.getElementById('prodDropdown').value = '';
+  document.getElementById('prodQty').value = 1;
+  document.getElementById('stockInfo').innerText = '';
+  renderCart();
+}
+
+function renderCart(){
+  if(cart.length === 0) {
+    document.getElementById('cartList').innerHTML = '<div style="text-align:center;color:#999">Wala pang items</div>';
+    document.getElementById('totalKg').style.display = 'none';
+    return;
+  }
+
+  let totalGrams = 0;
+  let html = '';
+  cart.forEach((c,i)=>{
+    const itemKg = (c.grams * c.qty) / 1000;
+    totalGrams += c.grams * c.qty;
+    html += `
+    <div class="cart-item">
+      <div>
+        <div class="cart-name">${c.name}</div>
+        <div class="cart-qty">Qty: ${c.qty} = ${itemKg.toFixed(2)} KG</div>
+      </div>
+      <button class="remove-btn" onclick="removeCart(${i})">Remove</button>
+    </div>`;
+  });
+  document.getElementById('cartList').innerHTML = html;
+  document.getElementById('totalKg').style.display = 'block';
+  document.getElementById('totalKg').innerText = `TOTAL: ${(totalGrams/1000).toFixed(2)} KG`;
+}
+
+window.removeCart = (i) => {
+  cart.splice(i,1);
+  renderCart();
+}
+
+document.getElementById('proofImage').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if(file) {
+    base64Proof = await compressImage(file);
+    document.getElementById('imgPreview').src = base64Proof;
+    document.getElementById('imgPreview').style.display = 'block';
+  }
+});
+
+async function compressImage(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        let quality = 0.7; let maxWidth = 800;
+        let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d');
+        let width = img.width; let height = img.height;
+        if(width > maxWidth) { height = (maxWidth / width) * height; width = maxWidth; }
+        canvas.width = width; canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      }
+    }
+  });
+}
+
+window.saveTransfer = async () => {
+  const name = document.getElementById('recName').value.trim();
+  const address = document.getElementById('recAddress').value.trim();
+  const note = document.getElementById('recNote').value.trim();
+
+  if(!name ||!address) { alert('Lagay mo name at address boss!'); return; }
+  if(cart.length === 0) { alert('Mag add ka muna ng products!'); return; }
+  if(!base64Proof) { alert('Mag upload ka muna ng proof boss!'); return; }
+
+  const btn = document.querySelector('.save-btn');
+  btn.disabled = true;
+  btn.innerText = 'Saving...';
+
+  try {
+    let totalGrams = cart.reduce((a,b)=>a + (b.grams * b.qty), 0);
+
+    await runTransaction(db, async (transaction) => {
+      for(const item of cart){
+        const prodRef = doc(db, "products", item.id);
+        const prodSnap = await transaction.get(prodRef);
+        if(!prodSnap.exists()) throw "Product not found";
+        const currentStock = prodSnap.data().stock || 0;
+        const newStock = currentStock - item.qty;
+        if(newStock < 0) throw `Kulang stock: ${item.name}`;
+        transaction.update(prodRef, { stock: newStock });
+      }
+
+      const transferRef = doc(collection(db, "transfers"));
+      transaction.set(transferRef, {
+        type: 'Transfer',
+        recipientName: name,
+        recipientAddress: address,
+        note: note,
+        items: cart,
+        totalQty: cart.reduce((a,b)=>a+b.qty,0),
+        totalKg: totalGrams / 1000,
+        proofImage: base64Proof,
+        timestamp: serverTimestamp(),
+        isPaid: false,
+        totalAmount: 0
+      });
+    });
+
+    alert('✓ Transfer Saved! May proof at auto bawas na sa stock.');
+    cart = []; base64Proof = '';
+    document.getElementById('recName').value = '';
+    document.getElementById('recAddress').value = '';
+    document.getElementById('recNote').value = '';
+    document.getElementById('proofImage').value = '';
+    document.getElementById('imgPreview').style.display = 'none';
+    renderCart();
+    loadProducts();
+
+  } catch(error) {
+    alert('Error: ' + error);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = '✓ SAVE TRANSFER';
+  }
+}
+
+loadProducts();
+</script>
+</body>
+</html>
