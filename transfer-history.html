@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transfer History</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:15px}
+.container{max-width:900px;margin:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:15px;font-size:24px;display:flex;justify-content:space-between;align-items:center}
+.back-btn{background:#757575;color:white;border:none;padding:8px 15px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+.section-title{background:#D32F2F;color:white;padding:10px;border-radius:10px;text-align:center;font-weight:800;margin:15px 0 10px;font-size:15px}
+.transfer-card{background:#FFFDF7;border:2px solid #FFCC80;border-radius:12px;padding:12px;margin-bottom:12px;position:relative}
+.transfer-head{display:flex;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:5px;align-items:center}
+.transfer-date{color:#D32F2F;font-weight:700;font-size:13px}
+.badge{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;background:#FFE0B2;color:#E65100}
+.delete-btn{position:absolute;top:10px;right:10px;background:#C62828;color:white;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer}
+.transfer-to{font-size:14px;font-weight:800;color:#D32F2F;margin-bottom:4px}
+.transfer-address{font-size:11px;color:#555;margin-bottom:8px}
+.transfer-items{font-size:12px;color:#333;line-height:1.6;margin-bottom:8px}
+.transfer-total{font-size:16px;font-weight:900;color:#2E7D32}
+.proof-img{max-width:120px;max-height:120px;margin-top:8px;border-radius:8px;border:2px solid #FFB74D;cursor:pointer}
+.loading{text-align:center;padding:40px;color:#D32F2F;font-weight:700}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>🎁 Transfer History <button class="back-btn" onclick="window.location='index.html'">← Back</button></h2>
+
+  <div class="section-title">📋 Transfers List - Sorted by Time</div>
+  <div id="transferList" class="loading">Loading...</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, query, orderBy, doc, deleteDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",projectId: "dhan-siomai-pos-fe1e5"};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function loadTransfers(){
+  document.getElementById('transferList').innerHTML = '<div class="loading">Loading...</div>';
+  
+  const q = query(collection(db,"transfers"), orderBy("timestamp","desc"));
+  const snap = await getDocs(q);
+  
+  if(snap.empty){
+    document.getElementById('transferList').innerHTML = '<div style="text-align:center;color:#999">No transfers yet</div>';
+    return;
+  }
+
+  let html = '';
+  snap.forEach(docSnap=>{
+    const t = docSnap.data();
+    const id = docSnap.id;
+    const date = t.timestamp ? t.timestamp.toDate().toLocaleString('en-PH', {timeZone: 'Asia/Manila'}) : 'N/A';
+    
+    let items = '';
+    t.items.forEach(i=>{
+      const kg = ((i.grams * i.qty)/1000).toFixed(2);
+      items += `${i.name} x${i.qty} = ${kg}kg<br>`;
+    });
+
+    let proof = t.proofImage ? `<img src="${t.proofImage}" class="proof-img" onclick="window.open('${t.proofImage}')">` : '';
+
+    html += `
+    <div class="transfer-card" id="card${id}">
+      <button class="delete-btn" onclick="deleteTransfer('${id}')">🗑️ Delete</button>
+      <div class="transfer-head">
+        <span class="transfer-date">${date}</span>
+        <span class="badge">FREE</span>
+      </div>
+      <div class="transfer-to">👤 To: ${t.recipientName}</div>
+      <div class="transfer-address">📍 ${t.recipientAddress}</div>
+      ${t.note ? `<div style="font-size:11px;color:#666;margin-bottom:8px">Note: ${t.note}</div>` : ''}
+      <div class="transfer-items">${items}</div>
+      <div class="transfer-total">TOTAL: ${t.totalKg ? t.totalKg.toFixed(2) : 0} KG - ${t.totalQty} items</div>
+      ${proof}
+    </div>`;
+  });
+
+  document.getElementById('transferList').innerHTML = html;
+}
+
+window.deleteTransfer = async (id) => {
+  if(!confirm('Sure ka boss? Ibabalik sa stock yung mga items nito.')) return;
+
+  try {
+    const transferRef = doc(db, "transfers", id);
+    
+    // KUHA MUNA NG DATA BAGO DELETE PARA MAIBALIK SA STOCK
+    const snap = await getDocs(collection(db,"transfers"));
+    const transferData = snap.docs.find(d=>d.id===id).data();
+
+    await runTransaction(db, async (transaction) => {
+      // 1. IBALIK SA STOCK
+      for(const item of transferData.items){
+        const prodRef = doc(db, "products", item.id);
+        const prodSnap = await transaction.get(prodRef);
+        if(prodSnap.exists()){
+          const currentStock = prodSnap.data().stock || 0;
+          transaction.update(prodRef, { stock: currentStock + item.qty });
+        }
+      }
+      // 2. DELETE YUNG TRANSFER
+      transaction.delete(transferRef);
+    });
+
+    alert('✓ Deleted! Naibalik na sa stock yung items.');
+    document.getElementById('card'+id).remove(); // alis sa screen agad
+    
+  } catch(error) {
+    alert('Error: ' + error);
+  }
+}
+
+loadTransfers();
+</script>
+</body>
+</html>
