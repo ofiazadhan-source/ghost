@@ -1,1 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Naka-Buko Daily Sales</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:10px}
+.container{max-width:480px;margin:auto;background:white;border-radius:20px;padding:15px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:15px;font-size:20px;display:flex;justify-content:space-between;align-items:center}
+.back-btn{background:#757575;color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600}
+.date-row{display:flex;gap:6px;margin-bottom:15px;flex-wrap:wrap}
+.date-row input{padding:10px;border:2px solid #FFCC80;border-radius:8px;flex:1;min-width:100px;font-size:12px;background:#FFFDF7}
+.load-btn{padding:10px 15px;background:#D32F2F;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px}
+.all-btn{padding:10px 15px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px}
+.section-title{background:#D32F2F;color:white;padding:10px;border-radius:10px;text-align:center;font-weight:800;margin:15px 0 10px;font-size:14px}
 
+/* BUKO CARD */
+.buko-card{background:linear-gradient(135deg,#FFFDF7,#FFE0B2);border:3px solid #FFB74D;border-radius:15px;padding:12px;margin-bottom:15px}
+.buko-date{font-size:15px;font-weight:900;color:#D32F2F;margin-bottom:10px;text-align:center}
+.buko-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.buko-item{background:white;padding:8px;border-radius:10px;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+.buko-item h4{font-size:10px;color:#666;margin-bottom:3px;font-weight:700}
+.buko-item h2{font-size:16px;color:#000;font-weight:900}
+.net{grid-column:span 3;background:#2E7D32;color:white;padding:12px;margin-top:8px;border-radius:12px}
+.net h4{color:#C8E6C9;font-size:11px}
+.net h2{color:white;font-size:20px}
+.exp-red{color:#C62828!important}
+
+/* SALES LIST SA LOOB NG BUKO */
+.sale-list-title{font-size:12px;font-weight:800;color:#D32F2F;margin:12px 0 6px;border-top:2px dashed #FFCC80;padding-top:8px;text-align:center}
+.sale-card{background:white;border:2px solid #FFCC80;border-radius:10px;padding:10px;margin-bottom:8px}
+.sale-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:4px}
+.sale-date{color:#D32F2F;font-weight:700;font-size:11px}
+.badge{padding:3px 6px;border-radius:6px;font-size:9px;font-weight:700}
+.badge-rtl{background:#C8E6C9;color:#2E7D32}
+.badge-wlb{background:#BBDEFB;color:#1565C0}
+.badge-cash{background:#E0E0E0;color:#424242}
+.badge-gcash{background:#B3E5FC;color:#0277BD}
+.badge-bank{background:#FFE0B2;color:#E65100}
+.sale-total{font-size:18px;font-weight:900;color:#2E7D32;margin-bottom:4px;text-align:center}
+.sale-items{font-size:11px;color:#555;text-align:center}
+.proof-img{width:100%;height:auto;margin-top:8px;border-radius:8px;border:2px solid #FFB74D;cursor:pointer;object-fit:contain}
+.proof-note{font-size:9px;color:#D32F2F;text-align:center;margin-top:4px;font-weight:700}
+.loading{text-align:center;padding:40px;color:#D32F2F;font-weight:700}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>📖 Naka-Buko Daily Sales <button class="back-btn" onclick="window.location='net-profit.html'">← Back</button></h2>
+
+  <div class="date-row">
+    <input type="date" id="dateFrom">
+    <input type="date" id="dateTo">
+    <button class="load-btn" onclick="loadBuko()">Load</button>
+  </div>
+  <button class="all-btn" onclick="loadAllBuko()" style="width:100%;margin-bottom:15px">Load All</button>
+
+  <div class="section-title">📅 SALES PER DAY</div>
+  <div id="bukoList" class="loading">Loading...</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",projectId: "dhan-siomai-pos-fe1e5"};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const today = new Date();
+document.getElementById('dateFrom').valueAsDate = today;
+document.getElementById('dateTo').valueAsDate = today;
+
+const peso = n => '₱' + Number(n).toLocaleString();
+
+async function getDailyExpenses(from, to){
+  const q = query(collection(db,"daily_expenses"),
+    where("timestamp",">=",Timestamp.fromDate(from)),
+    where("timestamp","<=",Timestamp.fromDate(to))
+  );
+  const snap = await getDocs(q);
+  let total = 0;
+  snap.forEach(doc=>{ total += Number(doc.data().amount) || 0; });
+  return total;
+}
+
+async function loadBuko(){
+  document.getElementById('bukoList').innerHTML = '<div class="loading">Loading...</div>';
+  const fromVal = document.getElementById('dateFrom').value;
+  const toVal = document.getElementById('dateTo').value;
+  const from = new Date(fromVal + 'T00:00:00');
+  const to = new Date(toVal + 'T23:59:59');
+
+  const q = query(collection(db,"sales"),
+    where("timestamp",">=",Timestamp.fromDate(from)),
+    where("timestamp","<=",Timestamp.fromDate(to)),
+    orderBy("timestamp","desc")
+  );
+  const snap = await getDocs(q);
+  processBuko(snap, from, to);
+}
+
+async function loadAllBuko(){
+  document.getElementById('bukoList').innerHTML = '<div class="loading">Loading...</div>';
+  const from = new Date(2024,0,1);
+  const to = new Date();
+  const q = query(collection(db,"sales"), orderBy("timestamp","desc"));
+  const snap = await getDocs(q);
+  processBuko(snap, from, to);
+}
+
+async function processBuko(snap, from, to){
+  let dailyData = {};
+
+  snap.forEach(doc=>{
+    const s = doc.data();
+    const dateObj = s.timestamp.toDate();
+    const dateKey = dateObj.toLocaleDateString('en-PH', {timeZone: 'Asia/Manila'});
+
+    if(!dailyData[dateKey]) dailyData[dateKey] = { sales: [], total: 0, retail: 0, wholesale: 0, cash: 0, gcash: 0, bank: 0 };
+
+    const saleType = s.saleType || 'Retail';
+    const payMethod = s.paymentMethod || 'Cash';
+    const amount = Number(s.total) || 0;
+
+    dailyData[dateKey].sales.push(s);
+    dailyData[dateKey].total += amount;
+    if(saleType === 'Wilbert' || saleType === 'VIP') dailyData[dateKey].wholesale += amount;
+    else dailyData[dateKey].retail += amount;
+    if(payMethod === 'Gcash') dailyData[dateKey].gcash += amount;
+    else if(payMethod === 'Bank Transfer') dailyData[dateKey].bank += amount;
+    else dailyData[dateKey].cash += amount;
+  });
+
+  let html = '';
+  for(const dateKey in dailyData){
+    const d = dailyData[dateKey];
+    const dateForExp = new Date(dateKey);
+    const exp = await getDailyExpenses(dateForExp, dateForExp);
+    const net = d.retail - exp;
+
+    html += `
+    <div class="buko-card">
+      <div class="buko-date">📅 ${dateKey} - ${d.sales.length} Transactions</div>
+      <div class="buko-grid">
+        <div class="buko-item"><h4>Retail</h4><h2>${peso(d.retail)}</h2></div>
+        <div class="buko-item"><h4>Wholesale</h4><h2>${peso(d.wholesale)}</h2></div>
+        <div class="buko-item"><h4>Total</h4><h2>${peso(d.total)}</h2></div>
+        <div class="buko-item"><h4>Cash</h4><h2>${peso(d.cash)}</h2></div>
+        <div class="buko-item"><h4>GCash</h4><h2>${peso(d.gcash)}</h2></div>
+        <div class="buko-item"><h4>Bank</h4><h2>${peso(d.bank)}</h2></div>
+        <div class="buko-item"><h4>Expenses</h4><h2 class="exp-red">-${peso(exp)}</h2></div>
+      </div>
+      <div class="net"><h4>NET PROFIT</h4><h2>${peso(net)}</h2></div>
+
+      <div class="sale-list-title">📋 Sales List With Proof</div>
+    `;
+
+    d.sales.forEach(s => {
+      const date = s.timestamp.toDate().toLocaleString('en-PH', {timeZone: 'Asia/Manila'});
+      const saleType = s.saleType || 'Retail';
+      const payMethod = s.paymentMethod || 'Cash';
+      const bankName = s.bankName || '';
+      const typeBadge = saleType==='Wilbert'? 'badge-wlb' : 'badge-rtl';
+      const payBadge = payMethod==='Gcash'? 'badge-gcash' : payMethod==='Bank Transfer'? 'badge-bank' : 'badge-cash';
+      let items = s.items.map(i=>`${i.name} x${i.qty} = ₱${Number(i.total).toFixed(2)}`).join('<br>');
+      let proof = s.proofOfPayment? `<img src="${s.proofOfPayment}" class="proof-img" onclick="window.open('${s.proofOfPayment}')"><div class="proof-note">Tap to view full image</div>` : '';
+
+      html += `
+      <div class="sale-card">
+        <div class="sale-head">
+          <span class="sale-date">${date}</span>
+          <div>
+            <span class="badge ${typeBadge}">${saleType.substring(0,3).toUpperCase()}</span>
+            <span class="badge ${payBadge}">${payMethod.toUpperCase()}${bankName? ' - '+bankName : ''}</span>
+          </div>
+        </div>
+        <div class="sale-total">₱${Number(s.total).toFixed(2)}</div>
+        <div class="sale-items">${items}</div>
+        ${proof}
+      </div>`;
+    });
+
+    html += `</div>`;
+  }
+
+  document.getElementById('bukoList').innerHTML = html || '<div style="text-align:center;color:#999">No sales found</div>';
+}
+
+loadAllBuko();
+</script>
+</body>
+</html>
