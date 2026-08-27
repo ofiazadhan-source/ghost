@@ -1,3 +1,46 @@
+<script>
+// PASSWORD PROTECTION - I-ATTACH LANG ITO SA TAAS
+(function(){
+  const CORRECT_PASSWORD = "siomai123"; // PALITAN MO ITO
+  const KEY = 'siomaiLoggedIn';
+  
+  if(sessionStorage.getItem(KEY) !== 'true'){
+    document.write(`
+    <style>
+      #passScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',Tahoma,sans-serif}
+      .passBox{background:white;padding:30px;border-radius:20px;width:90%;max-width:350px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.3)}
+      .passBox h2{color:#D32F2F;margin-bottom:15px}
+      .passBox input{width:100%;padding:14px;border:2px solid #FFCC80;border-radius:10px;font-size:16px;margin-bottom:15px;text-align:center}
+      .passBox button{width:100%;padding:14px;background:#D32F2F;color:white;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer}
+      .passBox button:active{background:#B71C1C}
+      .err{color:red;font-size:12px;margin-top:8px;display:none}
+    </style>
+    <div id="passScreen">
+      <div class="passBox">
+        <h2>🔒 Siomai POS Login</h2>
+        <input type="password" id="passIn" placeholder="Enter Password">
+        <button onclick="checkP()">LOGIN</button>
+        <div class="err" id="errMsg">Maling password boss!</div>
+      </div>
+    </div>
+    `);
+    
+    window.checkP = function(){
+      if(document.getElementById('passIn').value === CORRECT_PASSWORD){
+        sessionStorage.setItem(KEY, 'true');
+        document.getElementById('passScreen').remove();
+      } else {
+        document.getElementById('errMsg').style.display = 'block';
+        document.getElementById('passIn').value = '';
+      }
+    }
+    
+    document.addEventListener('keypress', function(e){
+      if(e.key === 'Enter') checkP();
+    });
+  }
+})();
+</script>
 <!DOCTYPE html> 
 <html lang="en"> 
 <head> 
