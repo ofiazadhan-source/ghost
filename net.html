@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Net Profit Report</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:#FFF8E1;padding:12px}
+.container{max-width:900px;margin:auto;background:white;border-radius:20px;padding:15px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border-top:6px solid #D32F2F}
+h2{color:#D32F2F;text-align:center;margin-bottom:12px;font-size:22px;display:flex;justify-content:space-between;align-items:center}
+.back-btn{background:#757575;color:white;border:none;padding:8px 15px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+.date-row{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap}
+.date-row input{padding:10px;border:2px solid #FFCC80;border-radius:8px;flex:1;min-width:120px}
+.load-btn{padding:10px 20px;background:#D32F2F;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+.all-btn{padding:10px 20px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+
+/* ACCORDION STYLE */
+.accordion{margin-bottom:12px;border-radius:12px;overflow:hidden;border:2px solid #FFCC80}
+.acc-header{background:#D32F2F;color:white;padding:12px 15px;font-weight:800;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+.acc-header span.arrow{transition:0.3s}
+.acc-content{max-height:0;overflow:hidden;transition:max-height 0.35s ease;background:#FFFDF7}
+.acc-content.open{max-height:5000px;padding:12px}
+.accordion.active .arrow{transform:rotate(180deg)}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.card{padding:12px;border-radius:12px;text-align:center}
+.card h4{font-size:10px;color:#666;margin-bottom:4px}
+.card h2{font-size:18px;margin:0;color:#000;font-weight:900}
+.net-card{background:linear-gradient(135deg,#2E7D32,#388E3C);color:white}
+.net-card h4{color:#C8E6C9} .net-card h2{color:white}
+.exp-card{background:#FFEBEE} .exp-card h2{color:#C62828}
+.retail-card{background:#F3E5F5} .retail-card h2{color:#6A1B9A}
+.wholesale-card{background:#E3F2FD} .wholesale-card h2{color:#1565C0}
+.sales-card{background:#E8F5E9}
+
+.sale-card{background:white;border:1.5px solid #FFCC80;border-radius:10px;padding:10px;margin-bottom:8px}
+.sale-head{display:flex;justify-content:space-between;margin-bottom:6px}
+.sale-date{color:#D32F2F;font-weight:700;font-size:12px}
+.badge{padding:2px 6px;border-radius:6px;font-size:9px;font-weight:700}
+.badge-rtl{background:#C8E6C9;color:#2E7D32}
+.badge-gcash{background:#B3E5FC;color:#0277BD}
+.badge-cash{background:#E0E0E0;color:#424242}
+.badge-bank{background:#FFE0B2;color:#E65100}
+.sale-total{font-size:16px;font-weight:900;color:#2E7D32}
+.sale-items{font-size:11px;color:#555}
+.proof-img{max-width:90px;max-height:90px;margin-top:5px;border-radius:6px;border:1px solid #ddd}
+.exp-item{background:#FFF5F5;border:2px solid #FFCDD2;border-radius:10px;padding:10px;margin-bottom:8px}
+.exp-top{display:flex;justify-content:space-between}
+.exp-desc{font-weight:700;color:#C62828;font-size:13px}
+.exp-amt{font-weight:800;color:#C62828;font-size:14px}
+.exp-date{font-size:10px;color:#999}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>💰 Net Profit Report <button class="back-btn" onclick="window.location='index.html'">← Back</button></h2>
+
+<div class="date-row">
+<input type="date" id="dateFrom">
+<input type="date" id="dateTo">
+<button class="load-btn" onclick="window.loadReport()">Load</button>
+<button class="all-btn" onclick="window.loadAll()">Load All</button>
+</div>
+
+<!-- DAILY -->
+<div class="accordion active">
+<div class="acc-header" onclick="toggleAcc(this)">📅 DAILY COMPUTATION - Selected Date <span class="arrow">▼</span></div>
+<div class="acc-content open">
+<div class="grid">
+<div class="card retail-card"><h4>Retail Sales</h4><h2 id="retailSales">₱0</h2></div>
+<div class="card exp-card"><h4>Daily Expenses</h4><h2 id="dailyExpenses">₱0</h2></div>
+<div class="card net-card"><h4>DAILY NET</h4><h2 id="dailyNet">₱0</h2></div>
+</div>
+</div>
+</div>
+
+<!-- MONTHLY -->
+<div class="accordion active">
+<div class="acc-header" onclick="toggleAcc(this)">📆 MONTHLY COMPUTATION - Whole Month <span class="arrow">▼</span></div>
+<div class="acc-content open">
+<div class="grid">
+<div class="card wholesale-card"><h4>Monthly Total Sales</h4><h2 id="wholesaleSales">₱0</h2></div>
+<div class="card exp-card"><h4>Monthly Expenses</h4><h2 id="monthlyExpenses">₱0</h2></div>
+<div class="card net-card"><h4>MONTHLY NET</h4><h2 id="monthlyNet">₱0</h2></div>
+</div>
+</div>
+</div>
+
+<!-- TOTAL -->
+<div class="accordion active">
+<div class="acc-header" onclick="toggleAcc(this)">💵 TOTAL SUMMARY <span class="arrow">▼</span></div>
+<div class="acc-content open">
+<div class="grid">
+<div class="card sales-card"><h4>Total Sales (Day)</h4><h2 id="totalSales">₱0</h2></div>
+<div class="card" style="background:#F5F5F5"><h4>Cash</h4><h2 id="cashSales">₱0</h2></div>
+<div class="card" style="background:#FFF3E0"><h4>Bank</h4><h2 id="bankSales" style="color:#E65100">₱0</h2></div>
+<div class="card" style="background:#FCE4EC"><h4>GCash</h4><h2 id="gcashSales" style="color:#C2185B">₱0</h2></div>
+<div class="card net-card" style="grid-column:span 2;"><h4>TOTAL NET PROFIT</h4><h2 id="totalNet">₱0</h2></div>
+</div>
+</div>
+</div>
+
+<!-- DAILY EXP -->
+<div class="accordion">
+<div class="acc-header" onclick="toggleAcc(this)">📋 Daily Expenses - With Proof <span class="arrow">▼</span></div>
+<div class="acc-content">
+<div id="dailyExpList">Loading...</div>
+</div>
+</div>
+
+<!-- MONTHLY EXP -->
+<div class="accordion">
+<div class="acc-header" onclick="toggleAcc(this)">📋 Monthly Expenses - With Proof <span class="arrow">▼</span></div>
+<div class="acc-content">
+<div id="monthlyExpList">Loading...</div>
+</div>
+</div>
+
+<!-- SALES LIST -->
+<div class="accordion">
+<div class="acc-header" onclick="toggleAcc(this)">📋 Sales List - Sorted by Time <span class="arrow">▼</span></div>
+<div class="acc-content">
+<div id="salesList">Loading...</div>
+</div>
+</div>
+
+</div>
+
+<script>
+function toggleAcc(el){
+const acc = el.parentElement;
+const content = acc.querySelector('.acc-content');
+acc.classList.toggle('active');
+content.classList.toggle('open');
+}
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where, orderBy, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig = {apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",projectId: "dhan-siomai-pos-fe1e5"};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const today = new Date();
+document.getElementById('dateFrom').valueAsDate = today;
+document.getElementById('dateTo').valueAsDate = today;
+
+async function getDailyExpenses(from, to){
+const q = query(collection(db,"daily_expenses"), where("timestamp",">=",Timestamp.fromDate(from)), where("timestamp","<=",Timestamp.fromDate(to)), orderBy("timestamp","desc") );
+const snap = await getDocs(q);
+let total = 0; let html = '';
+snap.forEach(doc=>{ const e = doc.data(); total += Number(e.amount) || 0; const date = e.timestamp.toDate().toLocaleString('en-PH', {timeZone: 'Asia/Manila'}); const receipt = e.receipt ? `<img src="${e.receipt}" class="proof-img" onclick="window.open('${e.receipt}')">` : ''; html += `<div class="exp-item"><div class="exp-date">${date}</div><div class="exp-top"><span class="exp-desc">${e.desc}</span><span class="exp-amt">-₱${Number(e.amount).toLocaleString()}</span></div>${receipt}</div>`; });
+document.getElementById('dailyExpList').innerHTML = html || '<div style="text-align:center;color:#999">No daily expenses</div>';
+return total;
+}
+async function getMonthlyExpenses(month, year){
+const q = query(collection(db,"monthly_expenses"), where("month","==",month), where("year","==",year) );
+const snap = await getDocs(q);
+let total = 0; let html = '';
+snap.forEach(doc=>{ const e = doc.data(); total += Number(e.amount) || 0; const receipt = e.receipt ? `<img src="${e.receipt}" class="proof-img" onclick="window.open('${e.receipt}')">` : ''; html += `<div class="exp-item"><div class="exp-date">${months[e.month-1]} ${e.year}</div><div class="exp-top"><span class="exp-desc">${e.desc}</span><span class="exp-amt">-₱${Number(e.amount).toLocaleString()}</span></div>${receipt}</div>`; });
+document.getElementById('monthlyExpList').innerHTML = html || '<div style="text-align:center;color:#999">No monthly expenses</div>';
+return total;
+}
+
+window.loadReport = async function(){
+document.getElementById('salesList').innerHTML = 'Loading...';
+const fromVal = document.getElementById('dateFrom').value;
+const toVal = document.getElementById('dateTo').value;
+const from = new Date(fromVal + 'T00:00:00');
+const to = new Date(toVal + 'T23:59:59');
+const month = from.getMonth() + 1;
+const year = from.getFullYear();
+const monthStart = new Date(year, from.getMonth(), 1, 0, 0, 0);
+const monthEnd = new Date(year, from.getMonth() + 1, 0, 23, 59, 59);
+
+const dailyQ = query(collection(db,"sales"), where("timestamp",">=",Timestamp.fromDate(from)), where("timestamp","<=",Timestamp.fromDate(to)), orderBy("timestamp","desc") );
+const dailySnap = await getDocs(dailyQ);
+const monthlyQ = query(collection(db,"sales"), where("timestamp",">=",Timestamp.fromDate(monthStart)), where("timestamp","<=",Timestamp.fromDate(monthEnd)), orderBy("timestamp","desc") );
+const monthlySnap = await getDocs(monthlyQ);
+
+let dailyTotal=0, retail=0, gcash=0, cash=0, bank=0;
+let dailyHtml='';
+dailySnap.forEach(doc=>{
+const s = doc.data();
+const saleType = s.saleType || 'Retail';
+const payMethod = s.paymentMethod || 'Cash';
+dailyTotal += Number(s.total) || 0;
+if(saleType !== 'Wilbert' && saleType !== 'VIP') retail += Number(s.total) || 0;
+if(payMethod === 'Gcash') gcash += Number(s.total) || 0;
+else if(payMethod === 'Bank Transfer') bank += Number(s.total) || 0;
+else cash += Number(s.total) || 0;
+const date = s.timestamp.toDate().toLocaleString('en-PH', {timeZone: 'Asia/Manila'});
+let items = s.items.map(i=>`${i.name} x${i.qty}`).join('<br>');
+let proof = s.proofOfPayment ? `<img src="${s.proofOfPayment}" class="proof-img">` : '';
+dailyHtml += `<div class="sale-card"><div class="sale-head"><span class="sale-date">${date}</span></div><div class="sale-total">₱${Number(s.total).toFixed(2)}</div><div class="sale-items">${items}</div>${proof}</div>`;
+});
+let monthlyTotal = 0;
+monthlySnap.forEach(doc=>{ monthlyTotal += Number(doc.data().total) || 0; });
+
+const dailyExp = await getDailyExpenses(from, to);
+const monthlyExp = await getMonthlyExpenses(month, year);
+
+document.getElementById('totalSales').innerText = '₱'+dailyTotal.toLocaleString();
+document.getElementById('retailSales').innerText = '₱'+retail.toLocaleString();
+document.getElementById('wholesaleSales').innerText = '₱'+monthlyTotal.toLocaleString();
+document.getElementById('dailyExpenses').innerText = '₱'+dailyExp.toLocaleString();
+document.getElementById('monthlyExpenses').innerText = '₱'+monthlyExp.toLocaleString();
+document.getElementById('dailyNet').innerText = '₱'+(retail - dailyExp).toLocaleString();
+document.getElementById('monthlyNet').innerText = '₱'+(monthlyTotal - monthlyExp).toLocaleString();
+document.getElementById('totalNet').innerText = '₱'+((retail - dailyExp) + (monthlyTotal - monthlyExp)).toLocaleString();
+document.getElementById('gcashSales').innerText = '₱'+gcash.toLocaleString();
+document.getElementById('cashSales').innerText = '₱'+cash.toLocaleString();
+document.getElementById('bankSales').innerText = '₱'+bank.toLocaleString();
+document.getElementById('salesList').innerHTML = dailyHtml || 'No sales found';
+}
+
+window.loadAll = async function(){
+document.getElementById('salesList').innerHTML = 'Loading...';
+const now = new Date();
+const month = now.getMonth() + 1;
+const year = now.getFullYear();
+const monthStart = new Date(year, now.getMonth(), 1, 0, 0, 0);
+const monthEnd = new Date(year, now.getMonth() + 1, 0, 23, 59, 59);
+const from = new Date(2024,0,1);
+const to = new Date();
+const dailyQ = query(collection(db,"sales"), orderBy("timestamp","desc"));
+const dailySnap = await getDocs(dailyQ);
+const monthlyQ = query(collection(db,"sales"), where("timestamp",">=",Timestamp.fromDate(monthStart)), where("timestamp","<=",Timestamp.fromDate(monthEnd)), orderBy("timestamp","desc"));
+const monthlySnap = await getDocs(monthlyQ);
+let dailyTotal=0, retail=0, gcash=0, cash=0, bank=0; let html='';
+dailySnap.forEach(doc=>{
+const s = doc.data();
+const payMethod = s.paymentMethod || 'Cash';
+dailyTotal += Number(s.total) || 0;
+retail += Number(s.total) || 0;
+if(payMethod === 'Gcash') gcash += Number(s.total) || 0;
+else if(payMethod === 'Bank Transfer') bank += Number(s.total) || 0;
+else cash += Number(s.total) || 0;
+const date = s.timestamp.toDate().toLocaleString('en-PH', {timeZone: 'Asia/Manila'});
+let items = s.items.map(i=>`${i.name} x${i.qty}`).join('<br>');
+html += `<div class="sale-card"><div class="sale-date">${date}</div><div class="sale-total">₱${Number(s.total).toFixed(2)}</div><div class="sale-items">${items}</div></div>`;
+});
+let monthlyTotal = 0;
+monthlySnap.forEach(doc=>{ monthlyTotal += Number(doc.data().total) || 0; });
+const dailyExp = await getDailyExpenses(from, to);
+const monthlyExp = await getMonthlyExpenses(month, year);
+document.getElementById('totalSales').innerText = '₱'+dailyTotal.toLocaleString();
+document.getElementById('retailSales').innerText = '₱'+retail.toLocaleString();
+document.getElementById('wholesaleSales').innerText = '₱'+monthlyTotal.toLocaleString();
+document.getElementById('dailyExpenses').innerText = '₱'+dailyExp.toLocaleString();
+document.getElementById('monthlyExpenses').innerText = '₱'+monthlyExp.toLocaleString();
+document.getElementById('dailyNet').innerText = '₱'+(retail - dailyExp).toLocaleString();
+document.getElementById('monthlyNet').innerText = '₱'+(monthlyTotal - monthlyExp).toLocaleString();
+document.getElementById('totalNet').innerText = '₱'+((retail - dailyExp) + (monthlyTotal - monthlyExp)).toLocaleString();
+document.getElementById('gcashSales').innerText = '₱'+gcash.toLocaleString();
+document.getElementById('cashSales').innerText = '₱'+cash.toLocaleString();
+document.getElementById('bankSales').innerText = '₱'+bank.toLocaleString();
+document.getElementById('salesList').innerHTML = html || 'No sales found';
+}
+window.loadAll();
+</script>
+</body>
+</html>
