@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Production - Siomai Factory</title>
+<style>
+* {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, sans-serif;}
+body {background:#FFF8E1; padding:10px; min-height:100vh; overflow-x:hidden}
+.container { max-width:480px; margin:auto; background:white; border-radius:20px; padding:15px; box-shadow:0 6px 20px rgba(0,0,0,0.12); border-top:6px solid #D32F2F; overflow:hidden }
+h2 { color:#D32F2F; text-align:center; margin-bottom:8px; font-size:22px; }
+.subtitle { text-align:center; color:#666; font-size:12px; margin-bottom:15px; }
+.back-btn { background:#757575; color:white; border:none; padding:9px 15px; border-radius:8px; cursor:pointer; margin-bottom:12px; font-size:12px; font-weight:600; }
+.date-box { background:#FFF3E0; border:2px solid #FFCC80; border-radius:12px; padding:12px; margin-bottom:12px; }
+.date-box label { display:block; font-weight:800; color:#D32F2F; margin-bottom:6px; text-align:center; font-size:13px; }
+.date-box input { font-size:16px; padding:10px; border:2px solid #D32F2F; border-radius:10px; font-weight:800; color:#D32F2F; text-align:center; width:100%; }
+.select-box { background:white; border:2px solid #D32F2F; border-radius:12px; padding:10px; margin-bottom:10px; overflow:hidden }
+.select-box label { display:block; font-weight:800; color:#D32F2F; font-size:12px; margin-bottom:5px; }
+.select-box select { width:100%; padding:10px; border:2px solid #FFCC80; border-radius:8px; font-size:14px; font-weight:700; background:#FFFDF7; }
+.input-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:10px; }
+.input-box { background:white; border:2px solid #FFB74D; border-radius:8px; padding:6px; }
+.input-box label { display:block; font-size:10px; color:#666; font-weight:700; margin-bottom:3px; text-align:center }
+.input-box input { width:100%; border:none; background:transparent; font-size:18px; font-weight:900; color:#D32F2F; outline:none; text-align:center; }
+.input-box.waste { border-color:#E53935; background:#FFEBEE; }
+.btn-add { width:100%; padding:13px; background:#D32F2F; color:white; border:none; border-radius:10px; font-weight:800; font-size:14px; cursor:pointer; margin-bottom:12px; }
+.cart-box { background:#FFFDF7; border:2px solid #FFCC80; border-radius:12px; padding:10px; margin-bottom:12px; min-height:60px; }
+.cart-item { display:flex; justify-content:space-between; align-items:center; background:white; border:1px solid #FFCC80; border-radius:8px; padding:7px 9px; margin-bottom:5px; font-size:11px; }
+.cart-item b { color:#D32F2F; }
+.remove-btn { background:#C62828; color:white; border:none; padding:4px 8px; border-radius:5px; font-size:10px; font-weight:800; }
+.total-box { background:linear-gradient(135deg, #2E7D32, #388E3C); color:white; border-radius:12px; padding:15px; text-align:center; margin:12px 0; }
+.total-box div { font-size:30px; font-weight:900; }
+.waste-box { background:#FFEBEE; border:2px dashed #E53935; border-radius:12px; padding:12px; margin:12px 0; overflow:hidden }
+.waste-box h3 { color:#C62828; text-align:center; font-size:13px; margin-bottom:8px; }
+.waste-input-row { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; width:100% }
+.waste-input-row input { width:100%; padding:10px; border:2px solid #FF8A65; border-radius:8px; font-weight:800; text-align:center; font-size:13px; }
+.waste-preview { max-width:100%; max-height:150px; border-radius:10px; margin-top:6px; display:none; border:2px solid #FFCDD2; }
+.btn-save { width:100%; padding:14px; background:#2E7D32; color:white; border:none; border-radius:12px; font-weight:800; font-size:15px; cursor:pointer; margin-bottom:8px; }
+.history-section { margin-top:20px; border-top:3px solid #D32F2F; padding-top:15px; }
+.history-title { background:#D32F2F; color:white; padding:10px; border-radius:10px; font-weight:900; text-align:center; font-size:14px; margin-bottom:10px; }
+.history-controls { display:flex; gap:6px; margin-bottom:10px; }
+.history-controls input { flex:1; padding:8px; border:2px solid #FFCC80; border-radius:8px; font-size:12px; font-weight:700; }
+.history-controls button { padding:8px 12px; background:#D32F2F; color:white; border:none; border-radius:8px; font-weight:800; font-size:12px; }
+.history-card { background:white; border:2px solid #FFCC80; border-radius:10px; padding:10px; margin-bottom:8px; }
+.history-card.old-data { border-color:#C62828; background:#FFF5F5; }
+.history-date { font-weight:900; color:#D32F2F; font-size:12px; }
+.history-good { font-weight:900; color:#2E7D32; font-size:16px; }
+.waste-tag { background:#FFEBEE; color:#C62828; padding:2px 6px; border-radius:5px; font-size:10px; font-weight:800; display:inline-block; margin-top:3px; }
+.proof-thumb { max-width:70px; max-height:70px; border-radius:6px; border:1px solid #FFCDD2; margin-top:5px; cursor:pointer; }
+.edit-btn { background:#1565C0; color:white; border:none; padding:6px 14px; border-radius:6px; font-weight:800; font-size:11px; cursor:pointer; }
+.del-btn { background:#C62828; color:white; border:none; padding:6px 14px; border-radius:6px; font-weight:800; font-size:11px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="container">
+<button class="back-btn" onclick="window.location='index.html'">← Back to Menu</button>
+<h2>📦 Daily Production</h2>
+<p class="subtitle">Dropdown + Edit/Delete with Password</p>
+
+<div class="date-box">
+<label>Production Date</label>
+<input type="date" id="prodDate">
+</div>
+
+<div class="select-box">
+<label>1️⃣ Select Category</label>
+<select id="catSelect" onchange="onCategoryChange()">
+<option value="">-- Pili Category --</option>
+<option value="65s">65's SIOMAI</option>
+<option value="30s">30's SIOMAI</option>
+<option value="big">BIG SIOMAI</option>
+<option value="dumplings">DUMPLINGS</option>
+<option value="siopao">SIOPAO</option>
+<option value="sauce">SAUCE</option>
+<option value="others">OTHERS</option>
+</select>
+</div>
+
+<div class="select-box">
+<label>2️⃣ Select Item</label>
+<select id="prodSelect" onchange="document.getElementById('inputArea').style.display=this.value?'block':'none'">
+<option value="">-- Pili muna Category --</option>
+</select>
+</div>
+
+<div id="inputArea" style="display:none">
+<div class="input-row">
+<div class="input-box"><label>Produced</label><input type="number" id="inputProd" value="0" min="0"></div>
+<div class="input-box"><label>Damaged</label><input type="number" id="inputDam" value="0" min="0"></div>
+<div class="input-box waste"><label>Waste kg</label><input type="number" id="inputWaste" value="0" min="0" step="0.01"></div>
+</div>
+<button class="btn-add" onclick="addToList()">➕ Add to Today's Production</button>
+</div>
+
+<div class="cart-box">
+<div style="font-weight:800;color:#D32F2F;font-size:12px;margin-bottom:6px;text-align:center">📋 TODAY'S ADDED - <span id="countText">0 items</span></div>
+<div id="cartList"><div style="text-align:center;color:#999;padding:10px;font-size:11px">Wala pa - pili ka category at item boss</div></div>
+</div>
+
+<div class="waste-box">
+<h3>🗑️ WRAPPER / MIX WASTE - With Proof</h3>
+<div class="waste-input-row">
+<input type="number" id="wrapperWasteKg" placeholder="KG ex: 1.2" step="0.001">
+<input type="number" id="wrapperWastePcs" placeholder="Pcs ex: 50">
+</div>
+<label style="font-size:11px;font-weight:700;color:#C62828;">📸 Proof (timbangan):</label>
+<input type="file" id="wasteProof" accept="image/*" style="width:100%;padding:6px;border:2px dashed #EF5350;border-radius:8px;background:white;margin-top:4px">
+<img id="wastePreview" class="waste-preview">
+</div>
+
+<div class="total-box">
+<label>TOTAL GOOD TODAY</label>
+<div id="totalGood">0 pcs</div>
+<div style="font-size:11px;margin-top:4px" id="totalWasteText">Waste: 0kg</div>
+</div>
+
+<button class="btn-save" onclick="saveProduction()">💾 Save All Production</button>
+
+<div class="history-section">
+<div class="history-title">📚 PRODUCTION HISTORY - Balikan</div>
+<div class="history-controls">
+<input type="date" id="histFrom">
+<input type="date" id="histTo">
+<button onclick="loadHistory()">Load</button>
+</div>
+<button onclick="loadHistoryAll()" style="width:100%;padding:10px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:800;font-size:13px;margin-bottom:10px">Load All History</button>
+<div id="historyList">Loading...</div>
+</div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, query, orderBy, where, doc, updateDoc, increment, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const ADMIN_PASS = "Ghost123";
+
+const firebaseConfig = { apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE", authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com", projectId: "dhan-siomai-pos-fe1e5", storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app", messagingSenderId: "305932123173", appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc" };
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let products = []; let cart = []; let wasteBase64 = "";
+document.getElementById('prodDate').valueAsDate = new Date();
+document.getElementById('histFrom').valueAsDate = new Date();
+document.getElementById('histTo').valueAsDate = new Date();
+
+document.getElementById('wasteProof').addEventListener('change', (e)=>{
+const file = e.target.files[0]; if(!file) return;
+const reader = new FileReader();
+reader.onload = (ev)=>{ wasteBase64 = ev.target.result; document.getElementById('wastePreview').src = wasteBase64; document.getElementById('wastePreview').style.display='block'; };
+reader.readAsDataURL(file);
+});
+
+async function loadProducts(){
+const q = query(collection(db,"products"), orderBy("name"));
+const snap = await getDocs(q);
+products = []; snap.forEach(d=>products.push({id:d.id,...d.data()}));
+}
+window.onCategoryChange = () => {
+const cat = document.getElementById('catSelect').value;
+const sel = document.getElementById('prodSelect');
+sel.innerHTML = '<option value="">-- Pili Item --</option>';
+if(!cat) return;
+const filtered = products.filter(p=>p.category===cat);
+filtered.forEach(p=>{
+const opt = document.createElement('option');
+opt.value = p.id; opt.textContent = `${p.name} (${p.stock||0})`;
+sel.appendChild(opt);
+});
+document.getElementById('inputArea').style.display='none';
+}
+window.addToList = () => {
+const prodId = document.getElementById('prodSelect').value;
+if(!prodId){ alert("Pili ka item boss!"); return; }
+const prod = products.find(p=>p.id===prodId);
+const p = parseInt(document.getElementById('inputProd').value)||0;
+const d = parseInt(document.getElementById('inputDam').value)||0;
+const w = parseFloat(document.getElementById('inputWaste').value)||0;
+if(p===0 && d===0 && w===0){ alert("Lagyan mo laman"); return; }
+const good = p-d;
+const idx = cart.findIndex(c=>c.productId===prodId);
+if(idx>=0){ cart[idx].produced+=p; cart[idx].damaged+=d; cart[idx].wasteKg+=w; cart[idx].good+=good; }
+else{ cart.push({ productId:prodId, productName:prod.name, category:prod.category, produced:p, damaged:d, wasteKg:w, good:good }); }
+renderCart();
+document.getElementById('inputProd').value=0; document.getElementById('inputDam').value=0; document.getElementById('inputWaste').value=0;
+}
+function renderCart(){
+const list = document.getElementById('cartList');
+document.getElementById('countText').innerText = cart.length+' items';
+if(cart.length===0){ list.innerHTML='<div style="text-align:center;color:#999;padding:10px;font-size:11px">Wala pa</div>'; document.getElementById('totalGood').innerText='0 pcs'; document.getElementById('totalWasteText').innerText='Waste: 0kg'; return; }
+let html=''; let totalGood=0; let totalWaste=0;
+cart.forEach((c,i)=>{
+totalGood+=c.good; totalWaste+=c.wasteKg;
+html+=`<div class="cart-item"><div><b>${c.productName}</b><br>P${c.produced} D${c.damaged} W${c.wasteKg}kg = G${c.good}</div><button class="remove-btn" onclick="removeItem(${i})">X</button></div>`;
+});
+list.innerHTML=html;
+const wrapperKg = parseFloat(document.getElementById('wrapperWasteKg').value)||0;
+document.getElementById('totalGood').innerText = totalGood+' pcs';
+document.getElementById('totalWasteText').innerText = `Waste: ${(totalWaste+wrapperKg).toFixed(3)}kg`;
+}
+window.removeItem = (i)=>{ cart.splice(i,1); renderCart(); }
+document.getElementById('wrapperWasteKg').addEventListener('input', renderCart);
+window.saveProduction = async () => {
+const date = document.getElementById('prodDate').value;
+if(!date){ alert("Pili date"); return; }
+if(cart.length===0 &&!wasteBase64){ alert("Wala ka pa na-add boss!"); return; }
+let promises=[]; cart.forEach(c=>{ if(c.good>0) promises.push(updateDoc(doc(db,"products",c.productId),{stock:increment(c.good)})); });
+const totalGood = cart.reduce((s,c)=>s+c.good,0);
+const totalWasteItems = cart.reduce((s,c)=>s+c.wasteKg,0);
+const wrapperKg = parseFloat(document.getElementById('wrapperWasteKg').value)||0;
+const wrapperPcs = parseInt(document.getElementById('wrapperWastePcs').value)||0;
+try{
+await addDoc(collection(db,"production"),{ date:date, timestamp:new Date(), items:cart, totalGood:totalGood, totalWasteKg:totalWasteItems+wrapperKg, wrapperWasteKg:wrapperKg, wrapperWastePcs:wrapperPcs, wasteProof:wasteBase64||null });
+await Promise.all(promises);
+alert(`Saved! ${totalGood} pcs ✅`);
+cart=[]; renderCart(); loadHistoryAll();
+document.getElementById('wrapperWasteKg').value=''; document.getElementById('wrapperWastePcs').value=''; document.getElementById('wastePreview').style.display='none'; wasteBase64='';
+}catch(e){ alert("Error: "+e.message); }
+}
+
+// EDIT & DELETE - HINDI NA GINAGALAW STOCK BOSS - SAFE SA 27/28 INVENTORY MO
+window.deleteProduction = async (docId) => {
+const pass = prompt("ADMIN PASSWORD para i-DELETE:");
+if(pass!== ADMIN_PASS){ alert("Mali password boss!"); return; }
+if(!confirm("Sigurado ka i-DELETE? Hindi gagalawin stock (bago na inventory nung 27).")) return;
+try{
+await deleteDoc(doc(db,"production",docId));
+alert("✅ Deleted na! Hindi ginalaw stock.");
+loadHistoryAll();
+}catch(e){ alert("Error: "+e.message); }
+}
+window.editProduction = async (docId) => {
+const pass = prompt("ADMIN PASSWORD para i-EDIT:");
+if(pass!== ADMIN_PASS){ alert("Mali password boss!"); return; }
+try{
+const ref = doc(db,"production",docId);
+const snap = await getDoc(ref);
+const data = snap.data();
+let newKg = prompt(`Edit Wrapper Waste KG (dating ${data.wrapperWasteKg||0}kg):`, data.wrapperWasteKg||0);
+if(newKg===null) return;
+let newPcs = prompt(`Edit Wrapper Pcs (dating ${data.wrapperWastePcs||0}):`, data.wrapperWastePcs||0);
+if(newPcs===null) return;
+await updateDoc(ref,{ wrapperWasteKg: parseFloat(newKg)||0, wrapperWastePcs: parseInt(newPcs)||0, totalWasteKg: (data.items||[]).reduce((s,c)=>s+(c.wasteKg||0),0) + (parseFloat(newKg)||0), editedAt: new Date() });
+alert("✅ Na-edit na!");
+loadHistoryAll();
+}catch(e){ alert("Error: "+e.message); }
+}
+
+window.loadHistory = async () => {
+const list = document.getElementById('historyList'); list.innerHTML='Loading...';
+const fromVal = document.getElementById('histFrom').value; const toVal = document.getElementById('histTo').value;
+if(!fromVal||!toVal){ alert("Pili date"); return; }
+const from = new Date(fromVal+'T00:00:00'); const to = new Date(toVal+'T23:59:59');
+const q = query(collection(db,"production"), where("timestamp",">=",from), where("timestamp","<=",to), orderBy("timestamp","desc"));
+const snap = await getDocs(q); renderHistory(snap);
+}
+window.loadHistoryAll = async () => {
+const list = document.getElementById('historyList'); list.innerHTML='Loading all...';
+const q = query(collection(db,"production"), orderBy("timestamp","desc"));
+const snap = await getDocs(q); renderHistory(snap);
+}
+function renderHistory(snap){
+const list = document.getElementById('historyList');
+if(snap.empty){ list.innerHTML='<div style="text-align:center;color:#999;padding:10px;font-size:11px">Wala pang production</div>'; return; }
+let html='';
+snap.forEach(d=>{
+const p = d.data();
+const dateStr = p.timestamp?.toDate? p.timestamp.toDate().toLocaleString('en-PH',{timeZone:'Asia/Manila'}) : p.date;
+const waste = p.totalWasteKg||0;
+const proof = p.wasteProof? `<img src="${p.wasteProof}" class="proof-thumb" onclick="window.open('${p.wasteProof}')">` : '';
+let items = (p.items||[]).map(it=>`${it.productName} G${it.good}`).join(', ');
+const isOld = p.date < '2026-08-27';
+html+=`<div class="history-card ${isOld?'old-data':''}">
+<div class="history-date">${dateStr} | ${p.date} ${isOld?'<span style="background:#C62828;color:white;padding:2px 6px;border-radius:4px;font-size:9px">TESTING - DELETE MO NA</span>':''}</div>
+<div class="history-good">${p.totalGood} pcs Good</div>
+${waste>0?`<div class="waste-tag">Waste ${Number(waste).toFixed(3)}kg</div>`:''}
+<div style="font-size:10px;color:#555;margin-top:4px">${items}</div>
+${proof}
+<div style="display:flex;gap:6px;margin-top:8px">
+<button class="edit-btn" onclick="editProduction('${d.id}')">EDIT</button>
+<button class="del-btn" onclick="deleteProduction('${d.id}')">DELETE</button>
+</div>
+</div>`;
+});
+list.innerHTML=html;
+}
+loadProducts().then(()=>loadHistoryAll());
+</script>
+</body>
+</html>
