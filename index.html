@@ -1,39 +1,4 @@
-  <script>
-// ===== LICENSE EXPIRE - ALING GINA STORE =====
-// SET MO DITO BOSS
-const EXPIRE_DATE = "2026-09-30"; // <-- kelan mag e-expire
-const SECRET_KEY = "GINA2026BAYAD"; // <-- key pag nagbayad na sila
-
-(function(){
-  const today = new Date(); today.setHours(0,0,0,0);
-  const expire = new Date(EXPIRE_DATE); expire.setHours(0,0,0,0);
-  const isUnlocked = localStorage.getItem("gina_license") === SECRET_KEY;
-  const extended = localStorage.getItem("gina_license_extend");
-  let realExpire = expire;
-  if(extended){ realExpire = new Date(extended); }
-  
-  if(today > realExpire && !isUnlocked){
-    document.addEventListener("DOMContentLoaded", function(){
-      document.body.innerHTML = `
-        <div style="min-height:100vh;background:#FFF8E1;display:flex;align-items:center;justify-content:center;padding:20px;font-family:Segoe UI;">
-          <div style="background:white;padding:30px;border-radius:20px;box-shadow:0 6px 20px rgba(0,0,0,0.2);max-width:380px;width:100%;border-top:6px solid #D32F2F;text-align:center;">
-            <h1 style="color:#D32F2F;font-size:24px;margin-bottom:10px;">🔒 LICENSE EXPIRED</h1>
-            <p style="color:#666;font-size:14px;">Siomai Factory POS<br><b>ALING GINA STORE</b><br><br>Expired na ang trial. Contact developer para ma-activate.</p>
-            <p style="font-size:11px;color:#999;margin:10px 0;">Expired: ${realExpire.toDateString()}<br>Today: ${today.toDateString()}</p>
-            <input id="keyInput" type="text" placeholder="License Key" style="width:100%;padding:12px;margin:15px 0;border:2px solid #FFCC80;border-radius:10px;text-align:center;">
-            <button onclick="if(document.getElementById('keyInput').value.trim()==='${SECRET_KEY}'){let n=new Date();n.setFullYear(n.getFullYear()+1);localStorage.setItem('gina_license_extend',n.toISOString());alert('✅ Activated 1 Year!');location.reload();}else{alert('❌ Mali Key!');}" style="width:100%;padding:12px;background:#D32F2F;color:white;border:none;border-radius:10px;font-weight:bold;">ACTIVATE</button>
-            <p style="margin-top:15px;font-size:10px;color:#999;">Dev: Boss J</p>
-          </div>
-        </div>
-      `;
-    });
-  } else {
-    // show days left sa console lang, di halata
-    const diff = Math.ceil((realExpire - today)/(1000*60*60*24));
-    console.log("License: "+diff+" days left");
-  }
-})();
-</script>     
+     
 <!DOCTYPE html>
 <html lang="en">
 <head>
