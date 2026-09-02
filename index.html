@@ -1,4 +1,74 @@
-     
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDk3ZbOXuw3PEfJzdt8AI2ueJq5yksfekE",
+  authDomain: "dhan-siomai-pos-fe1e5.firebaseapp.com",
+  projectId: "dhan-siomai-pos-fe1e5",
+  storageBucket: "dhan-siomai-pos-fe1e5.firebasestorage.app",
+  messagingSenderId: "305932123173",
+  appId: "1:305932123173:web:f27894a2d5e6e6ab8253cc"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function checkLicense(){
+  const ref = doc(db, "licenses", "gina_store");
+  try{
+    const snap = await getDoc(ref);
+    if(!snap.exists()){
+      await setDoc(ref, { 
+        expireDate: new Date("2026-09-30"), 
+        currentKey: "GINA2026BAYAD", 
+        usedKeys: [] 
+      });
+      return location.reload();
+    }
+    const data = snap.data();
+    let expireDate = data.expireDate.toDate ? data.expireDate.toDate() : new Date(data.expireDate);
+    const today = new Date(); today.setHours(0,0,0,0);
+    expireDate.setHours(0,0,0,0);
+    const diffDays = Math.ceil((expireDate - today)/(1000*60*60*24));
+
+    if(today > expireDate){
+      document.addEventListener("DOMContentLoaded", () => {
+        document.body.innerHTML = `
+        <div style="min-height:100vh;background:#FFF8E1;display:flex;align-items:center;justify-content:center;padding:20px;font-family:Segoe UI;">
+          <div style="background:white;padding:30px;border-radius:20px;box-shadow:0 6px 20px rgba(0,0,0,0.2);max-width:380px;width:100%;border-top:6px solid #D32F2F;text-align:center;">
+            <h1 style="color:#D32F2F;">🔒 LICENSE EXPIRED</h1>
+            <p>ALING GINA STORE<br>GCash to Activate<br>Dev: 09XX-XXX-XXXX</p>
+            <input id="keyInput" placeholder="Enter License Key" style="width:100%;padding:12px;margin:15px 0;border:2px solid #FFCC80;border-radius:10px;text-align:center;">
+            <button id="activateBtn" style="width:100%;padding:12px;background:#D32F2F;color:white;border:none;border-radius:10px;font-weight:bold;">ACTIVATE</button>
+            <p id="msg" style="color:red;font-size:12px;"></p>
+          </div>
+        </div>`;
+        document.getElementById("activateBtn").onclick = async () => {
+          const key = document.getElementById("keyInput").value.trim();
+          const msg = document.getElementById("msg");
+          if(key === data.currentKey && !data.usedKeys?.includes(key)){
+            const newExpire = new Date(); newExpire.setFullYear(newExpire.getFullYear()+1);
+            const newKey = "GINA" + Math.random().toString(36).substring(2,8).toUpperCase() + "2027";
+            await updateDoc(ref, { expireDate: newExpire, currentKey: newKey, usedKeys: [...(data.usedKeys||[]), key] });
+            alert("✅ Activated 1 Year! Next code: " + newKey);
+            location.reload();
+          } else if(data.usedKeys?.includes(key)){
+            msg.innerText = "❌ Nagamit na yang code!";
+          } else {
+            msg.innerText = "❌ Mali ang Key!";
+          }
+        };
+      });
+    } else {
+      document.addEventListener("DOMContentLoaded", () => {
+        const sub = document.querySelector(".subtitle");
+        if(sub) sub.innerHTML += `<br><span style="color:${diffDays<=7?'red':'green'};font-weight:bold;">License: ${diffDays} days left</span>`;
+      });
+    }
+  }catch(e){ console.log("License check failed, offline?", e); }
+}
+checkLicense();
+           </script>     
 <!DOCTYPE html>
 <html lang="en">
 <head>
